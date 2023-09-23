@@ -16,7 +16,7 @@ struct ServerBlock;
 struct HttpBlock {
 	std::map<std::string, std::string> types;
 	std::map<int, std::string> errorPages;
-	std::vector<ServerBlock> serverList;
+	std::vector<ServerBlock*> serverList; // default_server = vector<ServerBlock> index 0
 	
 	int clientMaxBodySize; // default unit kB
 	int clientBodyTimeout = 60; // default unit sec.
@@ -27,7 +27,7 @@ struct ServerBlock {
 	int listenPort; // default port 4242
 	std::string serverName;
 	std::string rootPath;
-	std::vector<LocationBlock> locationList;
+	std::vector<LocationBlock*> locationList;
 };
 
 struct LocationBlock {
@@ -38,7 +38,7 @@ struct LocationBlock {
 	std::string index; // default "index.html"
 	std::string alias;
 	std::pair<int, std::string> returnPair;
-	std::vector<LocationBlock> locationList;
+	std::vector<LocationBlock*> locationList;
 };
 
 void InitHttpBlock(HttpBlock& http);
