@@ -24,7 +24,7 @@ void InitServerBlock(ServerBlock &server)
 {
 	server.listenPort = 4242;
 	server.rootPath = "";
-	LocationBlock *location = new LocationBlock;
+	// LocationBlock *location = new LocationBlock;
 }
 
 void InitLocationBlock(LocationBlock &location)
@@ -63,8 +63,6 @@ int ServerParser(ServerBlock &server, std::ifstream &file)
 	{
 		std::istringstream iss(line);
 		std::string key;
-		std::cout << line << "\n";
-
 		if (!(iss >> key))
 		{
 			continue;
@@ -123,7 +121,7 @@ int ServerParser(ServerBlock &server, std::ifstream &file)
 			std::string value;
 			if (!(iss >> value) || value[0] != '/')
 			{
-				return 1;
+				return 3;
 			}
 			LocationBlock *location = new LocationBlock;
 			InitLocationBlock(*location);
@@ -199,17 +197,14 @@ int LocationParser_2(LocationBlock &location, std::ifstream &file)
 			}
 			else
 			{
-				std::cout << "1" << '\n';
 				return 2;
 			}
-				std::cout << value << "\n";
 			if (!(value.empty()))
 			{
 				location.rootPath = value + '/';
 			}
 			else
 			{
-				std::cout << "12" << '\n';
 				return 2;
 			}
 		}
@@ -271,13 +266,11 @@ int LocationParser_2(LocationBlock &location, std::ifstream &file)
 			InitLocationBlock(*location_mini);
 			if (!(iss >> value) || value[0] != '/')
 			{
-				std::cout << "loc1" << '\n';
 				return 1;
 			}
 			location_mini->uri = value;
 			if (!(iss >> value) || value.size() != 1 || value[0] != '{')
 			{
-					std::cout << "loc2" << '\n';
 				return 1;
 			}
 			// if (LocationParser(*location_mini, file)){
@@ -351,17 +344,14 @@ int LocationParser(LocationBlock &location, std::ifstream &file)
 			}
 			else
 			{
-				std::cout << "1" << '\n';
 				return 2;
 			}
-				std::cout << value << "\n";
 			if (!(value.empty()))
 			{
 				location.rootPath = value + '/';
 			}
 			else
 			{
-				std::cout << "12" << '\n';
 				return 2;
 			}
 		}
@@ -423,17 +413,14 @@ int LocationParser(LocationBlock &location, std::ifstream &file)
 			InitLocationBlock(*location_mini);
 			if (!(iss >> value) || value[0] != '/')
 			{
-				std::cout << "loc1" << '\n';
 				return 1;
 			}
 			location_mini->uri = value;
 			if (!(iss >> value) || value.size() != 1 || value[0] != '{')
 			{
-					std::cout << "loc2" << '\n';
 				return 1;
 			}
-			if (LocationParser(*location_mini, file)){
-				std::cout << "loc3 " << '\n';
+			if (LocationParser_2(*location_mini, file)){
 				return (1);
 			} else {
 				location.locationList.push_back(location_mini);
@@ -491,7 +478,6 @@ int ParseLine(const std::string &line, std::ifstream &file, HttpBlock &http)
 			}
 			else
 			{
-				std::cout << "1234" << '\n';
 				return 1;
 			}
 			if (value.back() == 'm' || value.back() == 'M')
@@ -524,7 +510,6 @@ int ParseLine(const std::string &line, std::ifstream &file, HttpBlock &http)
 			}
 			else
 			{
-				std::cout << "12345" << '\n';
 				return (1);
 			}
 			for (int i = 0; i < result.size() - 1; i++)
@@ -544,10 +529,9 @@ int ParseLine(const std::string &line, std::ifstream &file, HttpBlock &http)
 		}
 		ServerBlock *server = new ServerBlock;
 		InitServerBlock(*server);
-		if (ServerParser(*server, file) == false) {
+		if (ServerParser(*server, file)) {
 			return (1);
 		}
-		// std::cout << http.serverList.at(0)->locationlist.bget << '\n';
 		http.serverList.push_back(server);
 	}
 	else if (key == "location")
@@ -556,7 +540,6 @@ int ParseLine(const std::string &line, std::ifstream &file, HttpBlock &http)
 		// TODO uri checker가 만들어지면 uri 확인하는 코드도 추가 필요
 		if (!(iss >> value) || value[0] != '/')
 		{
-				std::cout << "loc1" << '\n';
 			return 1;
 		}
 		LocationBlock *location = new LocationBlock;
@@ -606,8 +589,9 @@ void printLocation(std::vector<LocationBlock *> const &input)
 		std::cout << "index: " << input.at(i)->index << std::endl;
 		std::cout << "alias: " << input.at(i)->alias << std::endl;
 		std::cout << "root: " << input.at(i)->rootPath << std::endl;
-		std::cout << input.at(i)->returnPair.first << " " << input.at(i)->returnPair.second << std::endl;
-		// printLocation(input.at(i)->locationList);
+		std::cout << "return: " << input.at(i)->returnPair.first << " " << input.at(i)->returnPair.second << std::endl;
+		std::cout << "--------------------------------" << "\n";
+		printLocation(input.at(i)->locationList);
 	}
 }
 
@@ -629,7 +613,7 @@ void printParserResult(HttpBlock &http)
 	std::cout << "client_max_body_size: " << http.clientMaxBodySize << "\n";
 	std::cout << "clientBodyTimeout: " << http.clientBodyTimeout << "\n";
 	std::cout << "workerConnections: " << http.workerConnections << "\n";
-	// printLocation(http.locationList);
+	printLocation(http.locationList);
 	printServer(http.serverList);
 }
 
