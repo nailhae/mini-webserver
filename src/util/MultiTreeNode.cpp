@@ -1,9 +1,9 @@
 #include "MultiTreeNode.hpp"
 
 MultiTreeNode::MultiTreeNode(locationBlock* data)
-	:	mChildren(std::vector<MultiTreeNode *>())
-	,	mParentNode(NULL)
-	,	mData(data)
+	: mChildren(std::vector<MultiTreeNode *>())
+	, mParentNode(NULL)
+	, mData(data)
 {}
 
 MultiTreeNode::~MultiTreeNode(void)

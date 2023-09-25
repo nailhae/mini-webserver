@@ -24,7 +24,6 @@ typedef struct locationBlock
 class MultiTreeNode
 {
 public:
-
 	MultiTreeNode(locationBlock* data);
 	~MultiTreeNode(void);
 	size_t GetChildrenSize(void) const;
@@ -32,9 +31,7 @@ public:
 	const std::string& GetURI(void) const;
 	const std::vector<MultiTreeNode*>& GetChildren(void);
 	void AddChildNode(locationBlock *target);
-
 private:
-
 	MultiTreeNode(void);
 	MultiTreeNode& operator=(const MultiTreeNode& rhs);
 	MultiTreeNode(const MultiTreeNode& other);
@@ -42,5 +39,4 @@ private:
 	std::vector<MultiTreeNode*> mChildren;
 	MultiTreeNode*				mParentNode;
 	locationBlock*				mData;
-
 };

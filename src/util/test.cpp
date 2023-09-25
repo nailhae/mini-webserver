@@ -39,17 +39,16 @@ int main()
 	MultiTree root(*temp);
 
 	// 경로 앞뒤의 '/'처리 결정해야 함
-	addChildURI(root.GetRoot(), "home/");
-	addChildURI(root.GetRoot(), "etc/");
+	addChildURI(root.GetRoot(), "home");
+	addChildURI(root.GetRoot(), "etc");
 	addChildURI(root.searchNodeOrNull("/home/"), "src/");
 	addChildURI(root.searchNodeOrNull("/home/"), "usr/");
 	addChildURI(root.searchNodeOrNull("/home/src/"), "http/");
-	addChildURI(root.searchNodeOrNull("/home/src/"), "http/html");
-	addChildURI(root.searchNodeOrNull("/home/src/"), "http/css");
-	addChildURI(root.searchNodeOrNull("/home/src/"), "http/ftp");
-	addChildURI(root.searchNodeOrNull("/home/src/"), "http/image");
 	addChildURI(root.searchNodeOrNull("/home/src/http/"), "html/");
 	addChildURI(root.searchNodeOrNull("/home/src/http/"), "css/");
+	addChildURI(root.searchNodeOrNull("/home/src/"), "http/html");
+	addChildURI(root.searchNodeOrNull("/home/src/"), "ftp/");
+	addChildURI(root.searchNodeOrNull("/home/src/"), "image");
 	addChildURI(root.searchNodeOrNull("/home/src/image/"), "png/");
 	addChildURI(root.searchNodeOrNull("/home/src/image/"), "jpg/");
 

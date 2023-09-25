@@ -30,7 +30,8 @@ static MultiTreeNode* findNodeOrNullRecursive(MultiTreeNode* node, std::string& 
 	target.erase(0, node->GetURI().size());
 	if (target.size() == 0)
 		return (node);
-	for (std::vector<MultiTreeNode*>::const_iterator it = node->GetChildren().begin(); it != node->GetChildren().end(); it++)
+	for (std::vector<MultiTreeNode*>::const_iterator it = node->GetChildren().begin();\
+		 it != node->GetChildren().end(); it++)
 	{
 		subString = target.substr(0, (*it)->GetURI().size());
 		if ((*it)->GetURI() == subString)
@@ -46,7 +47,7 @@ static MultiTreeNode* findNodeOrNullRecursive(MultiTreeNode* node, std::string& 
 		return (result);
 }
 
-MultiTreeNode* MultiTree::GetRoot(void)
+MultiTreeNode* MultiTree::GetRoot(void) const
 {
 	return (mRoot);
 }
@@ -57,7 +58,7 @@ MultiTreeNode* MultiTree::GetRoot(void)
  * @param target uri의 string
  * @return MultiTreeNode* 실패시: NULL 
  */
-MultiTreeNode* MultiTree::searchNodeOrNull(std::string target)
+MultiTreeNode* MultiTree::searchNodeOrNull(std::string target) const
 {
 	return (findNodeOrNullRecursive(mRoot, target));
 }

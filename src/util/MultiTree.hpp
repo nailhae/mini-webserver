@@ -9,14 +9,11 @@
 class MultiTree
 {
 public:
-
 	MultiTree(MultiTreeNode& root);
 	~MultiTree(void);
-	MultiTreeNode* GetRoot(void);
-	MultiTreeNode* searchNodeOrNull(std::string target);
-
+	MultiTreeNode* GetRoot(void) const;
+	MultiTreeNode* searchNodeOrNull(std::string target) const;
 private:
-
 	MultiTree(void);
 	MultiTree& operator=(const MultiTree& rhs);
 	MultiTree(const MultiTree& other);
