@@ -1,0 +1,8 @@
+﻿---
+BasedOnStyle: Microsoft
+AllowShortFunctionsOnASingleLine: None
+IndentWidth: '4'
+TabWidth: '1'
+UseTab: ForIndentation
+
+...
