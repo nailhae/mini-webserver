@@ -578,7 +578,6 @@ template <typename K, typename V> void print_map(std::map<K, V> &m)
 
 void printLocation(std::vector<LocationBlock *> const &input)
 {
-	std::cout << input.size() << '\n';
 	for (int i = 0; i < input.size(); i++)
 	{
 		std::cout << "URI: " << input.at(i)->uri << std::endl;
