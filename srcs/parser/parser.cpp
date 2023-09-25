@@ -1,109 +1,149 @@
 #include "parser.hpp"
-bool LocationParser(LocationBlock& location, std::ifstream &file);
-enum BlockType {
+int LocationParser(LocationBlock &location, std::ifstream &file);
+void printLocation(std::vector<LocationBlock *> const &input);
+
+enum BlockType
+{
 	NONE,
 	SERVER,
 	LOCATION
 };
 
-void InitHttpBlock(HttpBlock& http)
+void InitHttpBlock(HttpBlock &http)
 {
 	http.clientMaxBodySize = 1024;
 	http.clientBodyTimeout = 60;
 	http.workerConnections = 1024;
+	http.types.insert(std::make_pair("text/plain", "txt"));
+	http.types.insert(std::make_pair("text/html", "html"));
+	http.types.insert(std::make_pair("text/css", "css"));
+	http.types.insert(std::make_pair("image/png", "png"));
 }
 
-void InitServerBlock(ServerBlock& server)
+void InitServerBlock(ServerBlock &server)
 {
 	server.listenPort = 4242;
+	server.rootPath = "";
+	LocationBlock *location = new LocationBlock;
 }
 
-void InitLocationBlock(LocationBlock& location)
+void InitLocationBlock(LocationBlock &location)
 {
 	location.bget = false;
 	location.bpost = false;
 	location.bdeleteMethod = false;
+	location.autoindex = false;
+	location.rootPath = "";
 	location.index = "index.html";
 }
 
-std::vector<std::string> split(std::string str) {
+std::vector<std::string> split(std::string str)
+{
 	std::vector<std::string> vec;
 	std::stringstream ss(str);
 	std::string temp;
-
-	while (getline(ss, temp, ' ')) {
-		vec.push_back(temp);
+	ss >> temp;
+	while (getline(ss, temp, ' '))
+	{
+		if (!temp.empty())
+		{
+			vec.push_back(temp);
+		}
 	}
 
 	return (vec);
 }
 
-bool ServerParser(ServerBlock& server, std::ifstream &file) {
+int ServerParser(ServerBlock &server, std::ifstream &file)
+{
 	std::stack<BlockType> blockStack;
 	blockStack.push(SERVER);
 	std::string line;
-	while (getline(file, line)) {
+	while (getline(file, line))
+	{
 		std::istringstream iss(line);
 		std::string key;
+		std::cout << line << "\n";
 
-		if (!(iss >> key)) {continue;}
-
-		if (key == "listen") {
+		if (!(iss >> key))
+		{
+			continue;
+		}
+		if (key[0] == '#')
+		{
+			continue;
+		}
+		if (key == "listen")
+		{
 			std::string value;
-		if (iss >> value) {
-			if (value[value.size() - 1] == ';') {
-				value.erase(value.end() - 1);
+			if (iss >> value)
+			{
+				if (value.back() == ';')
+				{
+					value.erase(value.size() - 1);
+				}
+				server.listenPort = strtol(value.c_str(), NULL, 10);
+			}
+		}
+		else if (key == "server_name")
+		{
+			std::string value;
+			if ((iss >> value) && value.back() == ';')
+			{
+				value.erase(value.size() - 1);
 			}
 			else
 			{
-				return 1;
+				return 3;
 			}
-			server.listenPort = strtol(value.c_str(), NULL, 10);
-		} else if (key == "server_name") {
+			server.serverName = value;
+		}
+		else if (key == "root")
+		{
 			std::string value;
-			if (value[value.size() - 1] == ';') {
-				value.erase(value.end() - 1);
+			if ((iss >> value) && value.back() == ';')
+			{
+				value.erase(value.size() - 1);
 			}
 			else
 			{
-				return 1;
+				return 3;
 			}
-			if (iss >> value) {
-				server.serverName = value;
-			}
-		} else if (key == "root") {
-			std::string value;
-			if (value[value.size() - 1] == ';') {
-				value.erase(value.end() - 1); 
+			if (!value.empty())
+			{
+				server.rootPath = value + '/';
 			}
 			else
 			{
+				return 3;
+			}
+		}
+		else if (key == "location")
+		{
+			std::string value;
+			if (!(iss >> value) || value[0] != '/')
+			{
 				return 1;
 			}
-			if (iss >> value) {
-				server.rootPath = value;
-			}
-		} else if (key == "location") {
-			LocationBlock* location = new LocationBlock;
-			std::string value;
-			if (iss >> value) {
-				location->uri = value;
-			}
+			LocationBlock *location = new LocationBlock;
+			InitLocationBlock(*location);
+			if (value != "/")
+				location->uri = value + '/';
 			if (!(iss >> value) || value.size() != 1 || value[0] != '{')
 			{
-				return 1;
+				return 3;
 			}
-			if (LocationParser(*location, file)) {
-				server.locationList.push_back(location);
-			}
-			else
+			if (LocationParser(*location, file) != 0)
 			{
-				// TODO location parsing에 실패했으므로 동적할당 메모리 해제 후 프로그램 종료 해야함
-				return 1;
+				return (3);
 			}
-		} else if (key == "}") {
+			server.locationList.push_back(location);
+		}
+		else if (key == "}")
+		{
 			blockStack.pop();
-			if (blockStack.empty()) {
+			if (blockStack.empty())
+			{
 				return (0);
 			}
 		}
@@ -111,83 +151,316 @@ bool ServerParser(ServerBlock& server, std::ifstream &file) {
 	return (1);
 }
 
-bool LocationParser(LocationBlock& location, std::ifstream &file) {
+int LocationParser_2(LocationBlock &location, std::ifstream &file)
+{
 	std::stack<BlockType> blockStack;
 	blockStack.push(LOCATION);
 	std::string line;
-
-	while (std::getline(file, line)) {
+	while (std::getline(file, line))
+	{
 		std::istringstream iss(line);
 		std::string key;
-
-		if (!(iss >> key)) {continue;}
-
-		if (key == "limit_except") {
+		if (!(iss >> key))
+		{
+			continue;
+		}
+		if (key[0] == '#')
+		{
+			continue;
+		}
+		if (key == "limit_except")
+		{
 			std::string value;
-			while (iss value && value[value.size() - 1] != ';') {
-				if (value == "GET") {
+			while ((iss >> value))
+			{
+				if (value.back() == ';') {
+					value.erase(value.size() - 1);
+				}
+				if (value == "GET")
+				{
 					location.bget = true;
 				}
-				else if (value == "POST") {
-					location.bpost =true;
+				else if (value == "POST")
+				{
+					location.bpost = true;
 				}
-				else if (vlaue == "DELETE") {
+				else if (value == "DELETE")
+				{
 					location.bdeleteMethod = true;
 				}
 			}
-		} else if (key == "autoindex") {
+		}
+		else if (key == "root")
+		{
 			std::string value;
-			if (iss >> value) {
-				value.erase(value.end() - 1);
-				location.autoindex = (vlaue == "on" ? ture : false);
-			}
-		} else if (key == "index") {
-			std::string value;
-			iss >> value;
-			value.erase(value.end() - 1);
-			location.index = value;
-		} else if (key == "alias") {
-			std::string value;
-			iss >> value;
-			value.erase(value.end() - 1);
-			location.alias = value;
-		} else if (key == "return ") {
-			int firstPair = 0;
-			std::string secondPair = "";
-			iss>>firstPait>>secondPair;
-			if (secondPair[secondPair.end() - 1] == ';')
+			if ((iss >> value) && value.back() == ';')
 			{
-				secondPair.erase(secondPair.end() - 1); 
+				value.erase(value.size() - 1);
 			}
 			else
 			{
-				return 1;
+				std::cout << "1" << '\n';
+				return 2;
+			}
+				std::cout << value << "\n";
+			if (!(value.empty()))
+			{
+				location.rootPath = value + '/';
+			}
+			else
+			{
+				std::cout << "12" << '\n';
+				return 2;
+			}
+		}
+		else if (key == "autoindex")
+		{
+			std::string value;
+			if (iss >> value && value.back() == ';')
+			{
+				value.erase(value.size() - 1);
+				location.autoindex = (value == "on" ? true : false);
+			} else {
+				return 2;
+			}
+		}
+		else if (key == "index")
+		{
+			std::string value;
+
+			if (iss >> value && value.back() == ';')
+			{
+				value.erase(value.size() - 1);
+			}
+			else {
+				return (2);
+			}
+			value.erase(value.size() - 1);
+			location.index = value;
+		}
+		else if (key == "alias")
+		{
+			std::string value;
+			if (iss >> value && value.back() == ';')
+			{
+				value.erase(value.size() - 1);
+			}
+			else {
+				return (2);
+			}
+			location.alias = value;
+		}
+		else if (key == "return")
+		{
+			int firstPair = 0;
+			std::string secondPair = "";
+			iss >> firstPair;
+			iss >> secondPair;
+			if (secondPair.back() == ';')
+			{
+				secondPair.erase(secondPair.size() - 1);
+			}
+			else
+			{
+				return 2;
 			}
 			location.returnPair = std::make_pair(firstPair, secondPair);
-		} else if (key == "}") {
+		} else if (key == "location") {
+			std::string value;
+			LocationBlock *location_mini = new LocationBlock;
+			InitLocationBlock(*location_mini);
+			if (!(iss >> value) || value[0] != '/')
+			{
+				std::cout << "loc1" << '\n';
+				return 1;
+			}
+			location_mini->uri = value;
+			if (!(iss >> value) || value.size() != 1 || value[0] != '{')
+			{
+					std::cout << "loc2" << '\n';
+				return 1;
+			}
+			// if (LocationParser(*location_mini, file)){
+			// 	std::cout << "loc3 " << '\n';
+			// 	return (1);
+			// } else {
+			// 	location.locationList.push_back(location_mini);
+			// }
+		}
+		else if (key == "}")
+		{
 			blockStack.pop();
-			if (blockStack.empty()) {
+			if (blockStack.empty())
+			{
 				return (0);
 			}
-		} else {
-			return 1;
+		}
+		else
+		{
+			return 2;
 		}
 	}
 	return 0;
 }
 
-bool ParseLine(const std::string& line, std::ifstream file, HttpBlock& http, ServerBlock& server, LocationBlock& location)
+int LocationParser(LocationBlock &location, std::ifstream &file)
 {
-	// const int success = 1;
-	// const int fail = 0;
+	std::stack<BlockType> blockStack;
+	blockStack.push(LOCATION);
+	std::string line;
+	while (std::getline(file, line))
+	{
+		std::istringstream iss(line);
+		std::string key;
+		if (!(iss >> key))
+		{
+			continue;
+		}
+		if (key[0] == '#')
+		{
+			continue;
+		}
+		if (key == "limit_except")
+		{
+			std::string value;
+			while ((iss >> value))
+			{
+				if (value.back() == ';') {
+					value.erase(value.size() - 1);
+				}
+				if (value == "GET")
+				{
+					location.bget = true;
+				}
+				else if (value == "POST")
+				{
+					location.bpost = true;
+				}
+				else if (value == "DELETE")
+				{
+					location.bdeleteMethod = true;
+				}
+			}
+		}
+		else if (key == "root")
+		{
+			std::string value;
+			if ((iss >> value) && value.back() == ';')
+			{
+				value.erase(value.size() - 1);
+			}
+			else
+			{
+				std::cout << "1" << '\n';
+				return 2;
+			}
+				std::cout << value << "\n";
+			if (!(value.empty()))
+			{
+				location.rootPath = value + '/';
+			}
+			else
+			{
+				std::cout << "12" << '\n';
+				return 2;
+			}
+		}
+		else if (key == "autoindex")
+		{
+			std::string value;
+			if (iss >> value && value.back() == ';')
+			{
+				value.erase(value.size() - 1);
+				location.autoindex = (value == "on" ? true : false);
+			} else {
+				return 2;
+			}
+		}
+		else if (key == "index")
+		{
+			std::string value;
+
+			if (iss >> value && value.back() == ';')
+			{
+				value.erase(value.size() - 1);
+			}
+			else {
+				return (2);
+			}
+			value.erase(value.size() - 1);
+			location.index = value;
+		}
+		else if (key == "alias")
+		{
+			std::string value;
+			if (iss >> value && value.back() == ';')
+			{
+				value.erase(value.size() - 1);
+			}
+			else {
+				return (2);
+			}
+			location.alias = value;
+		}
+		else if (key == "return")
+		{
+			int firstPair = 0;
+			std::string secondPair = "";
+			iss >> firstPair;
+			iss >> secondPair;
+			if (secondPair.back() == ';')
+			{
+				secondPair.erase(secondPair.size() - 1);
+			}
+			else
+			{
+				return 2;
+			}
+			location.returnPair = std::make_pair(firstPair, secondPair);
+		} else if (key == "location") {
+			std::string value;
+			LocationBlock *location_mini = new LocationBlock;
+			InitLocationBlock(*location_mini);
+			if (!(iss >> value) || value[0] != '/')
+			{
+				std::cout << "loc1" << '\n';
+				return 1;
+			}
+			location_mini->uri = value;
+			if (!(iss >> value) || value.size() != 1 || value[0] != '{')
+			{
+					std::cout << "loc2" << '\n';
+				return 1;
+			}
+			if (LocationParser(*location_mini, file)){
+				std::cout << "loc3 " << '\n';
+				return (1);
+			} else {
+				location.locationList.push_back(location_mini);
+			}
+		}
+		else if (key == "}")
+		{
+			blockStack.pop();
+			if (blockStack.empty())
+			{
+				return (0);
+			}
+		}
+		else
+		{
+			return 2;
+		}
+	}
+	return 0;
+}
+
+int ParseLine(const std::string &line, std::ifstream &file, HttpBlock &http)
+{
 	std::istringstream iss(line);
 	std::string key;
 
-	if (!(iss >> key))
-	{
-		return (0);
-	}
-	if (key[0] == '#')
+	if (!(iss >> key) || key[0] == '#')
 	{
 		return (0);
 	}
@@ -196,94 +469,190 @@ bool ParseLine(const std::string& line, std::ifstream file, HttpBlock& http, Ser
 		std::string value;
 		if (iss >> value)
 		{
-			if (value[value.end() - 1] == ';')
+			if (value.back() == ';')
 			{
-				value.erase(value.end() - 1);
+				value.erase(value.size() - 1);
 			}
 			else
 			{
 				return 1;
 			}
+			http.types["default_type"] = value;
 		}
-		http.types["default_type"] = value;
-	} else if (key == "client_max_body_size") {
+	}
+	else if (key == "client_max_body_size")
+	{
 		std::string value;
-		if (iss >> value) {
-			if (value[value.end() - 1] == ';') {
-				value.erase(value.end() - 1); 
+		if (iss >> value)
+		{
+			if (value.back() == ';')
+			{
+				value.erase(value.size() - 1);
 			}
 			else
 			{
+				std::cout << "1234" << '\n';
 				return 1;
 			}
-			if (value[value.end() - 1] == 'm' || value[value.end() - 1] == 'M') {
+			if (value.back() == 'm' || value.back() == 'M')
+			{
 				http.clientMaxBodySize = strtol(value.c_str(), NULL, 10) * 1024;
-			} else if (value[value.end() - 1] == 'g' || value[value.end() - 1] == 'G') {
-				http.clientMaxBodySize = strtol(value.c_str(), NULL, 10) * 1024 * 1024;
-			} else if (value[value.end() - 1] == 'k' || value[value.end() - 1] == 'K') {
-				http.clientMaxBodySize = strtol(value.c_str(), NULL, 10);
-			} else {
-				http.clientMaxBodySize = strtol(value.c_str(), NULL, 10);
 			}
-	} else if (key == "error_pages") {
-		std::vector<std::string> result = split(line);
-		if (!(result.empty())) {
-			std::string errorRoute = result[result.end() - 1];
-			if (errorRoute[errorRoute.length() - 1] == ';') {
-				errorRoute.erase(errorRoute.length() - 1);
+			else if (value.back() == 'g' || value.back() == 'G')
+			{
+				http.clientMaxBodySize = strtol(value.c_str(), NULL, 10) * 1024 * 1024;
+			}
+			else if (value.back() == 'k' || value.back() == 'K')
+			{
+				http.clientMaxBodySize = strtol(value.c_str(), NULL, 10);
 			}
 			else
 			{
-				return 1;
-			}
-			for (int i = 0; i < result.end() - 1; i++) {
-				// TODO value에 값이 없지 않나?
-				http.errorPages[result[i]] = errorRoute;
+				http.clientMaxBodySize = strtol(value.c_str(), NULL, 10);
 			}
 		}
-	} else if (key == "server") {
+	}
+	else if (key == "error_page")
+	{
+		std::vector<std::string> result = split(line);
+		if (!(result.empty()))
+		{
+			std::string errorRoute = result.back();
+			if (errorRoute.back() == ';')
+			{
+				errorRoute.erase(errorRoute.size() - 1);
+			}
+			else
+			{
+				std::cout << "12345" << '\n';
+				return (1);
+			}
+			for (int i = 0; i < result.size() - 1; i++)
+			{
+				// TODO value에 값이 없지 않나?
+				http.errorPages[strtol(result[i].c_str(), NULL, 10)] = errorRoute;
+			}
+		}
+	}
+	else if (key == "server")
+	{
 		// } 가 나올때까지
 		std::string value;
-		if (!(iss >> value) || value.end() != 1 || value[0] != '{')
+		if (!(iss >> value) || value.size() != 1 || value[0] != '{')
 		{
 			return 1;
 		}
-		if (ServerParser(server, file) == false)
+		ServerBlock *server = new ServerBlock;
+		InitServerBlock(*server);
+		if (ServerParser(*server, file) == false) {
 			return (1);
-		http.serverList.push_back(&server);
-	} else if (key == "location") {
-		// TODO location후에  'uri {' 규칙 맞는지 확인하는 코드 추가
+		}
+		// std::cout << http.serverList.at(0)->locationlist.bget << '\n';
+		http.serverList.push_back(server);
+	}
+	else if (key == "location")
+	{
+		std::string value;
+		// TODO uri checker가 만들어지면 uri 확인하는 코드도 추가 필요
+		if (!(iss >> value) || value[0] != '/')
+		{
+				std::cout << "loc1" << '\n';
+			return 1;
+		}
+		LocationBlock *location = new LocationBlock;
+		InitLocationBlock(*location);
+		location->uri = value + '/';
+		if (!(iss >> value) || value.size() != 1 || value[0] != '{')
+		{
+			return 1;
+		}
 		// } 가 나올때까지
-		if (LocationParser(location, file) == false)
+		if (LocationParser(*location, file)){
 			return (1);
+		} else {
+			http.locationList.push_back(location);
+		}
 	}
 
-	if (iss >> key && key[0] != '#')
-	{
-		return 1;
-	}	
-	
+	// if (iss >> key && key[0] != '#')
+	// {
+	// 	std::cout << key << "123#" << '\n';
+	// 	return 1;
+	// }
+
 	return 0;
 }
 
-void ParseFile(const std::string& fileName, HttpBlock& http) 
+using namespace std;
+
+template <typename K, typename V> void print_map(std::map<K, V> &m)
 {
-	std::ifstream	file(fileName);
-	std::string		line;
+	for (typename std::map<K, V>::iterator itr = m.begin(); itr != m.end(); ++itr)
+	{
+		std::cout << itr->first << " " << itr->second << std::endl;
+	}
+}
 
-	ServerBlock* server = new ServerBlock;
-	LocationBlock* location = new LocationBlock;
+void printLocation(std::vector<LocationBlock *> const &input)
+{
+	std::cout << input.size() << '\n';
+	for (int i = 0; i < input.size(); i++)
+	{
+		std::cout << "URI: " << input.at(i)->uri << std::endl;
+		std::cout << "GET: " << input.at(i)->bget << std::endl;
+		std::cout << "POST: " << input.at(i)->bpost << std::endl;
+		std::cout << "DELETE: " << input.at(i)->bdeleteMethod << std::endl;
+		std::cout << "autoindex: " << input.at(i)->autoindex << std::endl;
+		std::cout << "index: " << input.at(i)->index << std::endl;
+		std::cout << "alias: " << input.at(i)->alias << std::endl;
+		std::cout << "root: " << input.at(i)->rootPath << std::endl;
+		std::cout << input.at(i)->returnPair.first << " " << input.at(i)->returnPair.second << std::endl;
+		// printLocation(input.at(i)->locationList);
+	}
+}
 
-	InitServerBlock(*server);
-	InitLocationBlock(*location);
-	if(!file.is_open()) {
+void printServer(std::vector<ServerBlock *> const &input)
+{
+	for (int i = 0; i < input.size(); i++)
+	{
+		std::cout << "Listen Port: " << input.at(i)->listenPort << std::endl;
+		std::cout << "Server Name: " << input.at(i)->serverName << std::endl;
+		std::cout << "Root Path: " << input.at(i)->rootPath << std::endl;
+		printLocation(input.at(i)->locationList);
+	}
+}
+
+void printParserResult(HttpBlock &http)
+{
+	print_map(http.types);
+	print_map(http.errorPages);
+	std::cout << "client_max_body_size: " << http.clientMaxBodySize << "\n";
+	std::cout << "clientBodyTimeout: " << http.clientBodyTimeout << "\n";
+	std::cout << "workerConnections: " << http.workerConnections << "\n";
+	// printLocation(http.locationList);
+	printServer(http.serverList);
+}
+
+void ParseFile(const std::string &fileName, HttpBlock &http)
+{
+	std::ifstream file(fileName);
+	std::string line;
+
+	if (!file.is_open())
+	{
 		std::cout << "Failed to open file" << std::endl;
-		return ;
+		return;
 	}
 
-	while (std::getline(file, line)) {
-		ParseLine(line, file, http, *server, *location);
+	while (std::getline(file, line))
+	{
+		if (int i = ParseLine(line, file, http)){
+			std::cout << "error" << i << '\n';
+			break;
+		}
 		// TODO ParseLine 실패 시 모든 동적할당 메모리 해제 후 conf file 에러라고 알리고 프로그램 종료
 		// TODO catch 됐을 때 동적할당 해제.
 	}
+
+	printParserResult(http);
 }
