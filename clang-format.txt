@@ -4,5 +4,12 @@ AllowShortFunctionsOnASingleLine: None
 IndentWidth: '4'
 TabWidth: '1'
 UseTab: ForIndentation
-
+BraceWrapping:
+  AfterClass: true
+  AfterControlStatement: true
+  AfterEnum: true
+  AfterFunction: true
+  AfterNamespace: true
+  AfterStruct: true
+  AfterUnion: true
 ...
