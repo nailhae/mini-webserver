@@ -1,4 +1,6 @@
 #include "parser.hpp"
+#include "../util/MultiTree.hpp"
+#include "../util/MultiTreeNode.hpp"
 
 void printLocation(std::vector<LocationBlock *> const &input);
 
@@ -57,7 +59,7 @@ template <typename K, typename V> void print_map(std::map<K, V> &m)
 
 void printLocation(std::vector<LocationBlock *> const &input)
 {
-	for (int i = 0; i < input.size(); i++)
+	for (size_t i = 0; i < input.size(); i++)
 	{
 		std::cout << "URI: " << input.at(i)->uri << std::endl;
 		std::cout << "GET: " << input.at(i)->bget << std::endl;
@@ -75,7 +77,7 @@ void printLocation(std::vector<LocationBlock *> const &input)
 
 void printServer(std::vector<ServerBlock *> const &input)
 {
-	for (int i = 0; i < input.size(); i++)
+	for (size_t i = 0; i < input.size(); i++)
 	{
 		std::cout << "Listen Port: " << input.at(i)->listenPort << std::endl;
 		std::cout << "Server Name: " << input.at(i)->serverName << std::endl;
@@ -96,10 +98,12 @@ void printParserResult(HttpBlock &http)
 }
 
 int locationUriErrorCheck(std::vector<LocationBlock *> const &location) {
-	for (int i = 0; i < location.size(); i++) {
-		if (locationUriErrorCheck(location.at(i)->locationList))
+	for (size_t i = 0; i < location.size(); i++) {
+		std::cout << location.at(i)->uri << "\n";
+		if (locationUriErrorCheck(location.at(i)->locationList)){
 				return 1;
-		for (int j = i + 1; j < location.size(); j++) {
+		}
+		for (size_t j = i + 1; j < location.size(); j++) {
 			std::cout << location.at(i)->uri << location.at(j)->uri << "\n";
 			if (location.at(i)->uri == location.at(j)->uri)
 				return 1;
@@ -111,13 +115,13 @@ int locationUriErrorCheck(std::vector<LocationBlock *> const &location) {
 int serverListenErrorCheck(std::vector<ServerBlock *> const &server) {
 	if (server.empty())
 		return 1;
-	for (int i = 0; i < server.size(); i++) {
+	for (size_t i = 0; i < server.size(); i++) {
 		if (!server.at(i)->listenPort) {
 			return(1);
 		}
 		if (locationUriErrorCheck(server.at(i)->locationList))
 				return 1;
-		for (int j = i + 1; j < server.size(); j++) {
+		for (size_t j = i + 1; j < server.size(); j++) {
 			if (server.at(i)->listenPort == server.at(j)->listenPort)
 				return 1;
 		}

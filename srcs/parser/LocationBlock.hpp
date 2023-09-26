@@ -1,17 +1,17 @@
-#ifndef LOCATIONBLOCK_HPP
-#define LOCATIONBLOCK_HPP
+// #ifndef LOCATIONBLOCK_HPP
+// #define LOCATIONBLOCK_HPP
 
-class LocationBlock
-{
-public:
-	LocationBlock();
-	virtual ~LocationBlock();
+// class LocationBlock
+// {
+// public:
+// 	LocationBlock();
+// 	virtual ~LocationBlock();
 
-	LocationBlock(const LocationBlock& other);
-	LocationBlock& operator=(const LocationBlock& other);
+// 	LocationBlock(const LocationBlock& other);
+// 	LocationBlock& operator=(const LocationBlock& other);
 
-private:
-	// Private members
-};
+// private:
+// 	// Private members
+// };
 
-#endif /* LOCATIONBLOCK_HPP */
+// #endif /* LOCATIONBLOCK_HPP */

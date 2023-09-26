@@ -1,4 +1,6 @@
 #include "parser.hpp"
+#include "../util/MultiTree.hpp"
+#include "../util/MultiTreeNode.hpp"
 
 int ServerParser(ServerBlock &server, std::ifstream &file)
 {
@@ -82,19 +84,26 @@ int ServerParser(ServerBlock &server, std::ifstream &file)
 			}
 			LocationBlock *location = new LocationBlock;
 			InitLocationBlock(*location);
-			if (value != "/")
-				location->uri = value + '/';
-			else
-				location->uri = value;
-			if (!(iss >> value) || value.size() != 1 || value[0] != '{')
+			MultiTreeNode *temp = new MultiTreeNode(location);
+			MultiTree *tree = new MultiTree(*temp);
+			server.root.push_back(tree);
+			if (value.size() - 1 == '/')
+			{
+				value.erase(value.size() - 1);
+			}
+			location->uri = value;
+			if (!(iss >> value) || value != "{")
 			{
 				return 3;
 			}
-			if (LocationParser(*location, file) != 0)
+			addChildURI(temp, location->uri);
+			if (LocationParser(*location, file, *server.root.at(server.root.size() - 1), location->uri) != 0)
 			{
 				return (3);
 			}
-			server.locationList.push_back(location);
+			// server.root.push_back();
+			// addChildURI(temp, location->uri);
+			// server.locationList.push_back(location);
 		}
 		else if (key == "}")
 		{

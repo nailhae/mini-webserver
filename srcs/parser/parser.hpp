@@ -1,6 +1,9 @@
 #ifndef PARSER_H
 #define PARSER_H
 
+// #include "../util/Colors.hpp"
+// #include "../util/MultiTree.hpp"
+// #include "../util/MultiTreeNode.hpp"
 #include <fstream>
 #include <iostream>
 #include <map>
@@ -9,6 +12,9 @@
 #include <stdlib.h>
 #include <vector>
 #include <exception>
+
+class MultiTree;
+class MultiTreeNode;
 
 enum BlockType
 {
@@ -27,7 +33,7 @@ struct HttpBlock
 	std::map<int, std::string> errorPages;
 	std::vector<ServerBlock *> serverList;	   // default_server = vector<ServerBlock> index 0
 	std::vector<LocationBlock *> locationList; // default_server = vector<ServerBlock> index 0
-
+	std::vector<MultiTree *> root;
 	int clientMaxBodySize; // default unit kB
 	int clientBodyTimeout; // default unit sec.
 	int workerConnections;
@@ -35,10 +41,11 @@ struct HttpBlock
 
 struct ServerBlock
 {
-	int listenPort; // default port 4242
+	int listenPort;
 	std::string serverName;
 	std::string rootPath;
 	std::vector<LocationBlock *> locationList;
+	std::vector<MultiTree *> root;
 };
 
 struct LocationBlock
@@ -60,7 +67,6 @@ void InitServerBlock(ServerBlock &server);
 void InitLocationBlock(LocationBlock &location);
 int ParseFile(const std::string &fileName, HttpBlock &http);
 int ServerParser(ServerBlock &server, std::ifstream &file);
-int LocationParser(LocationBlock &location, std::ifstream &file);
 int ParseLine(const std::string &line, std::ifstream &file, HttpBlock &http);
 std::vector<std::string> split(std::string str);
 void InitHttpBlock(HttpBlock &http);

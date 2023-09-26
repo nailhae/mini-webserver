@@ -1,4 +1,6 @@
 #include "parser.hpp"
+#include "../util/MultiTree.hpp"
+#include "../util/MultiTreeNode.hpp"
 
 int ParseLine(const std::string &line, std::ifstream &file, HttpBlock &http)
 {
@@ -14,7 +16,7 @@ int ParseLine(const std::string &line, std::ifstream &file, HttpBlock &http)
 		std::string value;
 		if (iss >> value)
 		{
-			if (value.back() == ';')
+			if (value.at(value.size() - 1) == ';')
 			{
 				value.erase(value.size() - 1);
 			}
@@ -71,9 +73,8 @@ int ParseLine(const std::string &line, std::ifstream &file, HttpBlock &http)
 			{
 				return (1);
 			}
-			for (int i = 0; i < result.size() - 1; i++)
+			for (size_t i = 0; i < result.size() - 1; i++)
 			{
-				// TODO value에 값이 없지 않나?
 				http.errorPages[strtol(result[i].c_str(), NULL, 10)] = errorRoute;
 				iss >> value;
 			}
@@ -82,9 +83,8 @@ int ParseLine(const std::string &line, std::ifstream &file, HttpBlock &http)
 	}
 	else if (key == "server")
 	{
-		// } 가 나올때까지
 		std::string value;
-		if (!(iss >> value) || value.size() != 1 || value[0] != '{')
+		if (!(iss >> value) || value != "{")
 		{
 			return 1;
 		}
@@ -105,20 +105,26 @@ int ParseLine(const std::string &line, std::ifstream &file, HttpBlock &http)
 		}
 		LocationBlock *location = new LocationBlock;
 		InitLocationBlock(*location);
-		if (value.at(value.size() - 1) != '/')
-			location->uri = value + '/';
-		else
-			location->uri = value;
-		if (!(iss >> value) || value.size() != 1 || value[0] != '{')
+		MultiTreeNode *temp = new MultiTreeNode(location);
+		MultiTree *tree = new MultiTree(*temp);
+		http.root.push_back(tree);
+		if (value.size() - 1 == '/')
+		{
+			value.erase(value.size() - 1);
+		}
+		location->uri = value;
+		if (!(iss >> value) || value != "{")
 		{
 			return 3;
 		}
 		// } 가 나올때까지
-		if (LocationParser(*location, file)){
+		addChildURI(temp, location->uri);
+		// if (LocationParser(*location, file, root, location->uri)){
+		if (LocationParser(*location, file, *http.root.at(http.root.size() - 1), location->uri)){
 			return (1);
-		} else {
-			http.locationList.push_back(location);
 		}
+		//addChildURI(temp, location->uri);
+		// http.locationList.push_back(location);
 	} else {
 		return (1);
 	}
