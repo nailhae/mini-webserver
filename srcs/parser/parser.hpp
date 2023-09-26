@@ -10,6 +10,13 @@
 #include <vector>
 #include <exception>
 
+enum BlockType
+{
+	NONE,
+	SERVER,
+	LOCATION
+};
+
 struct LocationBlock;
 
 struct ServerBlock;
@@ -51,6 +58,13 @@ struct LocationBlock
 void InitHttpBlock(HttpBlock &http);
 void InitServerBlock(ServerBlock &server);
 void InitLocationBlock(LocationBlock &location);
-void ParseFile(const std::string &fileName, HttpBlock &http);
+int ParseFile(const std::string &fileName, HttpBlock &http);
+int ServerParser(ServerBlock &server, std::ifstream &file);
+int LocationParser(LocationBlock &location, std::ifstream &file);
+int ParseLine(const std::string &line, std::ifstream &file, HttpBlock &http);
+std::vector<std::string> split(std::string str);
+void InitHttpBlock(HttpBlock &http);
+void InitServerBlock(ServerBlock &server);
+void InitLocationBlock(LocationBlock &location);
 
 #endif

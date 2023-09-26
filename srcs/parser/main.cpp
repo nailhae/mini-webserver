@@ -5,5 +5,6 @@ int main()
 	HttpBlock *config = new HttpBlock;
 	InitHttpBlock(*config);
 	// ParseFile("nginx.conf", *config);
-	ParseFile("default.conf", *config);
+	if (ParseFile("default.conf", *config))
+		return 0;
 }
