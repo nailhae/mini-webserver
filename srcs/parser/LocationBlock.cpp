@@ -119,6 +119,7 @@ int LocationParser(LocationBlock &location, std::ifstream &file, MultiTree &root
 			InitLocationBlock(*locationChild);
 			if (!(iss >> value) || value[0] != '/')
 			{
+				delete locationChild;
 				return 1;
 			}
 			if (value.at(value.size() - 1) == '/')
@@ -128,16 +129,17 @@ int LocationParser(LocationBlock &location, std::ifstream &file, MultiTree &root
 			locationChild->uri = value;
 			if (!(iss >> value) || value != "{")
 			{
+				delete locationChild;
 				return 1;
 			}
-			addChildURI(root.searchNodeOrNull(uri), locationChild->uri);
+			root.searchNodeOrNull(uri)->AddChildNode(locationChild);
 			if (LocationParser(*locationChild, file, root, uri + locationChild->uri)){
 				return (1);
 			}
 			// server.root.push_back();
 			//무조건 / /
 			//404.html
-			location.locationList.push_back(locationChild);
+			// location.locationList.push_back(locationChild);
 		}
 		else if (key == "}")
 		{

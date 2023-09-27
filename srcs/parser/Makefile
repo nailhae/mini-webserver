@@ -1,5 +1,5 @@
 ifeq "$(findstring debug, $(MAKECMDGOALS))" "debug"
-	DFLAGS = -g -fsanitize=address
+	DFLAGS = -g3 -fsanitize=address
 else
 	ARG.DEBUG = 0
 	DFLAGS =

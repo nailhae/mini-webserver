@@ -89,11 +89,11 @@ int ParseLine(const std::string &line, std::ifstream &file, HttpBlock &http)
 			return 1;
 		}
 		ServerBlock *server = new ServerBlock;
+		http.serverList.push_back(server);
 		InitServerBlock(*server);
 		if (ServerParser(*server, file)) {
 			return (2);
 		}
-		http.serverList.push_back(server);
 	}
 	else if (key == "location")
 	{
@@ -117,10 +117,13 @@ int ParseLine(const std::string &line, std::ifstream &file, HttpBlock &http)
 		{
 			return 3;
 		}
-		if (LocationParser(*location, file, *http.root.at(http.root.size() - 1), location->uri)){
+		if (LocationParser(*location, file, *http.root.at(http.root.size() - 1), location->uri))
+		{
 			return (1);
 		}
-	} else {
+	} 
+	else
+	{
 		return (1);
 	}
 
@@ -128,6 +131,5 @@ int ParseLine(const std::string &line, std::ifstream &file, HttpBlock &http)
 	{
 		return 1;
 	}
-
 	return 0;
 }

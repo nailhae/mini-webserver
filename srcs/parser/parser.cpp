@@ -57,32 +57,15 @@ template <typename K, typename V> void print_map(std::map<K, V> &m)
 	}
 }
 
-void printLocation(std::vector<LocationBlock *> const &input)
+void printServer(std::vector<ServerBlock *>& input)
 {
-	for (size_t i = 0; i < input.size(); i++)
+	for (std::vector<ServerBlock *>::iterator it = input.begin(); it != input.end(); it++)
 	{
-		std::cout << "URI: " << input.at(i)->uri << std::endl;
-		std::cout << "GET: " << input.at(i)->bget << std::endl;
-		std::cout << "POST: " << input.at(i)->bpost << std::endl;
-		std::cout << "DELETE: " << input.at(i)->bdeleteMethod << std::endl;
-		std::cout << "autoindex: " << input.at(i)->autoindex << std::endl;
-		std::cout << "index: " << input.at(i)->index << std::endl;
-		std::cout << "alias: " << input.at(i)->alias << std::endl;
-		std::cout << "root: " << input.at(i)->rootPath << std::endl;
-		std::cout << "return: " << input.at(i)->returnPair.first << " " << input.at(i)->returnPair.second << std::endl;
-		std::cout << "--------------------------------" << "\n";
-		printLocation(input.at(i)->locationList);
-	}
-}
-
-void printServer(std::vector<ServerBlock *> const &input)
-{
-	for (size_t i = 0; i < input.size(); i++)
-	{
-		std::cout << "Listen Port: " << input.at(i)->listenPort << std::endl;
-		std::cout << "Server Name: " << input.at(i)->serverName << std::endl;
-		std::cout << "Root Path: " << input.at(i)->rootPath << std::endl;
-		printLocation(input.at(i)->locationList);
+		std::cout << "Listen Port: " << (*it)->listenPort << std::endl;
+		std::cout << "Server Name: " << (*it)->serverName << std::endl;
+		std::cout << "Root Path: " << (*it)->rootPath << std::endl;
+		for (std::vector<MultiTree *>::iterator treeIt = (*it)->root.begin(); treeIt != (*it)->root.end(); treeIt++)
+			(*treeIt)->PrintEveryNodes();
 	}
 }
 
@@ -93,36 +76,44 @@ void printParserResult(HttpBlock &http)
 	std::cout << "client_max_body_size: " << http.clientMaxBodySize << "\n";
 	std::cout << "clientBodyTimeout: " << http.clientBodyTimeout << "\n";
 	std::cout << "workerConnections: " << http.workerConnections << "\n";
-	printLocation(http.locationList);
+	for (std::vector<MultiTree *>::iterator it = http.root.begin(); it != http.root.end(); it++)
+		(*it)->PrintEveryNodes();
 	printServer(http.serverList);
 }
 
-int locationUriErrorCheck(std::vector<LocationBlock *> const &location) {
-	for (size_t i = 0; i < location.size(); i++) {
-		std::cout << location.at(i)->uri << "\n";
-		if (locationUriErrorCheck(location.at(i)->locationList)){
-				return 1;
-		}
-		for (size_t j = i + 1; j < location.size(); j++) {
-			std::cout << location.at(i)->uri << location.at(j)->uri << "\n";
-			if (location.at(i)->uri == location.at(j)->uri)
-				return 1;
-		}
-	}
-	return 0;
-}
+// int locationUriErrorCheck(std::vector<LocationBlock*> const &location) {
+// 	for (size_t i = 0; i < location.size(); i++) 
+// 	{
+// 		std::cout << location.at(i)->uri << "\n";
+// 		if (locationUriErrorCheck(location.at(i)->locationList))
+// 				return 1;
+// 		for (size_t j = i + 1; j < location.size(); j++) 
+// 		{
+// 			std::cout << location.at(i)->uri << location.at(j)->uri << "\n";
+// 			if (location.at(i)->uri == location.at(j)->uri)
+// 				return 1;
+// 		}
+// 	}
+// 	return 0;
+// }
 
 int serverListenErrorCheck(std::vector<ServerBlock *> const &server) {
 	if (server.empty())
 		return 1;
-	for (size_t i = 0; i < server.size(); i++) {
-		if (!server.at(i)->listenPort) {
+	for (std::vector<ServerBlock*>::const_iterator it = server.begin(); it != server.end(); it++) 
+	{
+		if (!(*it)->listenPort) {
 			return(1);
 		}
-		if (locationUriErrorCheck(server.at(i)->locationList))
+		for (std::vector<MultiTree*>::const_iterator treeIt = (*it)->root.begin(); treeIt != (*it)->root.end(); treeIt++)
+		{
+			if ((*treeIt)->CheckDuplicateError() == false)
 				return 1;
-		for (size_t j = i + 1; j < server.size(); j++) {
-			if (server.at(i)->listenPort == server.at(j)->listenPort)
+		}
+		// if (locationUriErrorCheck((*it)->locationList))
+		// 		return 1;
+		for (std::vector<ServerBlock*>::const_iterator nextIt = it + 1; nextIt != server.end(); nextIt++) {
+			if ((*it)->listenPort == (*nextIt)->listenPort)
 				return 1;
 		}
 	}
@@ -136,8 +127,12 @@ int parserErrorCheck(HttpBlock &http) {
 	if (serverListenErrorCheck(http.serverList)) {
 		return 1;
 	}
-	if (locationUriErrorCheck(http.locationList))
-		return 1;
+
+	for (std::vector<MultiTree*>::iterator it = http.root.begin(); it != http.root.end(); it++)
+	{
+		if ((*it)->CheckDuplicateError() == false)
+			return 1;
+	}
 	return 0;
 }
 
@@ -166,6 +161,6 @@ int ParseFile(const std::string &fileName, HttpBlock &http)
 		return 1;
 	}
 
-	printParserResult(http);
+	// printParserResult(http);
 	return (0);
 }

@@ -32,7 +32,7 @@ struct HttpBlock
 	std::map<std::string, std::string> types;
 	std::map<int, std::string> errorPages;
 	std::vector<ServerBlock *> serverList;	   // default_server = vector<ServerBlock> index 0
-	std::vector<LocationBlock *> locationList; // default_server = vector<ServerBlock> index 0
+	// std::vector<LocationBlock *> locationList; // default_server = vector<ServerBlock> index 0
 	std::vector<MultiTree *> root;
 	int clientMaxBodySize; // default unit kB
 	int clientBodyTimeout; // default unit sec.
@@ -44,7 +44,7 @@ struct ServerBlock
 	int listenPort;
 	std::string serverName;
 	std::string rootPath;
-	std::vector<LocationBlock *> locationList;
+	// std::vector<LocationBlock *> locationList;
 	std::vector<MultiTree *> root;
 };
 
@@ -59,7 +59,7 @@ struct LocationBlock
 	std::string rootPath;
 	std::string alias;
 	std::pair<int, std::string> returnPair;
-	std::vector<LocationBlock *> locationList;
+	// std::vector<LocationBlock *> locationList;
 };
 
 void InitHttpBlock(HttpBlock &http);
