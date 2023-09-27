@@ -108,7 +108,7 @@ int ParseLine(const std::string &line, std::ifstream &file, HttpBlock &http)
 		MultiTreeNode *temp = new MultiTreeNode(location);
 		MultiTree *tree = new MultiTree(*temp);
 		http.root.push_back(tree);
-		if (value.size() - 1 == '/')
+		if (value.at(value.size() - 1) == '/')
 		{
 			value.erase(value.size() - 1);
 		}
@@ -117,14 +117,9 @@ int ParseLine(const std::string &line, std::ifstream &file, HttpBlock &http)
 		{
 			return 3;
 		}
-		// } 가 나올때까지
-		addChildURI(temp, location->uri);
-		// if (LocationParser(*location, file, root, location->uri)){
 		if (LocationParser(*location, file, *http.root.at(http.root.size() - 1), location->uri)){
 			return (1);
 		}
-		//addChildURI(temp, location->uri);
-		// http.locationList.push_back(location);
 	} else {
 		return (1);
 	}

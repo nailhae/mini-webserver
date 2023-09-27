@@ -87,7 +87,7 @@ int ServerParser(ServerBlock &server, std::ifstream &file)
 			MultiTreeNode *temp = new MultiTreeNode(location);
 			MultiTree *tree = new MultiTree(*temp);
 			server.root.push_back(tree);
-			if (value[value.size() - 1] == '/')
+			if (value.at(value.size() - 1) == '/')
 			{
 				value.erase(value.size() - 1);
 			}
@@ -96,14 +96,10 @@ int ServerParser(ServerBlock &server, std::ifstream &file)
 			{
 				return 3;
 			}
-			addChildURI(temp, location->uri);
 			if (LocationParser(*location, file, *server.root.at(server.root.size() - 1), location->uri) != 0)
 			{
 				return (3);
 			}
-			// server.root.push_back();
-			// addChildURI(temp, location->uri);
-			// server.locationList.push_back(location);
 		}
 		else if (key == "}")
 		{

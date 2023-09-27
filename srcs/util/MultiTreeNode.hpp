@@ -46,6 +46,5 @@ private:
 };
 
 void addChildURI(MultiTreeNode* nodeOrNull, std::string uri);
-// void addChildURI(MultiTreeNode* nodeOrNull, LocationBlock* location);
 
 #endif

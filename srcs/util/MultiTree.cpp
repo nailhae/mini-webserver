@@ -15,16 +15,6 @@ MultiTree& MultiTree::operator=(const MultiTree& rhs) {
 	this->mRoot = rhs.mRoot;
 	return *this;
 }
-// MultiTree::MultiTree(const MultiTree& other){
-// 	*this = other;
-// }
-
-// MultiTree& MultiTree::operator=(const MultiTree& rhs) {
-// 	if (this == &rhs) {
-// 		return *this;
-// 	}
-// 	return *this = rhs;
-// }
 
 MultiTree::~MultiTree(void)
 {

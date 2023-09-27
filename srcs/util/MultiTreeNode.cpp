@@ -45,18 +45,6 @@ void MultiTreeNode::AddChildNode(LocationBlock *target)
 	mChildren.push_back(child);
 }
 
-// void addChildURI(MultiTreeNode* nodeOrNull, LocationBlock* location)
-// {
-// 	if (nodeOrNull == NULL)
-// 	{
-// 		std::cout << Colors::RedString("node is NULL!") << std::endl;
-// 		return ;
-// 	}
-// 	// LocationBlock *data = new LocationBlock;
-// 	// data->uri = uri;
-// 	nodeOrNull->AddChildNode(location);
-// 	std::cout << Colors::Green << "complete add " << location->uri << Colors::Reset << std::endl;
-// }
 void addChildURI(MultiTreeNode* nodeOrNull, std::string uri)
 {
 	if (nodeOrNull == NULL)
