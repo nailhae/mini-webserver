@@ -14,6 +14,37 @@
             printTreeStructure((*it), depth + 2); // 들여쓰기 레벨 조절
         }
     }
+
+void RecurFreeLocationBlock(LocationBlock** targetLocation)
+{
+	if ((*targetLocation)->locationList.size() == 0)
+	{
+		delete *targetLocation;
+		return ;
+	}
+	for (std::vector<LocationBlock *>::iterator it = (*targetLocation)->locationList.begin(); \
+		it != (*targetLocation)->locationList.end(); it++)
+	{
+		RecurFreeLocationBlock(&(*it));
+	}
+	delete *targetLocation;
+}
+
+void FreeServerBlock(ServerBlock** targetServer)
+{
+	if ((*targetServer)->locationList.size() == 0)
+	{
+		delete *targetServer;
+		return ;
+	}
+	for (std::vector<LocationBlock *>::iterator it = (*targetServer)->locationList.begin(); \
+		it != (*targetServer)->locationList.end(); it++)
+	{
+		RecurFreeLocationBlock(&(*it));
+	}
+	delete *targetServer;
+}
+
 int main()
 {
  	// atexit(leak);
@@ -21,7 +52,25 @@ int main()
 	InitHttpBlock(*config);
 	// ParseFile("nginx.conf", *config);
 	if (ParseFile("default.conf", *config))
+	{
+		for (std::vector<MultiTree *>::iterator it = config->root.begin(); it != config->root.end(); it++)
+		{
+			delete (*it);
+		}
+		for (std::vector<LocationBlock *>::iterator it = config->locationList.begin(); \
+			it != config->locationList.end(); it++)
+		{
+			RecurFreeLocationBlock(&(*it));
+		}
+		for (std::vector<ServerBlock *>::iterator it = config->serverList.begin(); \
+			it != config->serverList.end(); it++)
+		{
+			FreeServerBlock(&(*it));
+		}
+
+		delete config;
 		return 1;
+	}
 	printTreeStructure(config->root.at(0)->GetRoot());
 	printTreeStructure(config->root.at(1)->GetRoot());
 	printTreeStructure(config->serverList.at(0)->root.at(0)->GetRoot());
