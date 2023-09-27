@@ -143,7 +143,7 @@ int parserErrorCheck(HttpBlock &http) {
 
 int ParseFile(const std::string &fileName, HttpBlock &http)
 {
-	std::ifstream file(fileName);
+	std::ifstream file(fileName.c_str());
 	std::string line;
 
 	if (!file.is_open())
