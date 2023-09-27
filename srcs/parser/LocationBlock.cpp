@@ -125,11 +125,13 @@ int LocationParser(LocationBlock &location, std::ifstream &file, MultiTree &root
 			{
 				value.erase(value.size() - 1);
 			}
-			locationChild->uri = uri + value;
+			// locationChild->uri = uri + value;
+			locationChild->uri = value;
 			if (!(iss >> value) || value != "{")
 			{
 				return 1;
 			}
+			std::cout << locationChild->uri << "\n";
 			addChildURI(root.searchNodeOrNull(uri), locationChild->uri);
 			if (LocationParser(*locationChild, file, root, uri + locationChild->uri)){
 				return (1);

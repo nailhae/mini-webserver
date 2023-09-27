@@ -87,7 +87,7 @@ int ServerParser(ServerBlock &server, std::ifstream &file)
 			MultiTreeNode *temp = new MultiTreeNode(location);
 			MultiTree *tree = new MultiTree(*temp);
 			server.root.push_back(tree);
-			if (value.size() - 1 == '/')
+			if (value[value.size() - 1] == '/')
 			{
 				value.erase(value.size() - 1);
 			}

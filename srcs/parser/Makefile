@@ -11,7 +11,9 @@ SRCS = $(wildcard *.cpp ../util/*.cpp)
 OBJS = ${SRCS:.cpp=.o}
 
 CXX = c++
+
 CXXFLAGS = -Wall -Wextra -Werror -std=c++98
+
 RM = rm -f
 
 all:	${NAME}
