@@ -1,6 +1,6 @@
 #include "MultiTreeNode.hpp"
 
-MultiTreeNode::MultiTreeNode(locationBlock* data)
+MultiTreeNode::MultiTreeNode(LocationBlock* data)
 	: mChildren(std::vector<MultiTreeNode *>())
 	, mParentNode(NULL)
 	, mData(data)
@@ -23,7 +23,7 @@ size_t MultiTreeNode::GetChildrenSize(void) const
 	return (mChildren.size());
 }
 
-const locationBlock* MultiTreeNode::GetLocationBlock(void) const
+const LocationBlock* MultiTreeNode::GetLocationBlock(void) const
 {
 	return (mData);
 }
@@ -38,9 +38,34 @@ const std::vector<MultiTreeNode *>& MultiTreeNode::GetChildren(void)
 	return (mChildren);
 }
 
-void MultiTreeNode::AddChildNode(locationBlock *target)
+void MultiTreeNode::AddChildNode(LocationBlock *target)
 {
 	MultiTreeNode *child = new MultiTreeNode(target);
 	child->mParentNode = this;
 	mChildren.push_back(child);
+}
+
+// void addChildURI(MultiTreeNode* nodeOrNull, LocationBlock* location)
+// {
+// 	if (nodeOrNull == NULL)
+// 	{
+// 		std::cout << Colors::RedString("node is NULL!") << std::endl;
+// 		return ;
+// 	}
+// 	// LocationBlock *data = new LocationBlock;
+// 	// data->uri = uri;
+// 	nodeOrNull->AddChildNode(location);
+// 	std::cout << Colors::Green << "complete add " << location->uri << Colors::Reset << std::endl;
+// }
+void addChildURI(MultiTreeNode* nodeOrNull, std::string uri)
+{
+	if (nodeOrNull == NULL)
+	{
+		std::cout << Colors::RedString("node is NULL!") << std::endl;
+		return ;
+	}
+	LocationBlock *data = new LocationBlock;
+	data->uri = uri;
+	nodeOrNull->AddChildNode(data);
+	std::cout << Colors::Green << "complete add " << uri << Colors::Reset << std::endl;
 }

@@ -4,6 +4,28 @@ MultiTree::MultiTree(MultiTreeNode& root)
 	: mRoot(&root)
 {}
 
+MultiTree::MultiTree(const MultiTree& other){
+	this->mRoot = other.mRoot;
+}
+
+MultiTree& MultiTree::operator=(const MultiTree& rhs) {
+	if (this == &rhs) {
+		return *this;
+	}
+	this->mRoot = rhs.mRoot;
+	return *this;
+}
+// MultiTree::MultiTree(const MultiTree& other){
+// 	*this = other;
+// }
+
+// MultiTree& MultiTree::operator=(const MultiTree& rhs) {
+// 	if (this == &rhs) {
+// 		return *this;
+// 	}
+// 	return *this = rhs;
+// }
+
 MultiTree::~MultiTree(void)
 {
 	delete (mRoot);
@@ -61,4 +83,15 @@ MultiTreeNode* MultiTree::GetRoot(void) const
 MultiTreeNode* MultiTree::searchNodeOrNull(std::string target) const
 {
 	return (findNodeOrNullRecursive(mRoot, target));
+}
+
+void printSearchedResult(MultiTree& root, std::string uri)
+{
+	MultiTreeNode *temp;
+
+	temp = root.searchNodeOrNull(uri);
+	if (temp == NULL)
+		std::cout << Colors::Red << "failed to find " << uri << Colors::Reset << std::endl;
+	else
+		std::cout << Colors::Cyan << "found node's URI: " << temp->GetURI() << Colors::Reset << std::endl;
 }
