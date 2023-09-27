@@ -32,7 +32,7 @@ int ParseLine(const std::string &line, std::ifstream &file, HttpBlock &http)
 		std::string value;
 		if (iss >> value)
 		{
-			if (value.back() == ';')
+			if (value.at(value.size() - 1) == ';')
 			{
 				value.erase(value.size() - 1);
 			}
@@ -40,15 +40,15 @@ int ParseLine(const std::string &line, std::ifstream &file, HttpBlock &http)
 			{
 				return 1;
 			}
-			if (value.back() == 'm' || value.back() == 'M')
+			if (value[value.size() - 1] == 'm' || value[value.size() - 1] == 'M')
 			{
 				http.clientMaxBodySize = strtol(value.c_str(), NULL, 10) * 1024;
 			}
-			else if (value.back() == 'g' || value.back() == 'G')
+			else if (value[value.size() - 1] == 'g' || value[value.size() - 1] == 'G')
 			{
 				http.clientMaxBodySize = strtol(value.c_str(), NULL, 10) * 1024 * 1024;
 			}
-			else if (value.back() == 'k' || value.back() == 'K')
+			else if (value[value.size() - 1] == 'k' || value[value.size() - 1] == 'K')
 			{
 				http.clientMaxBodySize = strtol(value.c_str(), NULL, 10);
 			}
@@ -64,8 +64,8 @@ int ParseLine(const std::string &line, std::ifstream &file, HttpBlock &http)
 		std::string value;
 		if (!(result.empty()))
 		{
-			std::string errorRoute = result.back();
-			if (errorRoute.back() == ';')
+			std::string errorRoute = result.at(result.size() - 1);
+			if (errorRoute.at(errorRoute.size() - 1) == ';')
 			{
 				errorRoute.erase(errorRoute.size() - 1);
 			}

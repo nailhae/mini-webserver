@@ -26,7 +26,7 @@ int ServerParser(ServerBlock &server, std::ifstream &file)
 			std::string value;
 			if (iss >> value)
 			{
-				if (value.back() == ';')
+				if (value.at(value.size() - 1) == ';')
 				{
 					value.erase(value.size() - 1);
 				}
@@ -45,7 +45,7 @@ int ServerParser(ServerBlock &server, std::ifstream &file)
 		else if (key == "server_name")
 		{
 			std::string value;
-			if ((iss >> value) && value.back() == ';')
+			if ((iss >> value) && value.at(value.size() - 1) == ';')
 			{
 				value.erase(value.size() - 1);
 			}
@@ -58,7 +58,7 @@ int ServerParser(ServerBlock &server, std::ifstream &file)
 		else if (key == "root")
 		{
 			std::string value;
-			if ((iss >> value) && value.back() == ';')
+			if ((iss >> value) && value.at(value.size() - 1) == ';')
 			{
 				value.erase(value.size() - 1);
 			}

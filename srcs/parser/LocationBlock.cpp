@@ -24,7 +24,7 @@ int LocationParser(LocationBlock &location, std::ifstream &file, MultiTree &root
 			std::string value;
 			while ((iss >> value))
 			{
-				if (value.back() == ';') {
+				if (value.at(value.size() - 1) == ';') {
 					value.erase(value.size() - 1);
 				}
 				if (value == "GET")
@@ -44,7 +44,7 @@ int LocationParser(LocationBlock &location, std::ifstream &file, MultiTree &root
 		else if (key == "root")
 		{
 			std::string value;
-			if ((iss >> value) && value.back() == ';')
+			if ((iss >> value) && value.at(value.size() - 1) == ';')
 			{
 				value.erase(value.size() - 1);
 			}
@@ -64,7 +64,7 @@ int LocationParser(LocationBlock &location, std::ifstream &file, MultiTree &root
 		else if (key == "autoindex")
 		{
 			std::string value;
-			if (iss >> value && value.back() == ';')
+			if (iss >> value && value.at(value.size() - 1) == ';')
 			{
 				value.erase(value.size() - 1);
 				location.autoindex = (value == "on" ? true : false);
@@ -76,7 +76,7 @@ int LocationParser(LocationBlock &location, std::ifstream &file, MultiTree &root
 		{
 			std::string value;
 
-			if (iss >> value && value.back() == ';')
+			if (iss >> value && value.at(value.size() - 1) == ';')
 			{
 				value.erase(value.size() - 1);
 			}
@@ -89,7 +89,7 @@ int LocationParser(LocationBlock &location, std::ifstream &file, MultiTree &root
 		else if (key == "alias")
 		{
 			std::string value;
-			if (iss >> value && value.back() == ';')
+			if (iss >> value && value.at(value.size() - 1) == ';')
 			{
 				value.erase(value.size() - 1);
 			}
@@ -104,7 +104,7 @@ int LocationParser(LocationBlock &location, std::ifstream &file, MultiTree &root
 			std::string secondPair = "";
 			iss >> firstPair;
 			iss >> secondPair;
-			if (secondPair.back() == ';')
+			if (secondPair.at(secondPair.size() - 1) == ';')
 			{
 				secondPair.erase(secondPair.size() - 1);
 			}
