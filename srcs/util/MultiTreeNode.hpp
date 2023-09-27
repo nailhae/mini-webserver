@@ -34,7 +34,9 @@ public:
 	const LocationBlock* GetLocationBlock(void) const;
 	const std::string& GetURI(void) const;
 	const std::vector<MultiTreeNode*>& GetChildren(void);
+	std::vector<MultiTreeNode*>& Children(void);
 	void AddChildNode(LocationBlock *target);
+	void PrintData(void) const;
 private:
 	MultiTreeNode(void);
 	MultiTreeNode& operator=(const MultiTreeNode& rhs);

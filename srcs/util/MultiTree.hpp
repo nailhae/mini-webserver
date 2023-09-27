@@ -19,6 +19,8 @@ public:
 	MultiTreeNode* searchNodeOrNull(std::string target) const;
 	MultiTree& operator=(const MultiTree& rhs);
 	MultiTree(const MultiTree& other);
+	void PrintEveryNodes(void);
+	int CheckDuplicateError(void);
 private:
 	MultiTree(void);
 	MultiTreeNode* mRoot;

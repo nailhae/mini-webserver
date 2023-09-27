@@ -38,11 +38,30 @@ const std::vector<MultiTreeNode *>& MultiTreeNode::GetChildren(void)
 	return (mChildren);
 }
 
+std::vector<MultiTreeNode *>& MultiTreeNode::Children(void)
+{
+	return (mChildren);
+}
+
 void MultiTreeNode::AddChildNode(LocationBlock *target)
 {
 	MultiTreeNode *child = new MultiTreeNode(target);
 	child->mParentNode = this;
 	mChildren.push_back(child);
+}
+
+void MultiTreeNode::PrintData(void) const
+{
+	std::cout << "URI: " << mData->uri << "\n" << \
+				 "GET: " << mData->bget << "\n" << \
+				 "POST: " << mData->bpost << "\n" << \
+				 "DELETE: " << mData->bdeleteMethod << "\n" << \
+				 "autoindex: " << mData->autoindex << "\n" << \
+				 "index: " << mData->index << "\n" << \
+				 "alias: " << mData->alias << "\n" << \
+				 "root: " << mData->rootPath << "\n" << \
+				 "return: " << mData->returnPair.first << ": " << mData->returnPair.second << \
+				 "\n--------------------------------" << std::endl;
 }
 
 void addChildURI(MultiTreeNode* nodeOrNull, std::string uri)

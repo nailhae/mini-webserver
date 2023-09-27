@@ -85,3 +85,47 @@ void printSearchedResult(MultiTree& root, std::string uri)
 	else
 		std::cout << Colors::Cyan << "found node's URI: " << temp->GetURI() << Colors::Reset << std::endl;
 }
+
+static void printNodeRecursive(MultiTreeNode* node)
+{
+	if (node == NULL)
+		return ;
+	node->PrintData();
+	for (std::vector<MultiTreeNode*>::const_iterator it = node->GetChildren().begin();\
+		 it != node->GetChildren().end(); it++)
+	{
+		printNodeRecursive(*it);
+	}
+}
+
+void MultiTree::PrintEveryNodes(void)
+{
+	printNodeRecursive(mRoot);
+}
+
+static int CheckDupRecursive(MultiTreeNode* node)
+{
+	std::string	temp;
+
+	if (node == NULL || node->GetChildrenSize() < 2)
+		return (true);
+	for (std::vector<MultiTreeNode*>::const_iterator it = node->GetChildren().begin();\
+		 it != node->GetChildren().end(); it++)
+	{
+		temp = (*it)->GetURI();
+		for (std::vector<MultiTreeNode*>::const_iterator nextIt = it + 1;\
+		nextIt != node->GetChildren().end(); nextIt++)
+		{
+			if (temp == (*nextIt)->GetURI())
+				return (false);
+		}
+		if (CheckDupRecursive(*it) == false)
+			return (false);
+	}
+	return (true);
+}
+
+int MultiTree::CheckDuplicateError(void)
+{
+	return (CheckDupRecursive(mRoot));
+}
