@@ -12,6 +12,7 @@
 #include <sys/time.h>
 #include <unistd.h>
 #include <vector>
+#include <map>
 
 #define BUFFER_SIZE 1024
 
@@ -40,9 +41,11 @@ private:
 	int mFd;
 	char mBuf[BUFFER_SIZE];
 	int mMethod;
-	int mStatus;
+	int mStatusCode;
 	int mHeaderFlag;
+	std::string mStatusText;
 	std::string mUri;
 	std::stringstream mReceived;
 	std::string mResponse;
+	std::map<int, std::string> mHeaders;
 };
