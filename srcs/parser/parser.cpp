@@ -4,6 +4,14 @@
 
 void printLocation(std::vector<LocationBlock *> const &input);
 
+std::string removeComment(const std::string& line) {
+	std::size_t pos = line.find('#');
+    if (pos != std::string::npos) {
+        return line.substr(0, pos);
+    }
+    return line;
+}
+
 void InitHttpBlock(HttpBlock &http)
 {
 	http.clientMaxBodySize = 1024;
@@ -149,6 +157,7 @@ int ParseFile(const std::string &fileName, HttpBlock &http)
 
 	while (std::getline(file, line))
 	{
+		line = removeComment(line);
 		if (int i = ParseLine(line, file, http)){
 			std::cout << "error" << i << '\n';
 			return 1;

@@ -11,6 +11,7 @@ int ParseLine(const std::string &line, std::ifstream &file, HttpBlock &http)
 	{
 		return (0);
 	}
+	
 	if (key == "default_type")
 	{
 		std::string value;

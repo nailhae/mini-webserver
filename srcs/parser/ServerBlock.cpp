@@ -12,7 +12,6 @@ int ServerParser(ServerBlock &server, std::ifstream &file)
 		std::istringstream iss(line);
 		std::string key;
         char* pos;
-		// std::cout << line << "\n";
 		if (!(iss >> key))
 		{
 			continue;

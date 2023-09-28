@@ -66,7 +66,7 @@ void deleteHttpBlock(HttpBlock& target)
 
 int main()
 {
- 	atexit(leak);
+ 	// atexit(leak);
 	std::cout << "http block size: " << sizeof(HttpBlock) << std::endl; 
 	std::cout << "server block size: " << sizeof(ServerBlock) << std::endl; 
 	std::cout << "location block size: " << sizeof(LocationBlock) << std::endl; 
