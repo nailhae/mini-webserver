@@ -3,7 +3,6 @@ AllowShortFunctionsOnASingleLine: None
 UseTab: Always
 IndentWidth: 4
 TabWidth: 4
-UseTab: ForIndentation
 BraceWrapping:
   AfterClass: true
   AfterControlStatement: true
