@@ -1,9 +1,15 @@
 #include "./UserData.hpp"
 #include "./ChangeList.hpp"
 
-static void	trimWhiteSpace(std::string& target)
+// Test 해보기.
+// GET /hello.txt HTTP/1.1
+// User-Agent: curl/7.64.1
+// Host: www.example.com
+// Accept-Language: en, mi
+
+static void trimWhiteSpace(std::string& target)
 {
-	size_t	start = 0;
+	size_t start = 0;
 
 	while (start < target.size() && isspace(target[start]) == true)
 	{
@@ -11,7 +17,7 @@ static void	trimWhiteSpace(std::string& target)
 	}
 	target.erase(0, start);
 
-	size_t	end = target.size() - 1;
+	size_t end = target.size() - 1;
 	while (end > 0 && isspace(target[end]) == true)
 	{
 		end -= 1;
@@ -47,8 +53,8 @@ int UserData::ParseHeader(std::string& field)
 	std::istringstream ss(field);
 	std::string header;
 	std::string value;
-	size_t		pos;
-	int			headerKey;
+	size_t pos;
+	int headerKey;
 
 	std::getline(ss, header, ':');
 	trimWhiteSpace(header);
@@ -59,10 +65,9 @@ int UserData::ParseHeader(std::string& field)
 	{
 		std::getline(ss, value);
 		trimWhiteSpace(value);
-		// ""처리 할 일이 있으면 여기서 trim 해주기.
 		if (value.size() == 0)
 		{
-			mStatusCode = 400; 
+			mStatusCode = 400;
 			mStatusText = "Bad Request";
 			return (ERROR);
 		}
@@ -71,14 +76,16 @@ int UserData::ParseHeader(std::string& field)
 	return (0);
 }
 
-int UserData::ParseRequest(std::stringstream& request)
+int UserData::ParseFirstLine(std::stringstream& request)
 {
 	std::string temp;
 
 	request.seekg(0);
-	std::getline(request, temp, ' ');
+	request >> temp;
 	if (temp == "GET")
 		mMethod = GET;
+	else if (temp == "HEAD")
+		mMethod = HEAD;
 	else if (temp == "POST")
 		mMethod = POST;
 	else if (temp == "DELETE")
@@ -86,22 +93,28 @@ int UserData::ParseRequest(std::stringstream& request)
 	else
 	{
 		mMethod = ERROR;
-		mStatusCode = 405; 
+		mStatusCode = 405;
 		mStatusText = "Method is not allowed";
-		// 헤더에 Allow: GET, POST, DELETE 추가해야 함.
+		// 이 경우 헤더에 Allow: GET, POST, DELETE 추가해야 함.
 		return (ERROR);
 	}
-	std::getline(request, mUri, ' ');
-	std::getline(request, temp, '\n');
+	request >> mUri >> temp;
 	if (*(temp.end() - 1) == '\r')
 		temp.erase(temp.size() - 1);
 	if (temp != "HTTP/1.1")
 	{
-		mStatusCode = 505; 
+		mStatusCode = 505;
 		mStatusText = "HTTP Version Not Supported";
 		return (ERROR);
 	}
+}
 
+int UserData::ParseRequest(std::stringstream& request)
+{
+	std::string temp;
+
+	if (ParseFirstLine(request) == ERROR)
+		return (ERROR);
 	while (1)
 	{
 		std::getline(request, temp, '\n');
@@ -109,7 +122,7 @@ int UserData::ParseRequest(std::stringstream& request)
 			return (0);
 		else if (request.fail())
 		{
-			mStatusCode = 500; 
+			mStatusCode = 500;
 			mStatusText = "Internal Server Error";
 			return (ERROR);
 		}
@@ -221,7 +234,7 @@ int UserData::GenerateResponse(void)
 		mStatusCode = 416;
 		mStatusText = "Requested Range Not Satisfiable";
 		return (ERROR);
-	}	
+	}
 	else if (mHeaderFlag == false)
 		return (0);
 	else

@@ -32,6 +32,7 @@ enum eHeaders
 enum eMethod
 {
 	GET = 0,
+	HEAD,
 	POST,
 	DELETE,
 	ERROR = -1

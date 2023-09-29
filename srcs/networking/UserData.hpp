@@ -29,6 +29,7 @@ public:
 	int GenerateResponse(void);
 	int GenerateGETResponse(void);
 	int ParseRequest(std::stringstream& request);
+	int ParseFirstLine(std::stringstream& request);
 	int ParseHeader(std::string& field);
 	int RecvFromClient(int fd);
 	int SendToClient(int fd);
