@@ -34,6 +34,7 @@ int main(void)
 	printSearchedResult(*config->serverList.at(1)->root.at(1), "/hello/");
 	printSearchedResult(*config->root.at(1), "/50x.html/");
 
+	WebServer::DeleteInstance();
 	// LocationBlock *rootData = new LocationBlock;
 	// rootData->uri = "/";
 	// MultiTreeNode *temp = new MultiTreeNode(rootData);
