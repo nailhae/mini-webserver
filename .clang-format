@@ -14,11 +14,14 @@ BraceWrapping:
 AccessModifierOffset: -4
 PointerAlignment: Left
 ReferenceAlignment: Left
+SortIncludes: CaseSensitive
+IncludeBlocks: Merge
 IncludeCategories:
   - Regex: '<.*>'
     Priority: 1
   - Regex: '".*"'
     Priority: 2
-SortIncludes: true
 BreakConstructorInitializers: BeforeComma
 ConstructorInitializerIndentWidth: 4
+SeparateDefinitionBlocks: Always
+EmptyLineBeforeAccessModifier: LogicalBlock
