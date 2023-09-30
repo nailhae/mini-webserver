@@ -5,33 +5,46 @@ else
 	DFLAGS =
 endif
 
-NAME 		=	./TreeTester
+CXX 		=	c++
 
-SRCS = $(wildcard *.cpp ../util/*.cpp)
-OBJS = ${SRCS:.cpp=.o}
+CXXFLAGS	=	-Wall -Wextra -Werror -std=c++98 $(INCS)
 
-CXX = c++
+NAME 		= ./a.out
 
-CXXFLAGS = -Wall -Wextra -Werror -std=c++98
+SRCS_DIR := $(shell dirname $(PWD))
 
-RM = rm -f
+INCS = \
+	-I$(SRCS_DIR)/util \
+	-I$(SRCS_DIR)/parser \
 
-all:	${NAME}
+SRCS = \
+	$(SRCS_DIR)/parser/HttpBlock.cpp \
+	$(SRCS_DIR)/parser/LocationBlock.cpp \
+	$(SRCS_DIR)/parser/Parser.cpp \
+	$(SRCS_DIR)/parser/ServerBlock.cpp \
+	$(SRCS_DIR)/parser/main.cpp \
+	$(SRCS_DIR)/util/Colors.cpp \
+	$(SRCS_DIR)/util/MultiTree.cpp \
+	$(SRCS_DIR)/util/MultiTreeNode.cpp \
+
+OBJS		=	$(SRCS:%.cpp=%.o)
+
+RM			=	rm -f
+
+all:	$(NAME)
 
 $(NAME): $(OBJS)
-	$(CXX) $(CXXFLAGS) $(DFLAGS) -o $@ $^
+	$(CXX) $(CXXFLAGS) $(OBJS) -o $@
 
-%.o: %.cpp %.hpp
-	$(CXX) $(CXXFLAGS) -c -o $@ $<
+%o:	%.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-clean:
-		${RM} ${OBJS}
+clean: 
+	$(RM) $(OBJS)
 
-fclean:	clean
-		${RM} ${NAME}
+fclean: clean
+	$(RM) $(NAME)
 
-re:		fclean all
+re: fclean all
 
-debug: $(NAME)
-
-.PHONY: all clean fclean re debug
+.PHONY: all clean fclean re

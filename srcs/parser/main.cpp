@@ -1,19 +1,23 @@
-#include "parser.hpp"
-#include "../util/MultiTree.hpp"
-#include "../util/MultiTreeNode.hpp"
+#include "MultiTree.hpp"
+#include "MultiTreeNode.hpp"
+#include "Parser.hpp"
 
-    void printTreeStructure(MultiTreeNode* node, int depth = 0) {
-        if (node == nullptr) {
-            return;
-        }
-        // 현재 노드 정보 출력
-        const LocationBlock* data = node->GetLocationBlock();
-        std::cout << std::string(depth, ' ') << "URI: " << data->uri << std::endl;
-        // 자식 노드 순회 및 출력
-        for (std::vector<MultiTreeNode*>::const_iterator it = node->GetChildren().begin(); it != node->GetChildren().end(); it++) {
-            printTreeStructure((*it), depth + 2); // 들여쓰기 레벨 조절
-        }
-    }
+void PrintTreeStructure(MultiTreeNode* node, int depth = 0)
+{
+	if (node == nullptr)
+	{
+		return;
+	}
+	// 현재 노드 정보 출력
+	const LocationBlock* data = node->GetLocationBlock();
+	std::cout << std::string(depth, ' ') << "URI: " << data->uri << std::endl;
+	// 자식 노드 순회 및 출력
+	for (std::vector<MultiTreeNode*>::const_iterator it = node->GetChildren().begin(); it != node->GetChildren().end();
+		 it++)
+	{
+		PrintTreeStructure((*it), depth + 2); // 들여쓰기 레벨 조절
+	}
+}
 
 // void RecurFreeLocationBlock(LocationBlock** targetLocation)
 // {
@@ -48,14 +52,13 @@ void leak()
 
 void deleteHttpBlock(HttpBlock& target)
 {
-	for (std::vector<MultiTree *>::iterator it = target.root.begin(); it != target.root.end(); it++)
+	for (std::vector<MultiTree*>::iterator it = target.root.begin(); it != target.root.end(); it++)
 	{
 		delete (*it);
 	}
-	for (std::vector<ServerBlock *>::iterator it = target.serverList.begin(); \
-		it != target.serverList.end(); it++)
+	for (std::vector<ServerBlock*>::iterator it = target.serverList.begin(); it != target.serverList.end(); it++)
 	{
-		for (std::vector<MultiTree *>::iterator treeIt = (*it)->root.begin(); treeIt != (*it)->root.end(); treeIt++)
+		for (std::vector<MultiTree*>::iterator treeIt = (*it)->root.begin(); treeIt != (*it)->root.end(); treeIt++)
 		{
 			delete (*treeIt);
 		}
@@ -66,22 +69,22 @@ void deleteHttpBlock(HttpBlock& target)
 
 int main()
 {
- 	// atexit(leak);
-	std::cout << "http block size: " << sizeof(HttpBlock) << std::endl; 
-	std::cout << "server block size: " << sizeof(ServerBlock) << std::endl; 
-	std::cout << "location block size: " << sizeof(LocationBlock) << std::endl; 
-	HttpBlock *config = new HttpBlock;
+	// atexit(leak);
+	std::cout << "http block size: " << sizeof(HttpBlock) << std::endl;
+	std::cout << "server block size: " << sizeof(ServerBlock) << std::endl;
+	std::cout << "location block size: " << sizeof(LocationBlock) << std::endl;
+	HttpBlock* config = new HttpBlock;
 	InitHttpBlock(*config);
 	// ParseFile("nginx.conf", *config);
-	if (ParseFile("default.conf", *config))
+	if (ParseFile(CONF_FILE_PATH, *config))
 	{
 		deleteHttpBlock(*config);
 		return 1;
 	}
-	// printTreeStructure(config->root.at(0)->GetRoot());
-	// printTreeStructure(config->root.at(1)->GetRoot());
-	// printTreeStructure(config->serverList.at(0)->root.at(0)->GetRoot());
-	// printTreeStructure(config->serverList.at(1)->root.at(0)->GetRoot());
+	// PrintTreeStructure(config->root.at(0)->GetRoot());
+	// PrintTreeStructure(config->root.at(1)->GetRoot());
+	// PrintTreeStructure(config->serverList.at(0)->root.at(0)->GetRoot());
+	// PrintTreeStructure(config->serverList.at(1)->root.at(0)->GetRoot());
 	// printSearchedResult(*config->root.at(0), "/404.html/");
 	// printSearchedResult(*config->root.at(0), "/404.html/src");
 	// printSearchedResult(*config->root.at(0), "/404.html/src/something");
@@ -96,13 +99,11 @@ int main()
 	// // printSearchedResult(*config->serverList.at(1)->root.at(1), "/hello/");
 	// printSearchedResult(*config->root.at(1), "/50x.html/");
 
-
 	// LocationBlock *rootData = new LocationBlock;
 	// rootData->uri = "/";
 	// MultiTreeNode *temp = new MultiTreeNode(rootData);
 	// MultiTree root(*temp);
 
-	
 	// 경로 앞뒤의 '/'처리 결정해야 함
 	// addChildURI(root.GetRoot(), "home");
 	// addChildURI(root.GetRoot(), "etc");

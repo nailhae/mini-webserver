@@ -1,8 +1,8 @@
-#include "parser.hpp"
-#include "../util/MultiTree.hpp"
-#include "../util/MultiTreeNode.hpp"
+#include "MultiTree.hpp"
+#include "MultiTreeNode.hpp"
+#include "Parser.hpp"
 
-int LocationParser(LocationBlock &location, std::ifstream &file, MultiTree &root, std::string uri)
+int LocationParser(LocationBlock& location, std::ifstream& file, MultiTree& root, std::string uri)
 {
 	std::stack<BlockType> blockStack;
 	blockStack.push(LOCATION);
@@ -24,7 +24,8 @@ int LocationParser(LocationBlock &location, std::ifstream &file, MultiTree &root
 			std::string value;
 			while ((iss >> value))
 			{
-				if (value.at(value.size() - 1) == ';') {
+				if (value.at(value.size() - 1) == ';')
+				{
 					value.erase(value.size() - 1);
 				}
 				if (value == "GET")
@@ -68,7 +69,9 @@ int LocationParser(LocationBlock &location, std::ifstream &file, MultiTree &root
 			{
 				value.erase(value.size() - 1);
 				location.autoindex = (value == "on" ? true : false);
-			} else {
+			}
+			else
+			{
 				return 2;
 			}
 		}
@@ -80,7 +83,8 @@ int LocationParser(LocationBlock &location, std::ifstream &file, MultiTree &root
 			{
 				value.erase(value.size() - 1);
 			}
-			else {
+			else
+			{
 				return (2);
 			}
 			value.erase(value.size() - 1);
@@ -93,7 +97,8 @@ int LocationParser(LocationBlock &location, std::ifstream &file, MultiTree &root
 			{
 				value.erase(value.size() - 1);
 			}
-			else {
+			else
+			{
 				return (2);
 			}
 			location.alias = value;
@@ -113,9 +118,11 @@ int LocationParser(LocationBlock &location, std::ifstream &file, MultiTree &root
 				return 2;
 			}
 			location.returnPair = std::make_pair(firstPair, secondPair);
-		} else if (key == "location") {
+		}
+		else if (key == "location")
+		{
 			std::string value;
-			LocationBlock *locationChild = new LocationBlock;
+			LocationBlock* locationChild = new LocationBlock;
 			InitLocationBlock(*locationChild);
 			if (!(iss >> value) || value[0] != '/')
 			{
@@ -133,13 +140,10 @@ int LocationParser(LocationBlock &location, std::ifstream &file, MultiTree &root
 				return 1;
 			}
 			root.searchNodeOrNull(uri)->AddChildNode(locationChild);
-			if (LocationParser(*locationChild, file, root, uri + locationChild->uri)){
+			if (LocationParser(*locationChild, file, root, uri + locationChild->uri))
+			{
 				return (1);
 			}
-			// server.root.push_back();
-			//무조건 / /
-			//404.html
-			// location.locationList.push_back(locationChild);
 		}
 		else if (key == "}")
 		{

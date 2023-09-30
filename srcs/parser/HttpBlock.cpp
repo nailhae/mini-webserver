@@ -1,8 +1,8 @@
-#include "parser.hpp"
-#include "../util/MultiTree.hpp"
-#include "../util/MultiTreeNode.hpp"
+#include "MultiTree.hpp"
+#include "MultiTreeNode.hpp"
+#include "Parser.hpp"
 
-int ParseLine(const std::string &line, std::ifstream &file, HttpBlock &http)
+int ParseLine(const std::string& line, std::ifstream& file, HttpBlock& http)
 {
 	std::istringstream iss(line);
 	std::string key;
@@ -11,7 +11,7 @@ int ParseLine(const std::string &line, std::ifstream &file, HttpBlock &http)
 	{
 		return (0);
 	}
-	
+
 	if (key == "default_type")
 	{
 		std::string value;
@@ -61,7 +61,7 @@ int ParseLine(const std::string &line, std::ifstream &file, HttpBlock &http)
 	}
 	else if (key == "error_page")
 	{
-		std::vector<std::string> result = split(line);
+		std::vector<std::string> result = Split(line);
 		std::string value;
 		if (!(result.empty()))
 		{
@@ -89,10 +89,11 @@ int ParseLine(const std::string &line, std::ifstream &file, HttpBlock &http)
 		{
 			return 1;
 		}
-		ServerBlock *server = new ServerBlock;
+		ServerBlock* server = new ServerBlock;
 		http.serverList.push_back(server);
 		InitServerBlock(*server);
-		if (ServerParser(*server, file)) {
+		if (ServerParser(*server, file))
+		{
 			return (2);
 		}
 	}
@@ -104,10 +105,10 @@ int ParseLine(const std::string &line, std::ifstream &file, HttpBlock &http)
 		{
 			return 1;
 		}
-		LocationBlock *location = new LocationBlock;
+		LocationBlock* location = new LocationBlock;
 		InitLocationBlock(*location);
-		MultiTreeNode *temp = new MultiTreeNode(location);
-		MultiTree *tree = new MultiTree(*temp);
+		MultiTreeNode* temp = new MultiTreeNode(location);
+		MultiTree* tree = new MultiTree(*temp);
 		http.root.push_back(tree);
 		if (value.at(value.size() - 1) == '/')
 		{
@@ -122,7 +123,7 @@ int ParseLine(const std::string &line, std::ifstream &file, HttpBlock &http)
 		{
 			return (1);
 		}
-	} 
+	}
 	else
 	{
 		return (1);
@@ -132,5 +133,6 @@ int ParseLine(const std::string &line, std::ifstream &file, HttpBlock &http)
 	{
 		return 1;
 	}
+
 	return 0;
 }

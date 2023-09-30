@@ -22,7 +22,7 @@ public:
 	static const std::string BoldMagenta;
 	static const std::string BoldCyan;
 	static const std::string BoldWhite;
-	
+
 	static std::string RedString(std::string target);
 	static std::string GreenString(std::string target);
 	static std::string YellowString(std::string target);
@@ -36,7 +36,6 @@ public:
 	static std::string BoldBlueString(std::string target);
 	static std::string BoldMagentaString(std::string target);
 	static std::string BoldCyanString(std::string target);
-
 };
 
 #endif

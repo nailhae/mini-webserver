@@ -1,8 +1,8 @@
-#include "parser.hpp"
-#include "../util/MultiTree.hpp"
-#include "../util/MultiTreeNode.hpp"
+#include "MultiTree.hpp"
+#include "MultiTreeNode.hpp"
+#include "Parser.hpp"
 
-int ServerParser(ServerBlock &server, std::ifstream &file)
+int ServerParser(ServerBlock& server, std::ifstream& file)
 {
 	std::stack<BlockType> blockStack;
 	blockStack.push(SERVER);
@@ -11,7 +11,7 @@ int ServerParser(ServerBlock &server, std::ifstream &file)
 	{
 		std::istringstream iss(line);
 		std::string key;
-        char* pos;
+		char* pos;
 		if (!(iss >> key))
 		{
 			continue;
@@ -29,15 +29,16 @@ int ServerParser(ServerBlock &server, std::ifstream &file)
 				{
 					value.erase(value.size() - 1);
 				}
-                if (value.empty())
-                    return 1;
+				if (value.empty())
+					return 1;
 				server.listenPort = strtol(value.c_str(), &pos, 10);
-                if (*pos)
-                    return (1);
-                if (server.listenPort < 0 && 65535 > server.listenPort)
-                    return (1);
+				if (*pos)
+					return (1);
+				if (server.listenPort < 0 && 65535 > server.listenPort)
+					return (1);
 			}
-			if ((iss >> value) && value != "default_server;") {
+			if ((iss >> value) && value != "default_server;")
+			{
 				return 1;
 			}
 		}
@@ -81,10 +82,10 @@ int ServerParser(ServerBlock &server, std::ifstream &file)
 			{
 				return 3;
 			}
-			LocationBlock *location = new LocationBlock;
+			LocationBlock* location = new LocationBlock;
 			InitLocationBlock(*location);
-			MultiTreeNode *temp = new MultiTreeNode(location);
-			MultiTree *tree = new MultiTree(*temp);
+			MultiTreeNode* temp = new MultiTreeNode(location);
+			MultiTree* tree = new MultiTree(*temp);
 			server.root.push_back(tree);
 			if (value.at(value.size() - 1) == '/')
 			{

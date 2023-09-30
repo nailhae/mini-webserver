@@ -1,14 +1,16 @@
+#pragma once
 #ifndef MULTITREENODE_H
 #define MULTITREENODE_H
+
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <vector>
-#include "../parser/parser.hpp"
 #include "Colors.hpp"
+#include "Parser.hpp"
 /**
  * @brief 임시로 사용할 location block
- * 
+ *
  * merge 후 삭제할 struct
  */
 // typedef struct LocationBlock
@@ -35,16 +37,17 @@ public:
 	const std::string& GetURI(void) const;
 	const std::vector<MultiTreeNode*>& GetChildren(void);
 	std::vector<MultiTreeNode*>& Children(void);
-	void AddChildNode(LocationBlock *target);
+	void AddChildNode(LocationBlock* target);
 	void PrintData(void) const;
+
 private:
 	MultiTreeNode(void);
 	MultiTreeNode& operator=(const MultiTreeNode& rhs);
 	MultiTreeNode(const MultiTreeNode& other);
 
 	std::vector<MultiTreeNode*> mChildren;
-	MultiTreeNode*				mParentNode;
-	LocationBlock*				mData;
+	MultiTreeNode* mParentNode;
+	LocationBlock* mData;
 };
 
 void addChildURI(MultiTreeNode* nodeOrNull, std::string uri);
