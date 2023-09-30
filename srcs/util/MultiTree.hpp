@@ -8,9 +8,11 @@
 #include <vector>
 #include "Colors.hpp"
 #include "MultiTreeNode.hpp"
-#include "Parser.hpp"
+#include "WebServer.hpp"
 
 struct LocationBlock;
+
+class MultiTreeNode;
 
 class MultiTree
 {
