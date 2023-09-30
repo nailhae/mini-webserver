@@ -1,7 +1,8 @@
 #pragma once
-#ifndef PARSER_H
-#define PARSER_H
+#ifndef WEBSERVER_HPP
+#define WEBSERVER_HPP
 
+#include <cstdlib>
 #include <exception>
 #include <fstream>
 #include <iostream>
@@ -10,6 +11,8 @@
 #include <stack>
 #include <stdlib.h>
 #include <vector>
+#include "MultiTree.hpp"
+#include "MultiTreeNode.hpp"
 
 #define CONF_FILE_PATH "../../config/default.conf"
 
@@ -59,15 +62,25 @@ struct LocationBlock
 	std::pair<int, std::string> returnPair;
 };
 
-void InitHttpBlock(HttpBlock& http);
-void InitServerBlock(ServerBlock& server);
-void InitLocationBlock(LocationBlock& location);
-int ParseFile(const std::string& fileName, HttpBlock& http);
-int ServerParser(ServerBlock& server, std::ifstream& file);
-int ParseLine(const std::string& line, std::ifstream& file, HttpBlock& http);
-std::vector<std::string> Split(std::string str);
-void InitHttpBlock(HttpBlock& http);
-void InitServerBlock(ServerBlock& server);
-void InitLocationBlock(LocationBlock& location);
+class WebServer
+{
+public:
+	static WebServer* GetInstance();
+	static void DeleteInstance();
+	const HttpBlock* GetHttp() const;
 
-#endif
+private:
+	WebServer();
+	WebServer(std::string confFile);
+	virtual ~WebServer();
+	WebServer(const WebServer& other);
+	WebServer& operator=(const WebServer& other);
+
+	HttpBlock* parseFileOrNull(const std::string& fileName);
+	void deleteHttpBlock(HttpBlock& http);
+
+	static WebServer* mWebServer;
+	HttpBlock* mHttp;
+};
+
+#endif /* WEBSERVER_HPP */

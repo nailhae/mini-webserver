@@ -1,3 +1,6 @@
+# 폴더 안에 Makefile이 여러개일 경우 사용법
+# make -f Makefile_WebServerSample [command]
+
 ifeq "$(findstring debug, $(MAKECMDGOALS))" "debug"
 	DFLAGS = -g3 -fsanitize=address
 else
@@ -9,20 +12,17 @@ CXX 		=	c++
 
 CXXFLAGS	=	-Wall -Wextra -Werror -std=c++98 $(INCS)
 
-NAME 		= ./a.out
+NAME 		= ./WebServerSample.out
 
 SRCS_DIR := $(shell dirname $(PWD))
 
 INCS = \
 	-I$(SRCS_DIR)/util \
-	-I$(SRCS_DIR)/parser \
+	-I$(SRCS_DIR)/networking \
 
 SRCS = \
-	$(SRCS_DIR)/parser/HttpBlock.cpp \
-	$(SRCS_DIR)/parser/LocationBlock.cpp \
-	$(SRCS_DIR)/parser/Parser.cpp \
-	$(SRCS_DIR)/parser/ServerBlock.cpp \
-	$(SRCS_DIR)/parser/main.cpp \
+	$(SRCS_DIR)/networking/main_WebServerSample.cpp \
+	$(SRCS_DIR)/networking/WebServer.cpp \
 	$(SRCS_DIR)/util/Colors.cpp \
 	$(SRCS_DIR)/util/MultiTree.cpp \
 	$(SRCS_DIR)/util/MultiTreeNode.cpp \
