@@ -18,12 +18,16 @@
 
 #define BUFFER_SIZE 1024
 
-// enum eHeaders
-// {
-// 	CONTENT_TYPE,
-// 	CONTENT_LENGTH,
-// 	CONNECT,
-// } eHeader;
+enum eHeaders
+{
+	NONE,
+	CONNECTION,
+	CONTENT_TYPE,
+	CONTENT_LENGTH,
+	CACHE_CONTROL,
+	IF_NONE_MATCH,
+	IF_MODIFIED_SINCE,
+};
 
 enum eMethod
 {

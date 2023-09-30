@@ -1,17 +1,73 @@
 #include "./UserData.hpp"
 #include "./ChangeList.hpp"
 
+static void	trimWhiteSpace(std::string& target)
+{
+	size_t	start = 0;
+
+	while (start < target.size() && isspace(target[start]) == true)
+	{
+		start += 1;
+	}
+	target.erase(0, start);
+
+	size_t	end = target.size() - 1;
+	while (end > 0 && isspace(target[end]) == true)
+	{
+		end -= 1;
+	}
+	target.erase(end + 1);
+}
+
+static int validHeader(std::string& content)
+{
+	for (std::string::iterator it = content.begin(); it != content.end(); it++)
+	{
+		if (isupper(*it) == true)
+			*it -= 32;
+	}
+	if (content == "connection")
+		return (CONNECTION);
+	else if (content == "content-type")
+		return (CONTENT_TYPE);
+	else if (content == "content-length")
+		return (CONTENT_LENGTH);
+	else if (content == "cache-control")
+		return (CACHE_CONTROL);
+	else if (content == "if-none-match")
+		return (IF_NONE_MATCH);
+	else if (content == "if-modified-since")
+		return (IF_MODIFIED_SINCE);
+	else
+		return (NONE);
+}
+
 int UserData::ParseHeader(std::string& field)
 {
 	std::istringstream ss(field);
 	std::string header;
 	std::string value;
-	/**
-	 * @brief 의사코드
-	 * : 까지 읽음
-	 * ; 까지 읽음
-	 * 각 토큰별 제거
-	 */
+	size_t		pos;
+	int			headerKey;
+
+	std::getline(ss, header, ':');
+	trimWhiteSpace(header);
+	headerKey = validHeader(header);
+	if (headerKey == NONE)
+		return (0);
+	else
+	{
+		std::getline(ss, value);
+		trimWhiteSpace(value);
+		// ""처리 할 일이 있으면 여기서 trim 해주기.
+		if (value.size() == 0)
+		{
+			mStatusCode = 400; 
+			mStatusText = "Bad Request";
+			return (ERROR);
+		}
+		mHeaders[headerKey] = value;
+	}
 	return (0);
 }
 
@@ -30,7 +86,9 @@ int UserData::ParseRequest(std::stringstream& request)
 	else
 	{
 		mMethod = ERROR;
-		std::cout << "Method Error" << std::endl;
+		mStatusCode = 405; 
+		mStatusText = "Method is not allowed";
+		// 헤더에 Allow: GET, POST, DELETE 추가해야 함.
 		return (ERROR);
 	}
 	std::getline(request, mUri, ' ');
@@ -39,7 +97,8 @@ int UserData::ParseRequest(std::stringstream& request)
 		temp.erase(temp.size() - 1);
 	if (temp != "HTTP/1.1")
 	{
-		std::cout << temp << " version Error" << std::endl;
+		mStatusCode = 505; 
+		mStatusText = "HTTP Version Not Supported";
 		return (ERROR);
 	}
 
@@ -48,8 +107,12 @@ int UserData::ParseRequest(std::stringstream& request)
 		std::getline(request, temp, '\n');
 		if (request.eof())
 			return (0);
-		else if (request.fail()) // 헤더가 너무 크다는 것.
+		else if (request.fail())
+		{
+			mStatusCode = 500; 
+			mStatusText = "Internal Server Error";
 			return (ERROR);
+		}
 		else if (*(temp.end() - 1) == '\r')
 			temp.erase(temp.size() - 1);
 		if (temp == "")
@@ -101,10 +164,8 @@ int UserData::GenerateGETResponse(void)
 UserData::UserData(int fd)
 	: mFd(fd)
 	, mMethod(-1)
-	, mStatus(0)
+	, mStatusCode(0)
 	, mHeaderFlag(0)
-	, mReceived(std::string())
-	, mResponse(std::string())
 {
 }
 
@@ -156,7 +217,11 @@ int UserData::GenerateResponse(void)
 {
 	mHeaderFlag = checkReceivedHeader(mReceived);
 	if (mHeaderFlag == ERROR)
+	{
+		mStatusCode = 416;
+		mStatusText = "Requested Range Not Satisfiable";
 		return (ERROR);
+	}	
 	else if (mHeaderFlag == false)
 		return (0);
 	else
@@ -174,24 +239,22 @@ int UserData::RecvFromClient(int fd)
 	int len;
 
 	len = read(fd, mBuf, BUFFER_SIZE);
-	std::cout << Colors::BoldBlue << "received message from client " << fd << "\n" << std::endl;
 	for (int i = 0; i < len; i++)
-	{
-		std::cout << mBuf[i];
 		mReceived << mBuf[i];
-	}
-	std::cout << Colors::Reset << std::endl;
 	return (len);
 }
 
 void UserData::InitUserData(void)
 {
 	mMethod = -1;
-	mStatus = -1;
+	mStatusCode = -1;
 	mHeaderFlag = -1;
+	mStatusCode = -1;
+	mStatusText.clear();
 	mUri.clear();
 	mReceived.str("");
 	mResponse.clear();
+	mHeaders.clear();
 }
 
 int UserData::SendToClient(int fd)
@@ -199,8 +262,7 @@ int UserData::SendToClient(int fd)
 	size_t len;
 
 	std::cout << Colors::BoldMagenta << "send to client " << fd << "\n" << Colors::Reset << std::endl;
-	len = write(fd, mResponse.c_str(), mResponse.size()); // 큰 파일도 한 번에 보낼 수 있나?
-	len = write(1, mResponse.c_str(), mResponse.size());  // 큰 파일도 한 번에 보낼 수 있나?
+	len = write(fd, mResponse.c_str(), mResponse.size());
 	if (len < 0)
 	{
 		std::cout << Colors::RedString("send() error") << std::endl;
