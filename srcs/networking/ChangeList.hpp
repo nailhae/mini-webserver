@@ -21,6 +21,7 @@
 enum eHeaders
 {
 	NONE,
+	HOST,
 	CONNECTION,
 	CONTENT_TYPE,
 	CONTENT_LENGTH,
