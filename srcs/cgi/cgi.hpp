@@ -1,6 +1,7 @@
 #ifndef CGI_HPP
 #define CGI_HPP
 
+#include "../networking/UserData.hpp"
 #include <iostream>
 #include <map>
 #include <unistd.h>

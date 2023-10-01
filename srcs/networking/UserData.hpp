@@ -32,6 +32,8 @@ public:
 	int ParseHeader(std::string& field);
 	int RecvFromClient(int fd);
 	int SendToClient(int fd);
+	int ReadCgiResponse(void);
+	int GeneratePostResponse(void);
 
 private:
 	UserData(void);

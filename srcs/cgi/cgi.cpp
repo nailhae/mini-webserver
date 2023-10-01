@@ -34,45 +34,40 @@ const std::string &Cgi::getCgiPath() const  {
     return (this->cgiPath);
 }
 
-void Cgi::initCgiEnv(UserData& req, std::string httpCgiPath);
+int checkCgiFile(std::string &) {
+    
+}
+//cgi가 있는경우 없는 경우
+void Cgi::initCgiEnv(UserData& req, std::string httpCgiPath)
 {
-    std::string cgiExec = ("cgi-bin/" + httpCgiPath);
-    if (req.getMethod() == POST)
-    {
-        std::stringstream iss;
-        iss << req.getBodu().length();
-        this->env["CONTENT_LENGTH"] = iss.str();
-        // type를 담는 자료형 체크
-        this->env["CONTENT_TYPE"] = req.getHeader("content-type");
-    }
-
-    this->env["AUTH_TYPE"] = "BASIC";
-    this->env["GATEWAY_INTERFACE"] = std::string("CGI/1.1");
-    this->env["SCRIPT_NAME"] = cgiExec;
-    this->env["HTTP_ACCEPT"]
-    this->env["HTTP_ACCEPT_CHARSET"]
-    this->env["HTTP_ACCEPT_ENCODING"]
-    this->env["HTTP_ACCEPT_LANGUAGE"]
-    this->env["HTTP_FORWARDED"]
-    this->env["HTTP_HOST"]//필수
-    this->env["HTTP_PROXY_AUTHORIZATION"]
-    this->env["HTTP_USER_AGENT"]
-    this->env["PATH_INFO"]
-    this->env["PATH_TRANSLATED"]
-    this->env["QUERY_STRING"]
-    this->env["REMOTE_ADDR"]
-    this->env["REMOTE_HOST"]
-    this->env["REMOTE_USER"]
-    this->env["REQUEST_METHOD"]
-    this->env["SCRIPT_NAME"]
-    this->env["SERVER_NAME"]
-    this->env["SERVER_PORT"]
-    this->env["SERVER_PROTOCOL"]
-    this->env["SERVER_SOFTWARE"]
-    this->env["HTTP_COOKIE"]
-    this->env["WEBTOP_USER"]
-    this->env["NCHOME"]
-
+    // this->env["AUTH_TYPE"] = "BASIC";
+    // this->env["CONTENT_LENGTH"] = iss.str();
+    // this->env["CONTENT_TYPE"] = req.getHeader("content-type");
+    // this->env["GATEWAY_INTERFACE"] = std::string("CGI/1.1");
+    // this->env["SCRIPT_NAME"] = cgiExec;
+    // this->env["HTTP_ACCEPT"]
+    // this->env["HTTP_ACCEPT_CHARSET"]
+    // this->env["HTTP_ACCEPT_ENCODING"]
+    // this->env["HTTP_ACCEPT_LANGUAGE"]
+    // this->env["HTTP_FORWARDED"]
+    // this->env["HTTP_HOST"]//필수
+    // this->env["HTTP_PROXY_AUTHORIZATION"]
+    // this->env["HTTP_USER_AGENT"]
+    // this->env["PATH_INFO"]
+    // this->env["PATH_TRANSLATED"]
+    // this->env["QUERY_STRING"]
+    // this->env["REMOTE_ADDR"]
+    // this->env["REMOTE_HOST"]
+    // this->env["REMOTE_USER"]
+    // this->env["REQUEST_METHOD"]
+    // this->env["SCRIPT_NAME"]
+    // this->env["SERVER_NAME"]
+    // this->env["SERVER_PORT"]
+    // this->env["SERVER_PROTOCOL"]
+    // this->env["SERVER_SOFTWARE"]
+    // this->env["HTTP_COOKIE"]
+    // this->env["WEBTOP_USER"]
+    // this->env["NCHOME"]
 }
 
 void Cgi::execute(size_t &errorCode)

@@ -91,6 +91,7 @@ int main()
 			exit(EXIT_FAILURE); // exit으로 부수고 나가기
 		}
 		changeList.clearEvent();
+
 		for (int i = 0; i < occurEventNum; i++)
 		{
 			UserData *currentUdata = static_cast<UserData*>(eventList[i].udata);
@@ -107,8 +108,12 @@ int main()
 					std::cout << Colors::Red << "ERROR: recv error: force close client: " << \
 					eventList[i].ident << Colors::Reset << std::endl;
 				}
-				else
+				else {
+					Cgi cgi("../cgi-bin/hello.py");
+
 					currentUdata->GenerateResponse();
+
+				}
 			}
 		}
 	}

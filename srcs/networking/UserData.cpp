@@ -230,6 +230,8 @@ int UserData::GenerateResponse(void)
 			return (ERROR);
 		if (mMethod == GET)
 			GenerateGETResponse();
+		else if (mMethod == POST)
+			GeneratePostResponse();
 	}
 	return (0);
 }
@@ -270,4 +272,10 @@ int UserData::SendToClient(int fd)
 	}
 	InitUserData();
 	return (len);
+}
+
+int UserData::ReadCgiResponse(void) {
+	char buffer[BUFFER_SIZE];
+	int readBuffer = read(cgi.pipeOut[0], buffer, BUFFER_SIZE);
+
 }
