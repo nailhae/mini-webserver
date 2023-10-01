@@ -52,5 +52,10 @@ body {
     transition: color .2s linear;
 }
 
+.container_body {
+    width: 100px;
+    margin: 0 auto;
+}
+
 
 
