@@ -1,61 +1,92 @@
-#include "AMethod.hpp"
-#include <iostream>
+#include "./AMethod.hpp"
+#include "../util/MultiTree.hpp"
+
+const int AMethod::mSetupFinished = 0x3FFF;
 
 AMethod::AMethod()
-	: mSetupFinished(GetSetupFinishedValue())
 {
 }
 
 AMethod::AMethod(int type)
 	: mType(type)
 	, mSetupFlags(0)
-	, mSetupFinished(GetSetupFinishedValue())
 {
 }
 
 AMethod::~AMethod()
 {
-	// Destructor implementation
 }
 
-AMethod::AMethod(const AMethod& other)
+void AMethod::applySettingLocationBlock(LocationBlock& valueSet, const LocationBlock* valueToSet)
 {
-	(void)other;
-}
-
-AMethod& AMethod::operator=(const AMethod& other)
-{
-	if (this == &other)
+	if (Alias & mSetupFlags)
 	{
-		return *this;
+		valueSet.alias = valueToSet->alias;
+		mSetupFlags |= Alias;
 	}
-
-	return *this;
+	if (BAutoIndex & mSetupFlags)
+	{
+		valueSet.autoindex = valueToSet->autoindex;
+		mSetupFlags |= BAutoIndex;
+	}
+	if ((BDelMethod & mSetupFlags) || (BGetMethod & mSetupFlags) || \
+		(BPostMethod & mSetupFlags) || (BHeadMethod & mSetupFlags))
+	{
+		valueSet.bdeleteMethod = valueToSet->bdeleteMethod;
+		mSetupFlags |= BDelMethod;
+		mSetupFlags |= BGetMethod;
+		mSetupFlags |= BPostMethod;
+		mSetupFlags |= BHeadMethod;
+	}
+	if (IndexPage & mSetupFlags)
+	{
+		valueSet.index = valueToSet->index;
+		mSetupFlags |= IndexPage;
+	}
+	if (LocationRootPath & mSetupFlags)
+	{
+		valueSet.rootPath = valueToSet->rootPath;
+		mSetupFlags |= LocationRootPath;
+	}
+	if (ReturnPairVec & mSetupFlags)
+	{
+		valueSet.returnPair = valueToSet->returnPair;
+		mSetupFlags |= ReturnPairVec;
+	}
 }
 
-void AMethod::ResponseConfigSetup(UserData&)
+void AMethod::ResponseConfigSetup(ServerBlock& server, UserData& target)
 {
-	// 미완 아래 내용은 메모
-	// MultiTreeNode* node;
-	// searchNodeOrNull
-
-	// 	while (1)
-	// {
-	// }
-	// for (::(users port).getTree 순회)
-	// {
-	// 	가장 구체적인 루트(매칭되는 길이가 더 긴 uri) search(Userdata.uri)
-	// }
-	// while (node.parentNode != NULL)
-	// {
-	// }
-
-	// delete node;
+	MultiTree* targetTree = NULL;
+	MultiTreeNode* targetTreeNode = NULL;
+	const MultiTreeNode* offset = NULL;
+	std::string	subString;
+	
+	for (std::vector<MultiTree*>::const_iterator it = server.root.begin(); it != server.root.end(); it++)
+	{
+		subString = target.GetUri().substr(0, (*it)->GetRoot()->GetURI().size());
+		if ((*it)->GetRoot()->GetURI() == subString)
+		{
+			if (targetTree == NULL || targetTree->GetRoot()->GetURI().size() < subString.size())
+				targetTree = *it;
+			break ;
+		}
+	}
+	targetTreeNode = targetTree->searchNodeOrNull(target.GetUri());
+	//server 블록에서 / 설정이 안 되어 있으면 어떻게 하지? 하긴 해당되는 블록이 없는 경우 허용 메서드 없어서 아무것도 접근 못하긴 함.
+	if (targetTreeNode == NULL)
+		return ;
+	offset = targetTreeNode;
+	while (offset != NULL)
+	{
+		applySettingLocationBlock(target.Setting(), offset->GetLocationBlock());
+		offset = targetTreeNode->GetParentNode();
+	}
 }
 
 int AMethod::GetType() const
 {
-	return mType;
+	return (mType);
 }
 
 void AMethod::SetSetupFlag(eSetupFlags flag)
@@ -70,17 +101,4 @@ bool AMethod::IsFinishSetupFlags(void) const
 		return false;
 	}
 	return true;
-}
-
-int AMethod::GetSetupFinishedValue(void) const
-{
-	int setupFinished = 0;
-
-	for (int i = 0; i < SetupFlagCount; i++)
-	{
-		setupFinished = setupFinished << 1;
-		setupFinished |= 1;
-	}
-
-	return setupFinished;
 }

@@ -1,25 +1,23 @@
-#ifndef AMETHOD_HPP
-#define AMETHOD_HPP
-
-#include "UserData.hpp"
-#include "parser.hpp"
+#pragma once
+#include <map>
+#include "../networking/UserData.hpp"
 
 enum eSetupFlags
 {
-	ListenPort = 1 << 0,
-	ServerName = 1 << 1,
-	ServerRootPath = 1 << 2,
-	ServerRootVec = 1 << 3,
-	Uri = 1 << 4,
-	BGetMethod = 1 << 5,
-	BPostMethod = 1 << 6,
-	BDelMethod = 1 << 7,
-	BAutoIndex = 1 << 7,
-	IndexPage = 1 << 7,
-	LocationRootPath = 1 << 7,
-	Alias = 1 << 7,
-	ReturnPairVec = 1 << 7,
-	SetupFlagCount = 13
+	ListenPort = 0x01,
+	ServerName = 0x02,
+	ServerRootPath = 0x04,
+	ServerRootVec = 0x08,
+	Uri = 0x10,
+	BGetMethod = 0x20,
+	BPostMethod = 0x40,
+	BDelMethod = 0x80,
+	BHeadMethod = 0x100,
+	BAutoIndex = 0x200,
+	IndexPage = 0x400,
+	LocationRootPath = 0x800,
+	Alias = 0x1000,
+	ReturnPairVec = 0x2000,
 };
 
 struct ResponseSetup
@@ -35,21 +33,18 @@ public:
 	virtual ~AMethod();
 
 	virtual int GenerateResponse(UserData&) = 0;
-	void ResponseConfigSetup(UserData&);
+	void ResponseConfigSetup(ServerBlock& server, UserData& target);
 	int GetType() const;
 	void SetSetupFlag(eSetupFlags flag);
 	bool IsFinishSetupFlags(void) const;
+	void applySettingLocationBlock(LocationBlock& valueSet, const LocationBlock* valueToSet);
 
 private:
 	AMethod();
 	AMethod(const AMethod& other);
 	AMethod& operator=(const AMethod& other);
 
-	int GetSetupFinishedValue(void) const;
-
+	static const int mSetupFinished;
 	int mType;
 	int mSetupFlags;
-	const int mSetupFinished;
 };
-
-#endif /* AMETHOD_HPP */
