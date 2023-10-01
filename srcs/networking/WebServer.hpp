@@ -55,6 +55,7 @@ struct LocationBlock
 	bool bget;			// default false;
 	bool bpost;			// default false;
 	bool bdeleteMethod; // default false;
+	bool bhead; 		// default false;
 	bool autoindex;		// default false
 	std::string index;	// default "index.html"
 	std::string rootPath;
