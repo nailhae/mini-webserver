@@ -21,6 +21,7 @@
 enum eHeaders
 {
 	NONE,
+	HOST,
 	CONNECTION,
 	CONTENT_TYPE,
 	CONTENT_LENGTH,
@@ -32,6 +33,7 @@ enum eHeaders
 enum eMethod
 {
 	GET = 0,
+	HEAD,
 	POST,
 	DELETE,
 	ERROR = -1
