@@ -14,6 +14,8 @@
 #include <vector>
 #include <map>
 
+#include "WebServer.hpp"
+#include "../AMethod/AMethod.hpp"
 #define BUFFER_SIZE 1024
 
 class UserData
@@ -24,8 +26,10 @@ public:
 	void InitUserData(void);
 	const std::stringstream& GetReceived(void) const;
 	const std::string& GetResponse(void) const;
-	int GetMethod(void) const;
+	const std::string& GetUri(void) const;
+	const AMethod& GetMethod(void) const;
 	int GetFd(void) const;
+	LocationBlock& Setting(void);
 	void GenerateResponse(void);
 	int GenerateGETResponse(void);
 	int ParseRequest(std::stringstream& request);
@@ -45,13 +49,14 @@ private:
 
 	int mFd;
 	char mBuf[BUFFER_SIZE];
-	int mMethod;
 	int mStatusCode;
 	int mHeaderFlag;
 	int mFillBodyFlag;
 	int mContentSize;
+	LocationBlock mSetting;
 	std::string mStatusText;
 	std::string mUri;
 	std::string mResponse;
 	std::map<int, std::string> mHeaders;
+	AMethod *mMethod;
 };

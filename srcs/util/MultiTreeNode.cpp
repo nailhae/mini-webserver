@@ -39,6 +39,11 @@ const std::vector<MultiTreeNode*>& MultiTreeNode::GetChildren(void)
 	return (mChildren);
 }
 
+const MultiTreeNode* MultiTreeNode::GetParentNode(void)
+{
+	return (mParentNode);
+}
+
 std::vector<MultiTreeNode*>& MultiTreeNode::Children(void)
 {
 	return (mChildren);

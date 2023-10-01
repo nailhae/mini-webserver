@@ -3,10 +3,10 @@
 
 UserData::UserData(int fd)
 	: mFd(fd)
-	, mMethod(-1)
 	, mStatusCode(-1)
 	, mHeaderFlag(0)
 	, mFillBodyFlag(-1)
+	, mMethod(NULL)
 {
 }
 
@@ -62,14 +62,24 @@ const std::string& UserData::GetResponse(void) const
 	return (mResponse);
 }
 
-int UserData::GetMethod(void) const
+const AMethod& UserData::GetMethod(void) const
 {
-	return (mMethod);
+	return (*mMethod);
 }
 
 int UserData::GetFd(void) const
 {
 	return (mFd);
+}
+
+LocationBlock& UserData::Setting(void)
+{
+	return (mSetting);
+}
+
+const std::string& UserData::GetUri(void) const
+{
+	return (mUri);
 }
 
 static int checkHeaderLength(std::stringstream& ss)
@@ -120,13 +130,13 @@ void UserData::GenerateResponse(void)
 		{
 			return ;
 		}
-		if (mMethod == GET)
+		if (mMethod->GetType() == GET)
 			GenerateGETResponse();
-		else if (mMethod == HEAD)
+		else if (mMethod->GetType() == HEAD)
 			std::cout << "HEAD response 전송해야 함." << std::endl;
-		else if (mMethod == POST)
+		else if (mMethod->GetType() == POST)
 			std::cout << "POST response 전송해야 함." << std::endl;
-		else if (mMethod == DELETE)
+		else if (mMethod->GetType() == DELETE)
 			std::cout << "DELETE response 전송해야 함." << std::endl;
 	}
 }
@@ -143,7 +153,11 @@ int UserData::RecvFromClient(int fd)
 
 void UserData::InitUserData(void)
 {
-	mMethod = -1;
+	if (mMethod != NULL)
+	{
+		delete mMethod;
+		mMethod = NULL;
+	}
 	mStatusCode = -1;
 	mHeaderFlag = -1;
 	mStatusCode = -1;
