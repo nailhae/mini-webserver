@@ -15,6 +15,8 @@
             <a class = "nav__link" href="index.html">Webserv</a>
             <nav class="nav">
                 <a class="nav__link" href="index.html">Home</a>
+                <a class="nav__link" href="print.html">Print</a>
+                <a class="nav__link" href="fileUpload.html">file</a>
                 <a class="nav__link" href="GET.html">GET</a>
                 <a class="nav__link" href="POST.html">POST</a>
                 <a class="nav__link" href="error/404.html">error</a>
@@ -26,7 +28,7 @@
   <body>
   <div class ="container_body">
     <h3>POST</h3>
-    <form method="post" action="../cgi-bin/hello.py">
+    <form action="../cgi-bin/hello.py" method="POST" >
       <p><label>Name : <input type="text" name="name"></label></p>
       <p><label>mbti : <input type="text" name="mbti"></label></p>
       <p><input type="submit" value="Submit"></p>
