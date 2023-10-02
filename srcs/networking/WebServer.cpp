@@ -1,6 +1,5 @@
 #include "WebServer.hpp"
 #include "Error.hpp"
-// TODO 에러메시지 출력해주는 함수 만들기. (+ Colors::BoldRedString(std::string))
 
 static void initHttpBlock(HttpBlock& http);
 static void initServerBlock(ServerBlock& server);
@@ -86,10 +85,6 @@ HttpBlock* WebServer::parseFileOrNull(const std::string& fileName)
 
 void WebServer::deleteHttpBlock(HttpBlock& http)
 {
-	for (std::vector<MultiTree*>::iterator it = http.root.begin(); it != http.root.end(); it++)
-	{
-		delete (*it);
-	}
 	for (std::vector<ServerBlock*>::iterator it = http.serverList.begin(); it != http.serverList.end(); it++)
 	{
 		for (std::vector<MultiTree*>::iterator treeIt = (*it)->root.begin(); treeIt != (*it)->root.end(); treeIt++)
@@ -247,11 +242,19 @@ static int parseLine(const std::string& line, std::ifstream& file, HttpBlock& ht
 		{
 			return error;
 		}
+		if (http.serverList.size() == 0)
+		{
+			Error::Print("A Location Block can only be in a Server Block");
+			return error;
+		}
 		LocationBlock* location = new LocationBlock;
 		initLocationBlock(*location);
-		MultiTreeNode* root = new MultiTreeNode(location);
-		MultiTree* tree = new MultiTree(*root);
-		http.root.push_back(tree);
+		MultiTreeNode* rootNode = new MultiTreeNode(location);
+		MultiTree* tree = new MultiTree(*rootNode);
+
+		ServerBlock* currentServer = http.serverList.at(http.serverList.size() - 1);
+		currentServer->root.push_back(tree);
+
 		if (value.at(value.size() - 1) == '/')
 		{
 			value.erase(value.size() - 1);
@@ -261,7 +264,7 @@ static int parseLine(const std::string& line, std::ifstream& file, HttpBlock& ht
 		{
 			return error;
 		}
-		if (locationParser(*location, file, *http.root.at(http.root.size() - 1), location->uri))
+		if (locationParser(*location, file, *tree, location->uri))
 		{
 			return error;
 		}
@@ -303,10 +306,13 @@ static int parserErrorCheck(HttpBlock& http)
 	// 서버블록이 0개일경우
 	// 서버블록안에 listen이 없을경우, 숫자여야한다, 다른 서버랑 중복이 아니여야한다. 범위는  0~65535
 	// 로케이션 uri중복인지 아닌지
-	for (std::vector<MultiTree*>::iterator it = http.root.begin(); it != http.root.end(); it++)
+	for (std::vector<ServerBlock*>::iterator it = http.serverList.begin(); it != http.serverList.end(); it++)
 	{
-		if ((*it)->CheckDuplicateError() == false)
-			return error;
+		for (std::vector<MultiTree*>::iterator treeIt = (*it)->root.begin(); treeIt != (*it)->root.end(); treeIt++)
+		{
+			if ((*treeIt)->CheckDuplicateError() == false)
+				return error;
+		}
 	}
 
 	return success;
