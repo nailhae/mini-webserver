@@ -1,18 +1,15 @@
 #pragma once
 #include <map>
-#include "../networking/UserData.hpp"
+#include "UserData.hpp"
 
+// TODO 대문자 형식으로 전환
 enum eSetupFlags
 {
-	ListenPort = 0x01,
-	ServerName = 0x02,
-	ServerRootPath = 0x04,
-	ServerRootVec = 0x08,
-	Uri = 0x10,
-	BGetMethod = 0x20,
-	BPostMethod = 0x40,
-	BDelMethod = 0x80,
-	BHeadMethod = 0x100,
+	URI = 0x10,
+	B_GET_SETTING = 0x20,
+	BPostSETTING = 0x40,
+	BDelSETTING = 0x80,
+	BHeadSETTING = 0x100,
 	BAutoIndex = 0x200,
 	IndexPage = 0x400,
 	LocationRootPath = 0x800,

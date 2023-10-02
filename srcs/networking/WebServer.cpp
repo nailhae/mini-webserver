@@ -1,4 +1,5 @@
 #include "WebServer.hpp"
+// TODO 에러메시지 출력해주는 함수 만들기. (+ Colors::BoldRedString(std::string))
 
 static void initHttpBlock(HttpBlock& http);
 static void initServerBlock(ServerBlock& server);
@@ -20,32 +21,15 @@ WebServer::WebServer()
 WebServer::WebServer(std::string confFile)
 	: mHttp(parseFileOrNull(confFile))
 {
-	const int error = 1;
-
 	if (mHttp == NULL)
 	{
 		std::cout << " Failed to parse .conf file" << std::endl;
-		exit(error);
+		exit(EXIT_FAILURE);
 	}
 }
 
 WebServer::~WebServer()
 {
-}
-
-WebServer::WebServer(const WebServer& other)
-{
-	(void)other;
-}
-
-WebServer& WebServer::operator=(const WebServer& other)
-{
-	if (this == &other)
-	{
-		return *this;
-	}
-
-	return *this;
 }
 
 WebServer* WebServer::GetInstance()

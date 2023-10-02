@@ -32,7 +32,7 @@ void AMethod::applySettingLocationBlock(LocationBlock& valueSet, const LocationB
 	if ((BDelMethod & mSetupFlags) || (BGetMethod & mSetupFlags) || \
 		(BPostMethod & mSetupFlags) || (BHeadMethod & mSetupFlags))
 	{
-		valueSet.bdeleteMethod = valueToSet->bdeleteMethod;
+		valueSet.bdelete = valueToSet->bdelete;
 		mSetupFlags |= BDelMethod;
 		mSetupFlags |= BGetMethod;
 		mSetupFlags |= BPostMethod;

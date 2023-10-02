@@ -35,7 +35,7 @@ struct HttpBlock
 	std::map<std::string, std::string> types;
 	std::map<int, std::string> errorPages;
 	std::vector<ServerBlock*> serverList; // default_server = vector<ServerBlock> index 0
-	std::vector<MultiTree*> root;
+	// std::vector<MultiTree*> root;
 	int clientMaxBodySize; // default unit kB
 	int clientBodyTimeout; // default unit sec.
 	int workerConnections;
@@ -52,9 +52,10 @@ struct ServerBlock
 struct LocationBlock
 {
 	std::string uri;
-	bool bget;			// default false;
-	bool bpost;			// default false;
-	bool bdeleteMethod; // default false;
+	// TODO 이름 통일
+	bool bGet;			// default false;
+	bool bPost;			// default false;
+	bool bdelete; // default false;
 	bool bhead; 		// default false;
 	bool autoindex;		// default false
 	std::string index;	// default "index.html"
