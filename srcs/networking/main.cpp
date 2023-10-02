@@ -12,8 +12,8 @@
 #include <sys/time.h>
 #include <sys/event.h>
 
-#include "./ChangeList.hpp"
-#include "../util/Colors.hpp"
+#include "ChangeList.hpp"
+#include "Colors.hpp"
 
 #define BUFFER_SIZE 1024
 #define MAX_KEVENTS 10
@@ -61,17 +61,6 @@ int main()
 	ChangeList changeList;
 	struct kevent eventList[MAX_KEVENTS];
 	int occurEventNum;
-
-	/**
-	 * @brief 서버 Listen 소켓 옵션 설정
-	 * int optVal = true;
-	 * while (서버 listen port 개수)
-	 * {
-	 * 	changeList(서버 listen 소켓, EVFILT_READ, EV_ADD);
-	 * 	setsockopt(서버 listen 소켓, SOL_SOCKET, SO_REUSEADDR, &optVal, sizeof(optVal));
-	 * 	setsockopt(서버 listen 소켓, SOL_SOCKET, SO_REUSEPORT, &optVal, sizeof(optVal));
-	 * }
-	 */
 
 	/**
 	 * @brief HTTP/1.1 default 값 keep alive 옵션 + 우아한 소켓 종료를 위한 linger 옵션 적용
