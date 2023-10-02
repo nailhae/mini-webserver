@@ -316,7 +316,7 @@ static int serverParser(ServerBlock& server, std::ifstream& file)
 {
 	const int success = 0;
 	const int error = 1;
-	std::stack<BlockType> blockStack;
+	std::stack<eBlockType> blockStack;
 	blockStack.push(SERVER);
 	std::string line;
 	while (getline(file, line))
@@ -429,7 +429,7 @@ static int locationParser(LocationBlock& location, std::ifstream& file, MultiTre
 {
 	const int success = 0;
 	const int error = 1;
-	std::stack<BlockType> blockStack;
+	std::stack<eBlockType> blockStack;
 	blockStack.push(LOCATION);
 
 	std::string line;

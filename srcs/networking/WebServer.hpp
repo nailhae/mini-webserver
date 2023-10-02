@@ -17,7 +17,7 @@
 class MultiTree;
 class MultiTreeNode;
 
-enum BlockType
+enum eBlockType
 {
 	NONE,
 	SERVER,
