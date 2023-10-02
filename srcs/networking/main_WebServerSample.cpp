@@ -1,4 +1,5 @@
 
+#include <exception>
 #include <iostream>
 #include "WebServer.hpp"
 
@@ -16,23 +17,25 @@ int main(void)
 	WebServer* inst = WebServer::GetInstance();
 	const HttpBlock* config = inst->GetHttp();
 	// ParseFile("nginx.conf", *config);
-	printTreeStructure(config->root.at(0)->GetRoot());
-	printTreeStructure(config->root.at(1)->GetRoot());
-	printTreeStructure(config->serverList.at(0)->root.at(0)->GetRoot());
-	printTreeStructure(config->serverList.at(1)->root.at(0)->GetRoot());
-	printSearchedResult(*config->root.at(0), "/404.html/");
-	printSearchedResult(*config->root.at(0), "/404.html/src");
-	printSearchedResult(*config->root.at(0), "/404.html/src/something");
-	printSearchedResult(*config->root.at(1), "/50x.html/");
-	printSearchedResult(*config->root.at(1), "/50x.html/something");
-	printSearchedResult(*config->serverList.at(0)->root.at(0), "/1/old-url/kapouetttt/something");
-	printSearchedResult(*config->serverList.at(0)->root.at(0), "/1/old-url/kapouetttt/kapouet/something");
-	printSearchedResult(*config->serverList.at(1)->root.at(0), "/2/2/something");
-	printSearchedResult(*config->serverList.at(1)->root.at(0), "/2/hello/something");
-	printSearchedResult(*config->root.at(0), "src");
-	printSearchedResult(*config->serverList.at(0)->root.at(1), "/1/");
-	printSearchedResult(*config->serverList.at(1)->root.at(1), "/hello/");
-	printSearchedResult(*config->root.at(1), "/50x.html/");
+	try
+	{
+		printTreeStructure(config->serverList.at(0)->root.at(0)->GetRoot());
+		printTreeStructure(config->serverList.at(1)->root.at(0)->GetRoot());
+		printSearchedResult(*config->serverList.at(0)->root.at(0), "/1/old-url/kapouetttt/something");
+		printSearchedResult(*config->serverList.at(0)->root.at(0), "/1/old-url/kapouetttt/kapouet/something");
+		// printSearchedResult(*config->serverList.at(1)->root.at(0), "/2/2/something");
+		// printSearchedResult(*config->serverList.at(1)->root.at(0), "/2/hello/something");
+		// printSearchedResult(*config->serverList.at(0)->root.at(1), "/1/");
+		// printSearchedResult(*config->serverList.at(1)->root.at(1), "/hello/");
+	}
+	catch (std::out_of_range& e)
+	{
+		std::cout << std::cout << e.what() << "out_of_range" << std::endl;
+	}
+	catch (std::exception& e)
+	{
+		std::cout << std::cout << e.what() << "exception" << std::endl;
+	}
 
 	WebServer::DeleteInstance();
 	// LocationBlock *rootData = new LocationBlock;

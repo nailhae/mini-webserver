@@ -24,6 +24,7 @@ SRCS = \
 	$(SRCS_DIR)/networking/main_WebServerSample.cpp \
 	$(SRCS_DIR)/networking/WebServer.cpp \
 	$(SRCS_DIR)/util/Colors.cpp \
+	$(SRCS_DIR)/util/Error.cpp \
 	$(SRCS_DIR)/util/MultiTree.cpp \
 	$(SRCS_DIR)/util/MultiTreeNode.cpp \
 
@@ -46,5 +47,7 @@ fclean: clean
 	$(RM) $(NAME)
 
 re: fclean all
+
+debug: $(NAME)
 
 .PHONY: all clean fclean re

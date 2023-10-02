@@ -1,5 +1,6 @@
-#include "./UserData.hpp"
-#include "./ChangeList.hpp"
+#include "ChangeList.hpp"
+#include "Error.hpp"
+#include "UserData.hpp"
 
 static void trimWhiteSpace(std::string& target)
 {
@@ -91,14 +92,14 @@ static int checkValidHeaderKey(int headerKey, std::string& value)
 		// config에서 지정한 파일 크기보다 큰 파일의 경우
 		// if (atoi(value.c_str) > max_contents)
 		// {
-		// 	return (ERROR);			
+		// 	return (ERROR);
 		// }
 	}
 	else if (headerKey == CACHE_CONTROL)
 	{
 		if (value.substr(0, 7) != "max-age")
 		{
-			std::cout << value.substr(0, 7) << " != " << "max-age" << std::endl;
+			Error::Print(value.substr(0, 7) + " != max-age");
 			return (0);
 		}
 		value.erase(0, 7);
@@ -145,7 +146,7 @@ int UserData::ParseHeaderKey(std::string& header)
 	headerKey = validHeader(header);
 	if (headerKey == NONE)
 		return (NONE);
-	else 
+	else
 		return (headerKey);
 }
 
@@ -187,7 +188,7 @@ int UserData::ParseFirstLine(std::stringstream& request)
 
 int UserData::ParseOneLine(std::string& oneLine)
 {
-	std::string key;		
+	std::string key;
 	int headerKey;
 
 	for (std::string::iterator it = oneLine.begin(); it != oneLine.end(); it++)
@@ -195,7 +196,7 @@ int UserData::ParseOneLine(std::string& oneLine)
 		if (*it == ':')
 		{
 			oneLine.erase(oneLine.begin(), it + 1);
-			break ;
+			break;
 		}
 		else
 			key += *it;
@@ -224,7 +225,7 @@ int UserData::ParseRequest(std::stringstream& request)
 		if (*(temp.end() - 1) == '\r')
 			temp.erase(temp.size() - 1);
 		if (temp.size() == 0)
-			break ;
+			break;
 		else if (ParseOneLine(temp) == ERROR)
 			return (ERROR);
 	}

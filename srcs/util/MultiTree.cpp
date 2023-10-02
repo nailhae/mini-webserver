@@ -1,4 +1,5 @@
 #include "MultiTree.hpp"
+#include "Error.hpp"
 
 MultiTree::MultiTree(MultiTreeNode& root)
 	: mRoot(&root)
@@ -85,9 +86,10 @@ void printSearchedResult(MultiTree& root, std::string uri)
 
 	temp = root.searchNodeOrNull(uri);
 	if (temp == NULL)
-		std::cout << Colors::Red << "failed to find " << uri << Colors::Reset << std::endl;
+		Error::Print("failed to find " + uri);
+
 	else
-		std::cout << Colors::Cyan << "found node's URI: " << temp->GetURI() << Colors::Reset << std::endl;
+		Error::Print("found node's URI: " + temp->GetURI());
 }
 
 static void printNodeRecursive(MultiTreeNode* node)

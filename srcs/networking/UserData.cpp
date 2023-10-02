@@ -1,5 +1,6 @@
 #include "./UserData.hpp"
 #include "./ChangeList.hpp"
+#include "Error.hpp"
 
 UserData::UserData(int fd)
 	: mFd(fd)
@@ -26,7 +27,7 @@ int UserData::GenerateGETResponse(void)
 	if (requestedFile.is_open() == false)
 	{
 		// 4XX error
-		std::cerr << Colors::RedString("open failed: ." + mUri) << std::endl;
+		Error::Print("open failed: ." + mUri);
 		write(mFd, "HTTP/1.1 404 Not found\r\n\r\n", 26);
 	}
 	else
@@ -97,7 +98,7 @@ static int checkHeaderLength(std::stringstream& ss)
 		else if (ss.tellg() > 1024)
 			return (ERROR);
 		else
-			continue ;
+			continue;
 	}
 }
 
@@ -110,11 +111,11 @@ void UserData::GenerateResponse(void)
 	{
 		mStatusCode = 416;
 		mStatusText = "Requested Range Not Satisfiable";
-		return ;
+		return;
 	}
 	else if (mHeaderFlag == false)
 	{
-		return ;
+		return;
 	}
 	else
 	{
@@ -122,13 +123,13 @@ void UserData::GenerateResponse(void)
 		{
 			// GenerateErrorResponse();
 			std::cout << "Error page 전송해야 함" << std::endl;
-			return ;
+			return;
 		}
 		std::getline(mReceived, temp, static_cast<char>(EOF));
 		mBody += temp;
 		if (mBody.size() < mContentSize)
 		{
-			return ;
+			return;
 		}
 		if (mMethod->GetType() == GET)
 			GenerateGETResponse();
@@ -179,11 +180,11 @@ int UserData::SendToClient(int fd)
 	{
 		std::cout << it->first << ": " << it->second << std::endl;
 	}
-	std::cout <<Colors::BoldBlue <<  "\nstatus " << mStatusCode << ": " << mStatusText << std::endl;
+	std::cout << Colors::BoldBlue << "\nstatus " << mStatusCode << ": " << mStatusText << std::endl;
 	std::cout << Colors::BoldMagenta << "send to client " << fd << "\n" << Colors::Reset << std::endl;
 	len = write(fd, mResponse.c_str(), mResponse.size());
 	if (len < 0)
-		std::cout << Colors::RedString("send() error") << std::endl;
+		Error::Print("send()");
 	InitUserData();
 	return (len);
 }

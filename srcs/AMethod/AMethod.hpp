@@ -1,23 +1,21 @@
 #pragma once
+
 #include <map>
-#include "../networking/UserData.hpp"
+#include "UserData.hpp"
+#include "WebServer.hpp"
 
 enum eSetupFlags
 {
-	ListenPort = 0x01,
-	ServerName = 0x02,
-	ServerRootPath = 0x04,
-	ServerRootVec = 0x08,
-	Uri = 0x10,
-	BGetMethod = 0x20,
-	BPostMethod = 0x40,
-	BDelMethod = 0x80,
-	BHeadMethod = 0x100,
-	BAutoIndex = 0x200,
-	IndexPage = 0x400,
-	LocationRootPath = 0x800,
-	Alias = 0x1000,
-	ReturnPairVec = 0x2000,
+	URI = 0x10,
+	B_GET_SETTING = 0x20,
+	B_POST_SETTING = 0x40,
+	B_DELETE_SETTING = 0x80,
+	B_HEAD_SETTING = 0x100,
+	B_AUTOINDEX = 0x200,
+	INDEX_PAGE = 0x400,
+	LOCATION_ROOT_PATH = 0x800,
+	ALIAS = 0x1000,
+	RETURN_PAIR_VEC = 0x2000,
 };
 
 struct ResponseSetup
