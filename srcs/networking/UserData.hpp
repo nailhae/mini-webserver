@@ -1,10 +1,12 @@
 #pragma once
+
 #include <arpa/inet.h>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include <map>
 #include <sstream>
 #include <string>
 #include <sys/event.h>
@@ -12,11 +14,13 @@
 #include <sys/time.h>
 #include <unistd.h>
 #include <vector>
-#include <map>
 
-#include "WebServer.hpp"
-#include "../AMethod/AMethod.hpp"
+#include "AMethod.hpp"
+#include "dataSet.hpp"
+
 #define BUFFER_SIZE 1024
+
+class AMethod;
 
 class UserData
 {
@@ -42,6 +46,7 @@ public:
 
 	std::stringstream mReceived;
 	std::string mBody;
+
 private:
 	UserData(void);
 	UserData(const UserData& rhs);
@@ -52,11 +57,11 @@ private:
 	int mStatusCode;
 	int mHeaderFlag;
 	int mFillBodyFlag;
-	int mContentSize;
+	size_t mContentSize;
 	LocationBlock mSetting;
 	std::string mStatusText;
 	std::string mUri;
 	std::string mResponse;
 	std::map<int, std::string> mHeaders;
-	AMethod *mMethod;
+	AMethod* mMethod;
 };
