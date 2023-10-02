@@ -1,4 +1,5 @@
 #include "MultiTreeNode.hpp"
+#include "Error.hpp"
 
 MultiTreeNode::MultiTreeNode(LocationBlock* data)
 	: mChildren(std::vector<MultiTreeNode*>())
@@ -74,7 +75,7 @@ void addChildURI(MultiTreeNode* nodeOrNull, std::string uri)
 {
 	if (nodeOrNull == NULL)
 	{
-		std::cout << Colors::RedString("node is NULL!") << std::endl;
+		Error::Print("node is NULL!");
 		return;
 	}
 	LocationBlock* data = new LocationBlock;

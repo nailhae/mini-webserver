@@ -1,4 +1,5 @@
 #include "WebServer.hpp"
+#include "Error.hpp"
 // TODO 에러메시지 출력해주는 함수 만들기. (+ Colors::BoldRedString(std::string))
 
 static void initHttpBlock(HttpBlock& http);
@@ -23,7 +24,7 @@ WebServer::WebServer(std::string confFile)
 {
 	if (mHttp == NULL)
 	{
-		std::cout << " Failed to parse .conf file" << std::endl;
+		Error::Print("parse .conf file");
 		exit(EXIT_FAILURE);
 	}
 }
@@ -61,7 +62,7 @@ HttpBlock* WebServer::parseFileOrNull(const std::string& fileName)
 
 	if (!file.is_open())
 	{
-		std::cout << "Failed to open file" << std::endl;
+		Error::Print("open file");
 		return NULL;
 	}
 
@@ -70,13 +71,13 @@ HttpBlock* WebServer::parseFileOrNull(const std::string& fileName)
 		line = removeComment(line);
 		if (int i = parseLine(line, file, *http))
 		{
-			std::cout << "error " << i << '\n';
+			Error::Print(i + "");
 			return NULL;
 		}
 	}
 	if (parserErrorCheck(*http))
 	{
-		std::cout << "errorCheck" << '\n';
+		Error::Print("parse conf file");
 		return NULL;
 	}
 
