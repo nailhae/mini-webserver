@@ -1,6 +1,8 @@
 #include "ChangeList.hpp"
 #include "Error.hpp"
+#include "MethodGet.hpp"
 #include "UserData.hpp"
+#include "dataSet.hpp"
 
 static void trimWhiteSpace(std::string& target)
 {
@@ -157,16 +159,16 @@ int UserData::ParseFirstLine(std::stringstream& request)
 	request.seekg(std::ios::beg);
 	request >> temp;
 	if (temp == "GET")
-		mMethod = GET;
+		mMethod = new MethodGet(GET);
 	else if (temp == "HEAD")
-		mMethod = HEAD;
+		mMethod = new MethodGet(HEAD);
 	else if (temp == "POST")
-		mMethod = POST;
+		mMethod = new MethodGet(POST);
 	else if (temp == "DELETE")
-		mMethod = DELETE;
+		mMethod = new MethodGet(DELETE);
 	else
 	{
-		mMethod = ERROR;
+		mMethod = new MethodGet(ERROR);
 		mStatusCode = 405;
 		mStatusText = "Method is not allowed";
 		// 이 경우 헤더에 Allow: GET, POST, DELETE 추가해야 함.
@@ -229,7 +231,7 @@ int UserData::ParseRequest(std::stringstream& request)
 		else if (ParseOneLine(temp) == ERROR)
 			return (ERROR);
 	}
-	if (mMethod == POST)
+	if (mMethod->GetType() == POST)
 	{
 		if (mHeaders[CONTENT_LENGTH] == "" || mHeaders[CONTENT_TYPE] == "")
 		{

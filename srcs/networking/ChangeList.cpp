@@ -1,16 +1,22 @@
 #include "ChangeList.hpp"
 
-ChangeList::ChangeList(void)
-	:	_keventVector(std::vector<struct kevent>())
-{}
+#include "Colors.hpp"
+#include "UserData.hpp"
+#include "dataSet.hpp"
 
-ChangeList::~ChangeList(void) 
-{}
+ChangeList::ChangeList(void)
+	: _keventVector(std::vector<struct kevent>())
+{
+}
+
+ChangeList::~ChangeList(void)
+{
+}
 
 void ChangeList::ChangeEvent(uintptr_t ident, int filter, int flags, UserData *udata)
 {
 	// fflags로 CGI 처리와 signal 등 처리 해야함.
-	struct kevent	target;
+	struct kevent target;
 
 	target.ident = ident;
 	target.filter = filter;
