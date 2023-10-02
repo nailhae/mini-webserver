@@ -32,7 +32,7 @@ static int createSocket(int port)
 		close(serverSocket);
 		return -1;
 	}
-	if (listen(serverSocket, 10) == -1) // back log 일반적으로 10 -100
+	if (listen(serverSocket, SOMAXCONN) == -1)
 	{
 		std::cout << "Error: listen() error" << std::endl;
 		close(serverSocket);
