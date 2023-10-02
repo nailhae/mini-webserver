@@ -1,6 +1,5 @@
 #pragma once
-#ifndef _COLORS_HPP_
-#define _COLORS_HPP_
+
 #include <iostream>
 #include <string>
 
@@ -37,5 +36,3 @@ public:
 	static std::string BoldMagentaString(std::string target);
 	static std::string BoldCyanString(std::string target);
 };
-
-#endif

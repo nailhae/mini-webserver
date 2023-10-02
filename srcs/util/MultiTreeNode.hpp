@@ -1,6 +1,4 @@
 #pragma once
-#ifndef MULTITREENODE_H
-#define MULTITREENODE_H
 
 #include <iostream>
 #include <sstream>
@@ -36,5 +34,3 @@ private:
 };
 
 void addChildURI(MultiTreeNode* nodeOrNull, std::string uri);
-
-#endif

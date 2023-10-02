@@ -1,4 +1,5 @@
 #include "WebServer.hpp"
+#include "Error.hpp"
 
 static void initHttpBlock(HttpBlock& http);
 static void initServerBlock(ServerBlock& server);
@@ -20,32 +21,15 @@ WebServer::WebServer()
 WebServer::WebServer(std::string confFile)
 	: mHttp(parseFileOrNull(confFile))
 {
-	const int error = 1;
-
 	if (mHttp == NULL)
 	{
-		std::cout << " Failed to parse .conf file" << std::endl;
-		exit(error);
+		Error::Print("parse .conf file");
+		exit(EXIT_FAILURE);
 	}
 }
 
 WebServer::~WebServer()
 {
-}
-
-WebServer::WebServer(const WebServer& other)
-{
-	(void)other;
-}
-
-WebServer& WebServer::operator=(const WebServer& other)
-{
-	if (this == &other)
-	{
-		return *this;
-	}
-
-	return *this;
 }
 
 WebServer* WebServer::GetInstance()
@@ -77,7 +61,7 @@ HttpBlock* WebServer::parseFileOrNull(const std::string& fileName)
 
 	if (!file.is_open())
 	{
-		std::cout << "Failed to open file" << std::endl;
+		Error::Print("open file");
 		return NULL;
 	}
 
@@ -86,13 +70,13 @@ HttpBlock* WebServer::parseFileOrNull(const std::string& fileName)
 		line = removeComment(line);
 		if (int i = parseLine(line, file, *http))
 		{
-			std::cout << "error " << i << '\n';
+			Error::Print("failed parsing");
 			return NULL;
 		}
 	}
 	if (parserErrorCheck(*http))
 	{
-		std::cout << "errorCheck" << '\n';
+		Error::Print("parse conf file");
 		return NULL;
 	}
 
@@ -101,10 +85,6 @@ HttpBlock* WebServer::parseFileOrNull(const std::string& fileName)
 
 void WebServer::deleteHttpBlock(HttpBlock& http)
 {
-	for (std::vector<MultiTree*>::iterator it = http.root.begin(); it != http.root.end(); it++)
-	{
-		delete (*it);
-	}
 	for (std::vector<ServerBlock*>::iterator it = http.serverList.begin(); it != http.serverList.end(); it++)
 	{
 		for (std::vector<MultiTree*>::iterator treeIt = (*it)->root.begin(); treeIt != (*it)->root.end(); treeIt++)
@@ -139,9 +119,9 @@ static void initServerBlock(ServerBlock& server)
 
 static void initLocationBlock(LocationBlock& location)
 {
-	location.bget = false;
-	location.bpost = false;
-	location.bdeleteMethod = false;
+	location.bGetMethod = false;
+	location.bPostMethod = false;
+	location.bDeleteMethod = false;
 	location.autoindex = false;
 	location.rootPath = "";
 	location.index = "index.html";
@@ -262,11 +242,19 @@ static int parseLine(const std::string& line, std::ifstream& file, HttpBlock& ht
 		{
 			return error;
 		}
+		if (http.serverList.size() == 0)
+		{
+			Error::Print("A Location Block can only be in a Server Block");
+			return error;
+		}
 		LocationBlock* location = new LocationBlock;
 		initLocationBlock(*location);
-		MultiTreeNode* root = new MultiTreeNode(location);
-		MultiTree* tree = new MultiTree(*root);
-		http.root.push_back(tree);
+		MultiTreeNode* rootNode = new MultiTreeNode(location);
+		MultiTree* tree = new MultiTree(*rootNode);
+
+		ServerBlock* currentServer = http.serverList.at(http.serverList.size() - 1);
+		currentServer->root.push_back(tree);
+
 		if (value.at(value.size() - 1) == '/')
 		{
 			value.erase(value.size() - 1);
@@ -276,7 +264,7 @@ static int parseLine(const std::string& line, std::ifstream& file, HttpBlock& ht
 		{
 			return error;
 		}
-		if (locationParser(*location, file, *http.root.at(http.root.size() - 1), location->uri))
+		if (locationParser(*location, file, *tree, location->uri))
 		{
 			return error;
 		}
@@ -318,10 +306,13 @@ static int parserErrorCheck(HttpBlock& http)
 	// 서버블록이 0개일경우
 	// 서버블록안에 listen이 없을경우, 숫자여야한다, 다른 서버랑 중복이 아니여야한다. 범위는  0~65535
 	// 로케이션 uri중복인지 아닌지
-	for (std::vector<MultiTree*>::iterator it = http.root.begin(); it != http.root.end(); it++)
+	for (std::vector<ServerBlock*>::iterator it = http.serverList.begin(); it != http.serverList.end(); it++)
 	{
-		if ((*it)->CheckDuplicateError() == false)
-			return error;
+		for (std::vector<MultiTree*>::iterator treeIt = (*it)->root.begin(); treeIt != (*it)->root.end(); treeIt++)
+		{
+			if ((*treeIt)->CheckDuplicateError() == false)
+				return error;
+		}
 	}
 
 	return success;
@@ -331,7 +322,7 @@ static int serverParser(ServerBlock& server, std::ifstream& file)
 {
 	const int success = 0;
 	const int error = 1;
-	std::stack<BlockType> blockStack;
+	std::stack<eBlockType> blockStack;
 	blockStack.push(SERVER);
 	std::string line;
 	while (getline(file, line))
@@ -444,7 +435,7 @@ static int locationParser(LocationBlock& location, std::ifstream& file, MultiTre
 {
 	const int success = 0;
 	const int error = 1;
-	std::stack<BlockType> blockStack;
+	std::stack<eBlockType> blockStack;
 	blockStack.push(LOCATION);
 
 	std::string line;
@@ -471,15 +462,15 @@ static int locationParser(LocationBlock& location, std::ifstream& file, MultiTre
 				}
 				if (value == "GET")
 				{
-					location.bget = true;
+					location.bGetMethod = true;
 				}
 				else if (value == "POST")
 				{
-					location.bpost = true;
+					location.bPostMethod = true;
 				}
 				else if (value == "DELETE")
 				{
-					location.bdeleteMethod = true;
+					location.bDeleteMethod = true;
 				}
 			}
 		}

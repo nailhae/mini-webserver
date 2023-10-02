@@ -1,6 +1,4 @@
 #pragma once
-#ifndef WEBSERVER_HPP
-#define WEBSERVER_HPP
 
 #include <cstdlib>
 #include <exception>
@@ -19,7 +17,7 @@
 class MultiTree;
 class MultiTreeNode;
 
-enum BlockType
+enum eBlockType
 {
 	NONE,
 	SERVER,
@@ -35,7 +33,7 @@ struct HttpBlock
 	std::map<std::string, std::string> types;
 	std::map<int, std::string> errorPages;
 	std::vector<ServerBlock*> serverList; // default_server = vector<ServerBlock> index 0
-	std::vector<MultiTree*> root;
+	// std::vector<MultiTree*> root;
 	int clientMaxBodySize; // default unit kB
 	int clientBodyTimeout; // default unit sec.
 	int workerConnections;
@@ -52,10 +50,11 @@ struct ServerBlock
 struct LocationBlock
 {
 	std::string uri;
-	bool bget;			// default false;
-	bool bpost;			// default false;
-	bool bdeleteMethod; // default false;
-	bool bhead; 		// default false;
+	// TODO 이름 통일
+	bool bGetMethod;	// default false;
+	bool bPostMethod;	// default false;
+	bool bDeleteMethod; // default false;
+	bool bHeadMethod;	// default false;
 	bool autoindex;		// default false
 	std::string index;	// default "index.html"
 	std::string rootPath;
@@ -83,5 +82,3 @@ private:
 	static WebServer* mWebServer;
 	HttpBlock* mHttp;
 };
-
-#endif /* WEBSERVER_HPP */
