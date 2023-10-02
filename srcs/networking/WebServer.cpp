@@ -70,7 +70,7 @@ HttpBlock* WebServer::parseFileOrNull(const std::string& fileName)
 		line = removeComment(line);
 		if (int i = parseLine(line, file, *http))
 		{
-			Error::Print(i + "");
+			Error::Print("failed parsing");
 			return NULL;
 		}
 	}
@@ -119,9 +119,9 @@ static void initServerBlock(ServerBlock& server)
 
 static void initLocationBlock(LocationBlock& location)
 {
-	location.bget = false;
-	location.bpost = false;
-	location.bdeleteMethod = false;
+	location.bGetMethod = false;
+	location.bPostMethod = false;
+	location.bDeleteMethod = false;
 	location.autoindex = false;
 	location.rootPath = "";
 	location.index = "index.html";
@@ -462,15 +462,15 @@ static int locationParser(LocationBlock& location, std::ifstream& file, MultiTre
 				}
 				if (value == "GET")
 				{
-					location.bget = true;
+					location.bGetMethod = true;
 				}
 				else if (value == "POST")
 				{
-					location.bpost = true;
+					location.bPostMethod = true;
 				}
 				else if (value == "DELETE")
 				{
-					location.bdeleteMethod = true;
+					location.bDeleteMethod = true;
 				}
 			}
 		}

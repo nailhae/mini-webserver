@@ -51,12 +51,12 @@ struct LocationBlock
 {
 	std::string uri;
 	// TODO 이름 통일
-	bool bGet;		   // default false;
-	bool bPost;		   // default false;
-	bool bdelete;	   // default false;
-	bool bhead;		   // default false;
-	bool autoindex;	   // default false
-	std::string index; // default "index.html"
+	bool bGetMethod;	// default false;
+	bool bPostMethod;	// default false;
+	bool bDeleteMethod; // default false;
+	bool bHeadMethod;	// default false;
+	bool autoindex;		// default false
+	std::string index;	// default "index.html"
 	std::string rootPath;
 	std::string alias;
 	std::pair<int, std::string> returnPair;

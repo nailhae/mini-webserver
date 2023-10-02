@@ -60,9 +60,10 @@ void MultiTreeNode::AddChildNode(LocationBlock* target)
 void MultiTreeNode::PrintData(void) const
 {
 	std::cout << "URI: " << mData->uri << "\n"
-			  << "GET: " << mData->bget << "\n"
-			  << "POST: " << mData->bpost << "\n"
-			  << "DELETE: " << mData->bdeleteMethod << "\n"
+			  << "GET: " << mData->bGetMethod << "\n"
+			  << "POST: " << mData->bPostMethod << "\n"
+			  << "DELETE: " << mData->bDeleteMethod << "\n"
+			  << "HEAD: " << mData->bHeadMethod << "\n"
 			  << "autoindex: " << mData->autoindex << "\n"
 			  << "index: " << mData->index << "\n"
 			  << "alias: " << mData->alias << "\n"
