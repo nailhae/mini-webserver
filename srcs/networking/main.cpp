@@ -109,8 +109,6 @@ int main()
 					eventList[i].ident << Colors::Reset << std::endl;
 				}
 				else {
-					Cgi cgi("../cgi-bin/hello.py");
-
 					currentUdata->GenerateResponse();
 
 				}

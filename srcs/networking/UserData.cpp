@@ -1,126 +1,18 @@
 #include "./UserData.hpp"
 #include "./ChangeList.hpp"
+#include "../cgi/cgi.hpp"
 
-static void	trimWhiteSpace(std::string& target)
+UserData::UserData(int fd)
+	: mFd(fd)
+	, mMethod(-1)
+	, mStatusCode(-1)
+	, mHeaderFlag(0)
+	, mFillBodyFlag(-1)
 {
-	size_t	start = 0;
-
-	while (start < target.size() && isspace(target[start]) == true)
-	{
-		start += 1;
-	}
-	target.erase(0, start);
-
-	size_t	end = target.size() - 1;
-	while (end > 0 && isspace(target[end]) == true)
-	{
-		end -= 1;
-	}
-	target.erase(end + 1);
 }
 
-static int validHeader(std::string& content)
+UserData::~UserData(void)
 {
-	for (std::string::iterator it = content.begin(); it != content.end(); it++)
-	{
-		if (isupper(*it) == true)
-			*it -= 32;
-	}
-	if (content == "connection")
-		return (CONNECTION);
-	else if (content == "content-type")
-		return (CONTENT_TYPE);
-	else if (content == "content-length")
-		return (CONTENT_LENGTH);
-	else if (content == "cache-control")
-		return (CACHE_CONTROL);
-	else if (content == "if-none-match")
-		return (IF_NONE_MATCH);
-	else if (content == "if-modified-since")
-		return (IF_MODIFIED_SINCE);
-	else
-		return (NONE);
-}
-
-int UserData::ParseHeader(std::string& field)
-{
-	std::istringstream ss(field);
-	std::string header;
-	std::string value;
-	size_t		pos;
-	int			headerKey;
-
-	std::getline(ss, header, ':');
-	trimWhiteSpace(header);
-	headerKey = validHeader(header);
-	if (headerKey == NONE)
-		return (0);
-	else
-	{
-		std::getline(ss, value);
-		trimWhiteSpace(value);
-		// ""처리 할 일이 있으면 여기서 trim 해주기.
-		if (value.size() == 0)
-		{
-			mStatusCode = 400; 
-			mStatusText = "Bad Request";
-			return (ERROR);
-		}
-		mHeaders[headerKey] = value;
-	}
-	return (0);
-}
-
-int UserData::ParseRequest(std::stringstream& request)
-{
-	std::string temp;
-
-	request.seekg(0);
-	std::getline(request, temp, ' ');
-	if (temp == "GET")
-		mMethod = GET;
-	else if (temp == "POST")
-		mMethod = POST;
-	else if (temp == "DELETE")
-		mMethod = DELETE;
-	else
-	{
-		mMethod = ERROR;
-		mStatusCode = 405; 
-		mStatusText = "Method is not allowed";
-		// 헤더에 Allow: GET, POST, DELETE 추가해야 함.
-		return (ERROR);
-	}
-	std::getline(request, mUri, ' ');
-	std::getline(request, temp, '\n');
-	if (*(temp.end() - 1) == '\r')
-		temp.erase(temp.size() - 1);
-	if (temp != "HTTP/1.1")
-	{
-		mStatusCode = 505; 
-		mStatusText = "HTTP Version Not Supported";
-		return (ERROR);
-	}
-
-	while (1)
-	{
-		std::getline(request, temp, '\n');
-		if (request.eof())
-			return (0);
-		else if (request.fail())
-		{
-			mStatusCode = 500; 
-			mStatusText = "Internal Server Error";
-			return (ERROR);
-		}
-		else if (*(temp.end() - 1) == '\r')
-			temp.erase(temp.size() - 1);
-		if (temp == "")
-			return (0);
-		if (ParseHeader(temp) == ERROR)
-			return (ERROR);
-	}
-	return (ERROR);
 }
 
 int UserData::GenerateGETResponse(void)
@@ -161,18 +53,6 @@ int UserData::GenerateGETResponse(void)
 	return (0);
 }
 
-UserData::UserData(int fd)
-	: mFd(fd)
-	, mMethod(-1)
-	, mStatusCode(0)
-	, mHeaderFlag(0)
-{
-}
-
-UserData::~UserData(void)
-{
-}
-
 const std::stringstream& UserData::GetReceived(void) const
 {
 	return (mReceived);
@@ -193,47 +73,65 @@ int UserData::GetFd(void) const
 	return (mFd);
 }
 
-static int checkReceivedHeader(std::stringstream& ss)
+static int checkHeaderLength(std::stringstream& ss)
 {
 	std::string line;
 
-	ss.seekg(0, std::ios::end);
-	if (ss.tellg() >= 1024)
-		return (true);
-	ss.seekg(0, std::ios::beg);
+	// ss.seekg(std::ios::beg); // 필요하지 않다면 빼기
 	while (1)
 	{
-		std::getline(ss, line, '\n');
+		std::getline(ss, line);
 		if (ss.eof() == true)
 			return (false);
-		else if (line == "" || line == "\r")
+		else if (line == "\r" || line == "")
 			return (true);
+		else if (ss.tellg() > 1024)
+			return (ERROR);
 		else
-			continue;
+			continue ;
 	}
 }
 
-int UserData::GenerateResponse(void)
+void UserData::GenerateResponse(void)
 {
-	mHeaderFlag = checkReceivedHeader(mReceived);
+	std::string temp;
+
+	mHeaderFlag = checkHeaderLength(mReceived);
 	if (mHeaderFlag == ERROR)
 	{
 		mStatusCode = 416;
 		mStatusText = "Requested Range Not Satisfiable";
-		return (ERROR);
-	}	
+		return ;
+	}
 	else if (mHeaderFlag == false)
-		return (0);
+	{
+		return ;
+	}
 	else
 	{
-		if (ParseRequest(mReceived) == ERROR)
-			return (ERROR);
+		if (mFillBodyFlag == -1 && ParseRequest(mReceived) == ERROR)
+		{
+			// GenerateErrorResponse();
+			std::cout << "Error page 전송해야 함" << std::endl;
+			return ;
+		}
+		std::getline(mReceived, temp, static_cast<char>(EOF));
+		mBody += temp;
+		if (mBody.size() < mContentSize)
+		{
+			return ;
+		}
 		if (mMethod == GET)
 			GenerateGETResponse();
-		else if (mMethod == POST)
-			GeneratePostResponse();
+		else if (mMethod == HEAD)
+			std::cout << "HEAD response 전송해야 함." << std::endl;
+		else if (mMethod == POST) {
+			ReadCgiResponse();
+
+		}
+		else if (mMethod == DELETE)
+			std::cout << "DELETE response 전송해야 함." << std::endl;
 	}
-	return (0);
 }
 
 int UserData::RecvFromClient(int fd)
@@ -252,6 +150,7 @@ void UserData::InitUserData(void)
 	mStatusCode = -1;
 	mHeaderFlag = -1;
 	mStatusCode = -1;
+	mFillBodyFlag = -1;
 	mStatusText.clear();
 	mUri.clear();
 	mReceived.str("");
@@ -263,19 +162,24 @@ int UserData::SendToClient(int fd)
 {
 	size_t len;
 
+	// test code
+	std::cout << Colors::BoldCyan << "[Headers]" << std::endl;
+	for (std::map<int, std::string>::iterator it = mHeaders.begin(); it != mHeaders.end(); it++)
+	{
+		std::cout << it->first << ": " << it->second << std::endl;
+	}
+	std::cout <<Colors::BoldBlue <<  "\nstatus " << mStatusCode << ": " << mStatusText << std::endl;
 	std::cout << Colors::BoldMagenta << "send to client " << fd << "\n" << Colors::Reset << std::endl;
 	len = write(fd, mResponse.c_str(), mResponse.size());
 	if (len < 0)
-	{
 		std::cout << Colors::RedString("send() error") << std::endl;
-		exit(1);
-	}
 	InitUserData();
 	return (len);
 }
 
 int UserData::ReadCgiResponse(void) {
-	char buffer[BUFFER_SIZE];
-	int readBuffer = read(cgi.pipeOut[0], buffer, BUFFER_SIZE);
-
+		Cgi cgi("../cgi-bin/hello.py");
+		cgi.initCgiEnv(*currentUdata, "../cgi-bin/hello.py");
+		size_t errorCode = 0;
+		cgi.execute(errorCode);
 }

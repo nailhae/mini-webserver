@@ -26,15 +26,20 @@ public:
 	const std::string& GetResponse(void) const;
 	int GetMethod(void) const;
 	int GetFd(void) const;
-	int GenerateResponse(void);
+	void GenerateResponse(void);
 	int GenerateGETResponse(void);
 	int ParseRequest(std::stringstream& request);
-	int ParseHeader(std::string& field);
+	int ParseFirstLine(std::stringstream& request);
+	int ParseHeaderKey(std::string& headerKey);
+	int ParseOneLine(std::string& oneLine);
+	int ParseHeaderValue(int headerKey, std::string& field);
 	int RecvFromClient(int fd);
 	int SendToClient(int fd);
 	int ReadCgiResponse(void);
 	int GeneratePostResponse(void);
 
+	std::stringstream mReceived;
+	std::string mBody;
 private:
 	UserData(void);
 	UserData(const UserData& rhs);
@@ -45,9 +50,10 @@ private:
 	int mMethod;
 	int mStatusCode;
 	int mHeaderFlag;
+	int mFillBodyFlag;
+	int mContentSize;
 	std::string mStatusText;
 	std::string mUri;
-	std::stringstream mReceived;
 	std::string mResponse;
 	std::map<int, std::string> mHeaders;
 };
