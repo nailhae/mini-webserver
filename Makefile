@@ -1,41 +1,62 @@
-NAME 		=	./TreeTester
+ifeq "$(findstring debug, $(MAKECMDGOALS))" "debug"
+	DFLAGS = -g3 -fsanitize=address
+else
+	ARG.DEBUG = 0
+	DFLAGS =
+endif
 
-CXX 		=	c++
-CXXFLAGS	=	-Wall -Wextra -Werror -std=c++98
+CXX = c++
 
-INCS		= \
-./srcs/util/ \
-./srcs/parser/ \
+CXXFLAGS = -Wall -Wextra -Werror -std=c++98 $(INCS)
 
-SRCS		= \
-./srcs/util/Colors.cpp \
-./srcs/util/MultiTree.cpp \
-./srcs/util/MultiTreeNode.cpp \
-\
-./srcs/parser/HttpBlock.cpp \
-./srcs/parser/LocationBlock.cpp \
-./srcs/parser/main.cpp \
-./srcs/parser/parser.cpp \
-./srcs/parser/ServerBlock.cpp \
+NAME = ./a.out
 
-OBJS		=	$(SRCS:%.cpp=%.o)
+SRCS_DIR = $(PWD)/srcs
 
-RM			=	rm -f
+INCS = \
+	-I$(SRCS_DIR)/util \
+	-I$(SRCS_DIR)/networking \
+	-I$(SRCS_DIR)/AMethod \
 
-all:	$(NAME)
+SRCS = \
+	$(SRCS_DIR)/networking/main.cpp \
+	\
+	$(SRCS_DIR)/AMethod/AMethod.cpp \
+	$(SRCS_DIR)/networking/ChangeList.cpp \
+	$(SRCS_DIR)/networking/UserData.cpp \
+	$(SRCS_DIR)/networking/WebServer.cpp \
+	$(SRCS_DIR)/networking/httpRequestParsing.cpp \
+	$(SRCS_DIR)/networking/initServer.cpp \
+	$(SRCS_DIR)/networking/waitForClientConnection.cpp \
+	$(SRCS_DIR)/networking/webServerParseFileOrNull.cpp \
+	$(SRCS_DIR)/util/Colors.cpp \
+	$(SRCS_DIR)/util/Error.cpp \
+	$(SRCS_DIR)/util/MultiTree.cpp \
+	$(SRCS_DIR)/util/MultiTreeNode.cpp \
 
-$(NAME): $(OBJS) $(INCS)
-	$(CXX) $(CXXFLAGS) $(OBJS) -o $@
+OBJS = $(SRCS:.cpp=.o)
 
-%o:	%.cpp $(INCS)
-	$(CXX) $(CXXFLAGS) $(INCS) -c $^ -o $@
+RM = rm -f
 
-clean: 
+all: $(NAME)
+
+$(NAME): $(OBJS)
+	$(CXX) $(CXXFLAGS) $(DFLAGS) $(OBJS) -o $@ 
+
+%o:	%.cpp
+	$(CXX) $(CXXFLAGS) $(DFLAGS) -c $< -o $@
+
+clean:
 	$(RM) $(OBJS)
 
-fclean: clean
+fclean:
+	make clean
 	$(RM) $(NAME)
 
-re: fclean all
+re:
+	make fclean
+	make all
+
+debug: $(NAME)
 
 .PHONY: all clean fclean re
