@@ -44,6 +44,7 @@ static int createSocket(int port)
 int WebServer::InitServer(void)
 {
 	int serverSocket;
+	UserData *udata = new UserData;
 
 	for (std::vector<serverBlock>::iterator it = mHttp->serverListserver_list.begin(); it != mHttp->serverList.end();
 		 it++)
@@ -54,7 +55,9 @@ int WebServer::InitServer(void)
 			std::cerr << "Error: server socket" << std::endl;
 			return (ERROR);		
 		}
-		changelist.changeEvent(serverSocket, EVFILT_READ, EV_ADD);
+		udata->SetServerPtr(it);
+		udata->SetSocketType = SERVER_SOCKET;
+		changelist.changeEvent(serverSocket, EVFILT_READ, EV_ADD, udata);
 	}
 	return (0);
 }

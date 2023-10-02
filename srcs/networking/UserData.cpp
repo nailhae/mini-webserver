@@ -85,6 +85,26 @@ const std::string& UserData::GetUri(void) const
 	return (mUri);
 }
 
+int UserData::GetSocketType(void) const
+{
+	return (mSocketType);
+}
+
+void UserData::SetSocketType(int socketType)
+{
+	mSocketType = socketType;
+}
+
+const ServerBlock UserData::GetServerPtr(void) const
+{
+	return (*mServerPtr);
+}
+
+void UserData::SetSocketType(ServerBlock* serverPtr)
+{
+	mServerPtr = serverPtr;
+}
+
 static int checkHeaderLength(std::stringstream& ss)
 {
 	std::string line;
@@ -144,11 +164,11 @@ void UserData::GenerateResponse(void)
 	}
 }
 
-int UserData::RecvFromClient(int fd)
+int UserData::RecvFromClient(void)
 {
 	int len;
 
-	len = read(fd, mBuf, BUFFER_SIZE);
+	len = read(mFd, mBuf, BUFFER_SIZE);
 	for (int i = 0; i < len; i++)
 		mReceived << mBuf[i];
 	return (len);

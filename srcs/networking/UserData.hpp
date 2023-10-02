@@ -33,6 +33,10 @@ public:
 	const std::string& GetUri(void) const;
 	const AMethod& GetMethod(void) const;
 	int GetFd(void) const;
+	int GetSocketType(void) const;
+	void SetSocketType(int socketType);
+	const ServerBlock *GetServerPtr(void) const;
+	void SetServerPtr(ServerBlock *serverPtr);
 	LocationBlock& Setting(void);
 	void GenerateResponse(void);
 	int GenerateGETResponse(void);
@@ -54,6 +58,7 @@ private:
 
 	int mFd;
 	char mBuf[BUFFER_SIZE];
+	int mSocketType;
 	int mStatusCode;
 	int mHeaderFlag;
 	int mFillBodyFlag;
@@ -63,5 +68,6 @@ private:
 	std::string mUri;
 	std::string mResponse;
 	std::map<int, std::string> mHeaders;
-	AMethod* mMethod;
+	ServerBlock* mServerPtr;
+	AMethod *mMethod;
 };

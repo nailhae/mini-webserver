@@ -13,12 +13,10 @@ ChangeList::~ChangeList(void)
 {
 }
 
-void ChangeList::changeEvent(uintptr_t ident, int filter, int flags)
+void ChangeList::ChangeEvent(uintptr_t ident, int filter, int flags, UserData *udata)
 {
 	// fflags로 CGI 처리와 signal 등 처리 해야함.
 	struct kevent target;
-	UserData* udata;
-	/* init udata */
 
 	target.ident = ident;
 	target.filter = filter;
@@ -31,23 +29,23 @@ void ChangeList::changeEvent(uintptr_t ident, int filter, int flags)
 	}
 	else
 	{
-		udata = new UserData(ident);
 		target.udata = udata;
+		udata->SetSocketType(socketType)
 		_keventVector.push_back(target);
 	}
 }
 
-void ChangeList::clearEvent(void)
+void ChangeList::ClearEvent(void)
 {
 	_keventVector.clear();
 }
 
-std::vector<struct kevent>& ChangeList::getKeventVector(void)
+std::vector<struct kevent>& ChangeList::GetKeventVector(void)
 {
 	return (_keventVector);
 }
 
-size_t ChangeList::getSize(void)
+size_t ChangeList::GetSize(void)
 {
 	return (_keventVector.size());
 }

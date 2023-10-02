@@ -11,6 +11,7 @@ public:
 	static WebServer* GetInstance();
 	static void DeleteInstance();
 	const HttpBlock* GetHttp() const;
+	void waitForClientConnection(void);
 	int InitServer(void);
 
 private:
@@ -22,8 +23,10 @@ private:
 
 	HttpBlock* parseFileOrNull(const std::string& fileName);
 	void deleteHttpBlock(HttpBlock& http);
+	void acceptClientSocket(ServerBlock* serverPtr);
+	void closeClientSocket(UserData* udata);
 
 	static WebServer* mWebServer;
-	ChangeList changelist;
+	ChangeList mChangelist;
 	HttpBlock* mHttp;
 };
