@@ -1,6 +1,4 @@
 #pragma once
-#ifndef WEBSERVER_HPP
-#define WEBSERVER_HPP
 
 #include <cstdlib>
 #include <exception>
@@ -53,12 +51,12 @@ struct LocationBlock
 {
 	std::string uri;
 	// TODO 이름 통일
-	bool bGet;			// default false;
-	bool bPost;			// default false;
-	bool bdelete; // default false;
-	bool bhead; 		// default false;
-	bool autoindex;		// default false
-	std::string index;	// default "index.html"
+	bool bGet;		   // default false;
+	bool bPost;		   // default false;
+	bool bdelete;	   // default false;
+	bool bhead;		   // default false;
+	bool autoindex;	   // default false
+	std::string index; // default "index.html"
 	std::string rootPath;
 	std::string alias;
 	std::pair<int, std::string> returnPair;
@@ -84,5 +82,3 @@ private:
 	static WebServer* mWebServer;
 	HttpBlock* mHttp;
 };
-
-#endif /* WEBSERVER_HPP */
