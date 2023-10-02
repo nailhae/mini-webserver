@@ -1,4 +1,4 @@
-#include "./UserData.hpp"
+#include "UserData.hpp"
 #include "./ChangeList.hpp"
 #include "../cgi/cgi.hpp"
 
@@ -136,7 +136,7 @@ void UserData::GenerateResponse(void)
 		else if (mMethod->GetType() == HEAD)
 			std::cout << "HEAD response 전송해야 함." << std::endl;
 		else if (mMethod == POST) {
-			ReadCgiResponse();
+			GeneratePostResponse();
 		}
 		else if (mMethod == DELETE)
 			std::cout << "DELETE response 전송해야 함." << std::endl;
@@ -190,9 +190,11 @@ int UserData::SendToClient(int fd)
 	return (len);
 }
 
-int UserData::ReadCgiResponse(void) {
-		Cgi cgi("../cgi-bin/hello.py");
-		cgi.initCgiEnv(*currentUdata, "../cgi-bin/hello.py");
-		size_t errorCode = 0;
-		cgi.execute(errorCode);
+int UserData::GeneratePostResponse(void) {
+	Cgi cgi(mUri);
+	cgi.initCgiEnv();
+	size_t errorCode = 0;
+	cgi.execute(errorCode);
+	cgi.sendCgiBody();
+	cgi.readCgiReesponse()
 }

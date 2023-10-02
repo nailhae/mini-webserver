@@ -58,28 +58,39 @@ std::string urlEncode(const std::string &path) {
     }
 
 }
-//cgi가 있는경우 없는 경우
-void Cgi::initCgiEnv(UserData& req, std::string httpCgiPath)
+
+int Cgi::findHostNamePos(const std::string path, const std::string ch)
+{
+    if (path.empty())
+        reutnr(-1);
+    size_t pos = path.find(ch);
+    if (pos != std::string:npos)
+        return (pos);
+    return (-1);
+}
+
+void Cgi::initCgiEnv(std::string httpCgiPath)
 {
     this->env["AUTH_TYPE"] = "BASIC";
-    this->env["CONTENT_LENGTH"] = req.mContentSize;
+    this->env["CONTENT_LENGTH"] = mContentSize;
     this->env["CONTENT_TYPE"] = req.mContentType;
     this->env["GATEWAY_INTERFACE"] = "CGI/1.1";
 
-    this->env["PATH_INFO"] = getPathInfo(this->cgiPath);
-    this->env["PATH_TRANSLATED"] = "root 폴더위치" + (this->env["PATH_INFO"]);
-    this->env["QUERY_STRING"] = urlEncode(req.QueryString);
-    this->env["REMOTE_ADDR"] = "header에 host";
+    this->env["PATH_INFO"] = httpCgiPath;
+    this->env["PATH_TRANSLATED"] = this->env["PATH_INFO"];
+    // this->env["QUERY_STRING"] = urlEncode(req.QueryString);
+    this->env["REMOTE_ADDR"] = mHeaders[HOST];
     // this->env["REMOTE_HOST"]
     // this->env["REMOTE_USER"]
-    // this->env["REQUEST_METHOD"]
-    this->env["SCRIPT_NAME"] = this->cgiPath;
-    // this->env["SERVER_NAME"]
-    // this->env["SERVER_PORT"]
-    // this->env["SERVER_PROTOCOL"]
-    // this->env["SERVER_SOFTWARE"]
-    // this->env["HTTP_COOKIE"]
-    // this->env["WEBTOP_USER"]
+    this->env["REQUEST_METHOD"] = mMethod;
+    this->env["SCRIPT_NAME"] = httpCgiPath;
+    pos = findHostNamePos(mHeader[HOST], ':');
+    this->env["SERVER_NAME"] = (pos > 0 ? mHeader[HOST].substr(0, pos) : "");
+    this->env["SERVER_PORT"] = (pos > 0 ? mHeader[HOST].substr(pos + 1, mHeader[HOST].size()) : "");
+    this->env["SERVER_PROTOCOL"] = "HTTP/1.1";
+    this->env["SERVER_SOFTWARE"] = "42webserv"
+    // this->env["HTTP_COOKIE"] 헤더의 쿠키값
+    // this->env["WEBTOP_USER"] 로그인한 사용자 이름
     // this->env["NCHOME"]
 
     this->chEnv = (char **)calloc(sizeof(char *), this->env.size() + 1);
@@ -90,7 +101,7 @@ void Cgi::initCgiEnv(UserData& req, std::string httpCgiPath)
         this->chEnv[i] = strdup(tmp.c_str());
     }
     this->argv = (char **)malloc(sizeof(char *) * 3);
-    this->argv[0] = strdup(extPath.c_str());
+    this->argv[0] = strdup(httpCgiPath.c_str());
     this->argv[1] = strdup(this->cgiPath.c_str());
     this->argv[2] = NULL;
 }
@@ -127,5 +138,67 @@ void Cgi::execute(size_t &errorCode)
     }
     else {
         errorCode = 500;
+    }
+}
+
+void    Cgi::readCgiResponse(CgiHandler &cgi)
+{
+    char    buffer[BUFFER_SIZE];
+    int     readBytes = 0;
+    
+    while ((readBytes = read(cgi.pipeOut[0], buffer, BUFFER_SIZE)) > 0)
+    {
+        responseContent.append(buffer, readBytes);
+        memset(buffer, 0, sizeof(buffer));
+    }
+
+    if (readBytes < 0)
+    {
+        close(cgi.pipeIn[0]);
+        close(cgi.pipeOut[0]);
+        error(500);
+        return;
+    }
+
+    close(cgi.pipeIn[0]);
+    close(cgi.pipeIn[1]);
+    
+    int status;
+    
+    waitpid(cgi.getCgiPid(), &status, 0);
+    
+	if (WEXITSTATUS(status) != 0)
+	{
+		error(502);
+	}
+}
+
+void Cgi::sendCgiBody()
+{
+    std::string reqBody = mBody;
+    size_t bodySize;
+
+    while (reqBody.length() > 0)
+    {
+        if (reqBody.length() >= BUFFER_SIZE)
+            bodySize = write(pipeIn[1], reqBody.c_str(), BUFFER_SIZE);
+        else
+            bodySize = write(pipeIn[1], reqBody.c_str(), reqBody.length());
+
+        if (bodySize < 0)
+        {
+            error(500);
+            break;
+        }
+        else if (bodySize == 0 || bodySize == reqBody.length())
+        {
+            close(pipeIn[1]);
+            close(pipeOut[1]);
+            break;
+        }
+        else
+        {
+            reqBody = reqBody.substr(bodySize);
+        }
     }
 }

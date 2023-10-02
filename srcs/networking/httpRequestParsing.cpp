@@ -38,6 +38,8 @@ static int validHeader(std::string& content)
 		return (IF_NONE_MATCH);
 	else if (content == "if-modified-since")
 		return (IF_MODIFIED_SINCE);
+	else if (content == "host")
+		return (HOST)
 	else
 		return (NONE);
 }

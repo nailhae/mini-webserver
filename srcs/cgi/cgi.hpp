@@ -24,16 +24,15 @@ class Cgi {
         Cgi(Cgi const &obj);
         Cgi &operator=(Cgi const &obj);
 
-        //void initEnv()
-        //void initEnvChi()
+        void initCgiEnv(std::string httpCgiPath);
         void execute(size_t &errorCode);
         // void clear();
 
         const std::map<std::string, std::string> &getEnv() const;
         const pid_t &getCgiPid() const;
         const std::string &getCgiPath() const;
-
-        void initCgiEnv(UserData& req, std::string httpCgiPath);
+        void sendCgiBody();
+        void    readCgiResponse(Client &c, CgiHandler &cgi);
 };
 
 #endif

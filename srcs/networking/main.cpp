@@ -110,7 +110,6 @@ int main()
 				}
 				else {
 					currentUdata->GenerateResponse();
-
 				}
 			}
 		}
