@@ -9,10 +9,10 @@
 #include <sys/event.h>
 #include <sys/socket.h>
 #include <sys/time.h>
-#include <sys/event.h>
 
 #include "ChangeList.hpp"
 #include "Colors.hpp"
+#include "WebServer.hpp"
 
 #define BUFFER_SIZE 1024
 #define MAX_KEVENTS 10
@@ -21,12 +21,11 @@
 
 int main()
 {
-	WebServer *webServer;
+	WebServer* webServer;
 
-	webServer->GetInstance();
+	webServer = WebServer::GetInstance();
 	webServer->waitForClientConnection();
-	webServer->DeleteInstance();
-	
+	WebServer::DeleteInstance();
 
 	return (0);
 }
