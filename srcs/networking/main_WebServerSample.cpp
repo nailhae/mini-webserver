@@ -1,7 +1,10 @@
 
 #include <exception>
 #include <iostream>
+
+#include "MultiTree.hpp"
 #include "WebServer.hpp"
+#include "dataSet.hpp"
 
 void printTreeStructure(MultiTreeNode* node, int depth = 0);
 

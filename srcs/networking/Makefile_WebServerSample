@@ -10,19 +10,25 @@ endif
 
 CXX 		=	c++
 
-CXXFLAGS	=	-Wall -Wextra -Werror -std=c++98 $(INCS)
+CXXFLAGS	=	-Wall -Wextra -Werror -std=c++98 $(INCS) -v
 
-NAME 		= ./WebServerSample.out
+NAME 		= ./a.out
 
 SRCS_DIR := $(shell dirname $(PWD))
 
 INCS = \
 	-I$(SRCS_DIR)/util \
 	-I$(SRCS_DIR)/networking \
+	-I$(SRCS_DIR)/AMethod \
 
 SRCS = \
+	$(SRCS_DIR)/AMethod/AMethod.cpp \
 	$(SRCS_DIR)/networking/main_WebServerSample.cpp \
 	$(SRCS_DIR)/networking/WebServer.cpp \
+	$(SRCS_DIR)/networking/webServerParseFileOrNull.cpp \
+	$(SRCS_DIR)/networking/ChangeList.cpp \
+	$(SRCS_DIR)/networking/UserData.cpp \
+	$(SRCS_DIR)/networking/httpRequestParsing.cpp \
 	$(SRCS_DIR)/util/Colors.cpp \
 	$(SRCS_DIR)/util/Error.cpp \
 	$(SRCS_DIR)/util/MultiTree.cpp \

@@ -1,4 +1,5 @@
 #pragma once
+
 #include <arpa/inet.h>
 #include <cstdio>
 #include <cstdlib>
@@ -13,31 +14,9 @@
 #include <unistd.h>
 #include <vector>
 
-#include "./UserData.hpp"
-#include "../util/Colors.hpp"
+#include "dataSet.hpp"
 
 #define BUFFER_SIZE 1024
-
-enum eHeaders
-{
-	NONE,
-	HOST,
-	CONNECTION,
-	CONTENT_TYPE,
-	CONTENT_LENGTH,
-	CACHE_CONTROL,
-	IF_NONE_MATCH,
-	IF_MODIFIED_SINCE,
-};
-
-enum eMethod
-{
-	GET = 0,
-	HEAD,
-	POST,
-	DELETE,
-	ERROR = -1
-};
 
 class ChangeList // 얘는 kqueue manage class가 될 수 있음.
 {
