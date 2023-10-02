@@ -9,6 +9,13 @@
 #include <stack>
 #include <stdlib.h>
 #include <vector>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <fcntl.h>
+#include <sys/event.h>
+
 #include "MultiTree.hpp"
 #include "MultiTreeNode.hpp"
 
@@ -68,6 +75,7 @@ public:
 	static WebServer* GetInstance();
 	static void DeleteInstance();
 	const HttpBlock* GetHttp() const;
+	int InitServer(void);
 
 private:
 	WebServer();
@@ -80,5 +88,6 @@ private:
 	void deleteHttpBlock(HttpBlock& http);
 
 	static WebServer* mWebServer;
+	ChangeList changelist;
 	HttpBlock* mHttp;
 };
