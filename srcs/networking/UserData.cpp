@@ -1,6 +1,8 @@
 #include "UserData.hpp"
 #include "ChangeList.hpp"
 #include "cgi.hpp"
+#include "Error.hpp"
+#include "WebServer.hpp"
 
 UserData::UserData(int fd)
 	: mFd(fd)
@@ -20,18 +22,18 @@ int UserData::GenerateGETResponse(void)
 	std::ifstream requestedFile;
 	std::string extTemp;
 
-	if (mUri == "/")
-		mUri = "/index.html";
 	extTemp = mUri.substr(mUri.find('.') + 1);
-	requestedFile.open("." + mUri, std::ios::binary);
+	requestedFile.open("../../assets" + mUri, std::ios::binary);
 	if (requestedFile.is_open() == false)
 	{
 		// 4XX error
-		std::cerr << Colors::RedString("open failed: ." + mUri) << std::endl;
-		write(mFd, "HTTP/1.1 404 Not found\r\n\r\n", 26);
+		Error::Print("open failed: ." + mUri);
+		write(mFd, "HTTP/1.1 404 Not found\r\nContent-type: text/html\r\ncontent-length: 45\r\n\r\n<!DOCTYPE HTML><HTML><H1>404 ERROR<H1><HTML>", 115);
+		close(mFd);
 	}
 	else
 	{
+		std::cout << Colors::BlueString("open success: ../../assets") << mUri << std::endl;
 		std::stringstream fileContent;
 		requestedFile.seekg(0, std::ios::end);
 		std::streampos fileSize = requestedFile.tellg();
@@ -83,17 +85,24 @@ const std::string& UserData::GetUri(void) const
 	return (mUri);
 }
 
-const int UserData::GetContentSize(void) const{
-	return (mContentSize);
+int UserData::GetSocketType(void) const
+{
+	return (mSocketType);
 }
-const std::string& UserData::GetHeader(int header) const{
-	return (mHeaders.at(header));
+
+void UserData::SetSocketType(int socketType)
+{
+	mSocketType = socketType;
 }
-// const std::string& UserData::GetContentSize(void) const{
-// 	return (mContentSize);
-// }
-const std::string& UserData::GetBody(void) const{
-	return (mBody);
+
+const ServerBlock* UserData::GetServerPtr(void) const
+{
+	return (mServerPtr);
+}
+
+void UserData::SetServerPtr(const ServerBlock* serverPtr)
+{
+	mServerPtr = serverPtr;
 }
 
 static int checkHeaderLength(std::stringstream& ss)
@@ -111,7 +120,7 @@ static int checkHeaderLength(std::stringstream& ss)
 		else if (ss.tellg() > 1024)
 			return (ERROR);
 		else
-			continue ;
+			continue;
 	}
 }
 
@@ -124,45 +133,51 @@ void UserData::GenerateResponse(void)
 	{
 		mStatusCode = 416;
 		mStatusText = "Requested Range Not Satisfiable";
-		return ;
+		return;
 	}
 	else if (mHeaderFlag == false)
 	{
-		return ;
+		return;
 	}
 	else
 	{
-		if (mFillBodyFlag == -1 && ParseRequest(mReceived) == ERROR)
+		if (ParseRequest(mReceived) == ERROR)
 		{
 			// GenerateErrorResponse();
 			std::cout << "Error page 전송해야 함" << std::endl;
-			return ;
-		}
-		std::getline(mReceived, temp, static_cast<char>(EOF));
-		mBody += temp;
-		if (mBody.size() < mContentSize)
-		{
-			return ;
+			return;
 		}
 		if (mMethod->GetType() == GET)
 			GenerateGETResponse();
 		else if (mMethod->GetType() == HEAD)
 			std::cout << "HEAD response 전송해야 함." << std::endl;
-		else if (mMethod == POST) {
+		else if (mMethod->GetType() == POST)
+		{
+			if (mBody.size() < mContentSize)
+			{
+				std::getline(mReceived, temp, static_cast<char>(EOF));
+				mBody += temp;
+				return;
+			}
 			GeneratePostResponse();
+			std::cout << "POST response 전송해야 함." << std::endl;
 		}
-		else if (mMethod == DELETE)
+		else if (mMethod->GetType() == DELETE)
 			std::cout << "DELETE response 전송해야 함." << std::endl;
 	}
 }
 
-int UserData::RecvFromClient(int fd)
+int UserData::RecvFromClient(void)
 {
 	int len;
 
-	len = read(fd, mBuf, BUFFER_SIZE);
+	len = read(mFd, mBuf, BUFFER_SIZE);
 	for (int i = 0; i < len; i++)
+	{
 		mReceived << mBuf[i];
+		std::cout << mBuf[i];
+	}
+	std::cout << std::endl;
 	return (len);
 }
 
@@ -194,11 +209,11 @@ int UserData::SendToClient(int fd)
 	{
 		std::cout << it->first << ": " << it->second << std::endl;
 	}
-	std::cout <<Colors::BoldBlue <<  "\nstatus " << mStatusCode << ": " << mStatusText << std::endl;
+	std::cout << Colors::BoldBlue << "\nstatus " << mStatusCode << ": " << mStatusText << std::endl;
 	std::cout << Colors::BoldMagenta << "send to client " << fd << "\n" << Colors::Reset << std::endl;
 	len = write(fd, mResponse.c_str(), mResponse.size());
 	if (len < 0)
-		std::cout << Colors::RedString("send() error") << std::endl;
+		Error::Print("send()");
 	InitUserData();
 	return (len);
 }
@@ -209,5 +224,5 @@ int UserData::GeneratePostResponse(void) {
 	size_t errorCode = 0;
 	cgi.execute(errorCode);
 	cgi.sendCgiBody();
-	cgi.readCgiResponse()
+	cgi.readCgiResponse();
 }

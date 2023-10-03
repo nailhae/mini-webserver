@@ -1,5 +1,4 @@
-#ifndef MULTITREE_H
-#define MULTITREE_H
+#pragma once
 
 #include <iostream>
 #include <sstream>
@@ -32,5 +31,3 @@ private:
 
 void printSearchedResult(MultiTree& root, std::string uri);
 int LocationParser(LocationBlock& location, std::ifstream& file, MultiTree& root, std::string uri);
-
-#endif

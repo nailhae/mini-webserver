@@ -1,30 +1,7 @@
 #pragma once
+
 #include <map>
-#include "UserData.hpp"
-
-enum eSetupFlags
-{
-	ListenPort = 0x01,
-	ServerName = 0x02,
-	ServerRootPath = 0x04,
-	ServerRootVec = 0x08,
-	Uri = 0x10,
-	BGetMethod = 0x20,
-	BPostMethod = 0x40,
-	BDelMethod = 0x80,
-	BHeadMethod = 0x100,
-	BAutoIndex = 0x200,
-	IndexPage = 0x400,
-	LocationRootPath = 0x800,
-	Alias = 0x1000,
-	ReturnPairVec = 0x2000,
-};
-
-struct ResponseSetup
-{
-	ServerBlock server;
-	LocationBlock location;
-};
+#include "dataSet.hpp"
 
 class AMethod
 {

@@ -1,5 +1,6 @@
-.vscode
-
+parser
+*.json
+.DS_Store
 # Prerequisites
 *.d
 

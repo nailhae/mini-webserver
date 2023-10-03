@@ -1,0 +1,165 @@
+/* CSS Reset*/
+body, ul, p, h1 {
+	margin: 0;
+	padding: 0;
+}
+
+li {
+	list-style-type: none;
+}
+
+a {
+	text-decoration: none;
+	color: inherit;
+}
+
+body {
+	background-image: url(images/bg.png);
+	background-attachment: fixed;
+	background-position: center;
+}
+
+.wrapper {
+	background-position: center;
+	background-image: url(images/rope.png);
+	width:  800px;
+	margin: 0 auto 100px;	
+}
+
+.header {
+	text-align: center;
+}
+
+.logo {
+	background-image: url(images/logo.png);
+	width: 450px;
+	height: 140px;
+	display: inline-block;
+	margin: 20px 0;
+	text-indent: -9999px;
+	/* Image Replacement 기법, IR기법*/
+	
+}
+
+.menu {
+	width: 200px;
+	margin: 50px auto;
+	color: #666;
+}
+
+.menu li {
+	
+	margin-bottom: 5px;
+	
+}
+.menu li a {
+	border: 3px solid;
+	padding: 5px 0;
+	display: block;
+}
+
+.menu li a:hover {
+	color: white;
+}
+
+.section{
+	background-image: url(images/wood.png);
+	background-color: #50310e;
+	margin: 50px 0px;
+	padding: 30px;
+	border: 10px solid #883a1d;
+	color: antiquewhite;
+	border-radius: 10px;
+	box-shadow: 0 0 30px 10px rgba(0,0,0,0.6), inset 0 0 10px rgba(0,0,0,0.5);
+
+}
+
+.section h1 {
+	margin-bottom: 20px;
+	font-size: 100px;
+	line-height: 174px;
+	font-family: 'Permanent Marker', cursive;
+	background-repeat: no-repeat;
+	background-position: right 15px center;
+}
+
+.section:nth-child(even) h1 {
+	background-position: left 15px center;
+	text-align: right;
+}
+
+
+.section h1.animal01 {
+	background-image: url(images/animal01.png);
+	color: orange;
+	
+}
+.section h1.animal02 {
+	background-image: url(images/animal02.png);
+	color: pink;
+	
+}
+.section h1.animal03 {
+	background-image: url(images/animal03.png);
+	color: #ddd;
+	
+}
+.section h1.animal04 {
+	background-image: url(images/animal04.png);
+	color: antiquewhite;
+	
+}
+.section h1.animal05 {
+	background-image: url(images/animal05.png);
+	color: #eee;
+	
+}
+.section h1.animal06 {
+	background-image: url(images/animal06.png);
+	color: darksalmon;
+	
+}
+.section h1.animal07 {
+	background-image: url(images/animal07.png);
+	color: darkgray;
+	
+}
+
+.section p {
+	line-height: 1.6;
+}
+
+.section p strong {
+	background-color: #883a1d;
+	padding: 0 20px;
+	border-radius: 12px;
+	color: darksalmon;
+}
+
+.footer {
+	background-color: #50310e;
+	color: limegreen;
+	text-align: center;
+	border-bottom: 10px solid rgba(0,0,0,0.4);
+	border-radius: 10px;
+	overflow: hidden;
+	box-shadow: 0 0 30px 10px rgba(0,0,0,0.6), inset 0 0 10px rgba(0,0,0,0.5);
+}
+
+/* 가상선택자
+	-가상 클래스: 클래스
+	-가상 요소: 생성되는 개념 CSS에서 HTML에 요소를 추가한다.
+*/
+.footer:before {
+	content: ' ';
+	background-image: url(images/ground.png);
+	display: block;
+	background-repeat: repeat-x;
+	height: 50px;
+}
+
+.footer p {
+	padding: 20px 0;
+	letter-spacing: 3px;
+
+}

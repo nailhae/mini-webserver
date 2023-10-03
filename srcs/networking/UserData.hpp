@@ -6,6 +6,7 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include <map>
 #include <sstream>
 #include <string>
 #include <sys/event.h>
@@ -13,11 +14,13 @@
 #include <sys/time.h>
 #include <unistd.h>
 #include <vector>
-#include <map>
 
-#include "WebServer.hpp"
-#include "../AMethod/AMethod.hpp"
+#include "AMethod.hpp"
+#include "dataSet.hpp"
+
 #define BUFFER_SIZE 1024
+
+class AMethod;
 
 class UserData
 {
@@ -35,7 +38,12 @@ public:
 
 	const AMethod& GetMethod(void) const;
 	int GetFd(void) const;
+	int GetSocketType(void) const;
+	void SetSocketType(int socketType);
+	const ServerBlock* GetServerPtr(void) const;
+	void SetServerPtr(const ServerBlock *serverPtr);
 	LocationBlock& Setting(void);
+	std::string uriGenerator(std::string);
 	void GenerateResponse(void);
 	int GenerateGETResponse(void);
 	int ParseRequest(std::stringstream& request);
@@ -43,13 +51,14 @@ public:
 	int ParseHeaderKey(std::string& headerKey);
 	int ParseOneLine(std::string& oneLine);
 	int ParseHeaderValue(int headerKey, std::string& field);
-	int RecvFromClient(int fd);
+	int RecvFromClient(void);
 	int SendToClient(int fd);
 	int ReadCgiResponse(void);
 	int GeneratePostResponse(void);
 
 	std::stringstream mReceived;
 	std::string mBody;
+
 private:
 	UserData(void);
 	UserData(const UserData& rhs);
@@ -57,14 +66,16 @@ private:
 
 	int mFd;
 	char mBuf[BUFFER_SIZE];
+	int mSocketType;
 	int mStatusCode;
 	int mHeaderFlag;
 	int mFillBodyFlag;
-	int mContentSize;
+	size_t mContentSize;
 	LocationBlock mSetting;
 	std::string mStatusText;
 	std::string mUri;
 	std::string mResponse;
 	std::map<int, std::string> mHeaders;
+	const ServerBlock* mServerPtr;
 	AMethod *mMethod;
 };

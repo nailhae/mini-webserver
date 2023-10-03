@@ -1,5 +1,8 @@
-#include "UserData.hpp"
 #include "ChangeList.hpp"
+#include "Error.hpp"
+#include "MethodGet.hpp"
+#include "UserData.hpp"
+#include "dataSet.hpp"
 
 static void trimWhiteSpace(std::string& target)
 {
@@ -93,14 +96,14 @@ static int checkValidHeaderKey(int headerKey, std::string& value)
 		// config에서 지정한 파일 크기보다 큰 파일의 경우
 		// if (atoi(value.c_str) > max_contents)
 		// {
-		// 	return (ERROR);			
+		// 	return (ERROR);
 		// }
 	}
 	else if (headerKey == CACHE_CONTROL)
 	{
 		if (value.substr(0, 7) != "max-age")
 		{
-			std::cout << value.substr(0, 7) << " != " << "max-age" << std::endl;
+			Error::Print(value.substr(0, 7) + " != max-age");
 			return (0);
 		}
 		value.erase(0, 7);
@@ -147,7 +150,7 @@ int UserData::ParseHeaderKey(std::string& header)
 	headerKey = validHeader(header);
 	if (headerKey == NONE)
 		return (NONE);
-	else 
+	else
 		return (headerKey);
 }
 
@@ -158,16 +161,16 @@ int UserData::ParseFirstLine(std::stringstream& request)
 	request.seekg(std::ios::beg);
 	request >> temp;
 	if (temp == "GET")
-		mMethod = GET;
+		mMethod = new MethodGet(GET);
 	else if (temp == "HEAD")
-		mMethod = HEAD;
+		mMethod = new MethodGet(HEAD);
 	else if (temp == "POST")
-		mMethod = POST;
+		mMethod = new MethodGet(POST);
 	else if (temp == "DELETE")
-		mMethod = DELETE;
+		mMethod = new MethodGet(DELETE);
 	else
 	{
-		mMethod = ERROR;
+		mMethod = new MethodGet(ERROR);
 		mStatusCode = 405;
 		mStatusText = "Method is not allowed";
 		// 이 경우 헤더에 Allow: GET, POST, DELETE 추가해야 함.
@@ -189,7 +192,7 @@ int UserData::ParseFirstLine(std::stringstream& request)
 
 int UserData::ParseOneLine(std::string& oneLine)
 {
-	std::string key;		
+	std::string key;
 	int headerKey;
 
 	for (std::string::iterator it = oneLine.begin(); it != oneLine.end(); it++)
@@ -197,7 +200,7 @@ int UserData::ParseOneLine(std::string& oneLine)
 		if (*it == ':')
 		{
 			oneLine.erase(oneLine.begin(), it + 1);
-			break ;
+			break;
 		}
 		else
 			key += *it;
@@ -226,11 +229,11 @@ int UserData::ParseRequest(std::stringstream& request)
 		if (*(temp.end() - 1) == '\r')
 			temp.erase(temp.size() - 1);
 		if (temp.size() == 0)
-			break ;
+			break;
 		else if (ParseOneLine(temp) == ERROR)
 			return (ERROR);
 	}
-	if (mMethod == POST)
+	if (mMethod->GetType() == POST)
 	{
 		if (mHeaders[CONTENT_LENGTH] == "" || mHeaders[CONTENT_TYPE] == "")
 		{
