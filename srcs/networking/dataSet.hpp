@@ -3,6 +3,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <stack>
 
 class AMethod;
 class ChangeList;
@@ -54,6 +55,13 @@ enum eBlockType
 	HTTP,
 	SERVER,
 	LOCATION
+};
+
+enum eSocketType
+{
+	SERVER_SOCKET,
+	CLIENT_SOCKET,
+	CGI_PIPE,
 };
 
 struct ServerBlock

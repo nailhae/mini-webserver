@@ -23,7 +23,7 @@ class ChangeList // 얘는 kqueue manage class가 될 수 있음.
 public:
 	ChangeList(void);
 	~ChangeList(void);
-	void ChangeEvent(uintptr_t nIdent, int nFilter, int nFlags, int socketType);
+	void ChangeEvent(uintptr_t nIdent, int nFilter, int nFlags, UserData* udata);
 	void ClearEvent(void);
 	std::vector<struct kevent>& GetKeventVector(void);
 	size_t GetSize(void);

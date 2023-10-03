@@ -95,12 +95,12 @@ void UserData::SetSocketType(int socketType)
 	mSocketType = socketType;
 }
 
-const ServerBlock UserData::GetServerPtr(void) const
+const ServerBlock* UserData::GetServerPtr(void) const
 {
-	return (*mServerPtr);
+	return (mServerPtr);
 }
 
-void UserData::SetSocketType(ServerBlock* serverPtr)
+void UserData::SetServerPtr(const ServerBlock* serverPtr)
 {
 	mServerPtr = serverPtr;
 }

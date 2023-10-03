@@ -35,8 +35,8 @@ public:
 	int GetFd(void) const;
 	int GetSocketType(void) const;
 	void SetSocketType(int socketType);
-	const ServerBlock *GetServerPtr(void) const;
-	void SetServerPtr(ServerBlock *serverPtr);
+	const ServerBlock* GetServerPtr(void) const;
+	void SetServerPtr(const ServerBlock *serverPtr);
 	LocationBlock& Setting(void);
 	void GenerateResponse(void);
 	int GenerateGETResponse(void);
@@ -45,8 +45,8 @@ public:
 	int ParseHeaderKey(std::string& headerKey);
 	int ParseOneLine(std::string& oneLine);
 	int ParseHeaderValue(int headerKey, std::string& field);
-	int RecvFromClient(int fd);
-	int SendToClient(int fd);
+	int RecvFromClient(void);
+	int SendToClient(int fd); // 테스트 끝난 뒤 void로 바꿀 예정
 
 	std::stringstream mReceived;
 	std::string mBody;
@@ -68,6 +68,6 @@ private:
 	std::string mUri;
 	std::string mResponse;
 	std::map<int, std::string> mHeaders;
-	ServerBlock* mServerPtr;
+	const ServerBlock* mServerPtr;
 	AMethod *mMethod;
 };

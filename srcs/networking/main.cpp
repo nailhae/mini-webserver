@@ -24,7 +24,7 @@ int main()
 	WebServer* webServer;
 
 	webServer = WebServer::GetInstance();
-	webServer->waitForClientConnection();
+	webServer->WaitForClientConnection();
 	WebServer::DeleteInstance();
 
 	return (0);
