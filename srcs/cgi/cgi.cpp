@@ -76,7 +76,7 @@ void Cgi::initCgiEnv(std::string httpCgiPath, size_t ContentSize, std::map<int, 
     this->env["AUTH_TYPE"] = "BASIC";
     this->env["CONTENT_LENGTH"] = ContentSize;
     // this->env["CONTENT_TYPE"] = Header[CONTENT_TYPE];
-    this->env["CONTENT_TYPE"] = "multipart/form-data";
+    this->env["CONTENT_TYPE"] = Header[CONTENT_TYPE];
     this->env["GATEWAY_INTERFACE"] = "CGI/1.1";
     this->env["PATH_INFO"] = httpCgiPath;
     this->env["PATH_TRANSLATED"] = this->env["PATH_INFO"];
@@ -86,7 +86,7 @@ void Cgi::initCgiEnv(std::string httpCgiPath, size_t ContentSize, std::map<int, 
     // this->env["REMOTE_USER"]
     this->env["REQUEST_METHOD"] = POST;
     this->env["SCRIPT_NAME"] = httpCgiPath;
-    this->env["SCRIPT_FILENAME"] = "07.jpg";
+    // this->env["SCRIPT_FILENAME"] = "3OfD_0ON3b5Mw9GmxClakX77pOo2tHJnNugH0kaRM3-yJ6NBID2Xbb-pG9sd0z-RAgBEwBFP1tijbVV5Qe8aFA.webp";
     size_t pos = findHostNamePos(Header[HOST], ":");
     this->env["SERVER_NAME"] = (pos > 0 ? Header[HOST].substr(0, pos) : "");
     this->env["SERVER_PORT"] = (pos > 0 ? Header[HOST].substr(pos + 1, Header[HOST].size()) : "");
