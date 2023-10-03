@@ -6,9 +6,11 @@
 
 UserData::UserData(int fd)
 	: mFd(fd)
+	, mSocketType(-1)
 	, mStatusCode(-1)
 	, mHeaderFlag(0)
 	, mFillBodyFlag(-1)
+	, mContentSize(0)
 	, mMethod(NULL)
 {
 }
@@ -23,7 +25,7 @@ int UserData::GenerateGETResponse(void)
 	std::string extTemp;
 
 	extTemp = mUri.substr(mUri.find('.') + 1);
-	requestedFile.open("../../assets" + mUri, std::ios::binary);
+	requestedFile.open("../../html" + mUri, std::ios::binary);
 	if (requestedFile.is_open() == false)
 	{
 		// 4XX error
@@ -33,7 +35,7 @@ int UserData::GenerateGETResponse(void)
 	}
 	else
 	{
-		std::cout << Colors::BlueString("open success: ../../assets") << mUri << std::endl;
+		std::cout << Colors::BlueString("open success: ../../html") << mUri << std::endl;
 		std::stringstream fileContent;
 		requestedFile.seekg(0, std::ios::end);
 		std::streampos fileSize = requestedFile.tellg();
@@ -147,20 +149,24 @@ void UserData::GenerateResponse(void)
 			std::cout << "Error page 전송해야 함" << std::endl;
 			return;
 		}
+		std::cout << Colors::BoldCyan << "[Method]" << mMethod->GetType() << std::endl;
 		if (mMethod->GetType() == GET)
 			GenerateGETResponse();
 		else if (mMethod->GetType() == HEAD)
 			std::cout << "HEAD response 전송해야 함." << std::endl;
 		else if (mMethod->GetType() == POST)
 		{
+			std::cout << Colors::BoldCyan << "[mContentSize]" << mHeaders[CONTENT_LENGTH] << std::endl;
+			mContentSize = strtol(mHeaders[CONTENT_LENGTH].c_str(), NULL, 10);
+			std::cout << Colors::BoldCyan << "[body]" << mContentSize << std::endl;
 			if (mBody.size() < mContentSize)
 			{
 				std::getline(mReceived, temp, static_cast<char>(EOF));
 				mBody += temp;
-				return;
+				std::cout << Colors::BoldCyan << "[body]" << mBody << std::endl;
+				std::cout << Colors::BoldCyan << "[body]" << temp << std::endl;
 			}
 			GeneratePostResponse();
-			std::cout << "POST response 전송해야 함." << std::endl;
 		}
 		else if (mMethod->GetType() == DELETE)
 			std::cout << "DELETE response 전송해야 함." << std::endl;
@@ -218,11 +224,15 @@ int UserData::SendToClient(int fd)
 	return (len);
 }
 
-int UserData::GeneratePostResponse(void) {
-	Cgi cgi(mUri, *this);
-	cgi.initCgiEnv();
+int UserData::GeneratePostResponse(void) 
+{
+	Cgi cgi(mUri);
+	cgi.initCgiEnv(mUri, mContentSize, mHeaders, mBody);
 	size_t errorCode = 0;
 	cgi.execute(errorCode);
-	cgi.sendCgiBody();
-	cgi.readCgiResponse();
+	cgi.sendCgiBody(mBody);
+	mResponse = cgi.readCgiResponse();
+
+	SendToClient(mFd);
+	return (0);
 }

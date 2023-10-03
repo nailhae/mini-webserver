@@ -19,20 +19,21 @@ class Cgi {
         int pipeOut[2];
 
         Cgi();
-        Cgi(const std::string& uri, const UserData& user);
+        Cgi(const std::string& uri);
         ~Cgi();
         Cgi(Cgi const &obj);
         Cgi &operator=(Cgi const &obj);
 
-        void initCgiEnv(std::string httpCgiPath);
+        void initCgiEnv(std::string httpCgiPath, size_t ContentSize, std::map<int, std::string> Header);
+        void initCgiEnv(std::string httpCgiPath, size_t ContentSize, std::map<int, std::string> Header, std::string Body);
         void execute(size_t &errorCode);
         // void clear();
 
         const std::map<std::string, std::string> &getEnv() const;
         const pid_t &getCgiPid() const;
         const std::string &getCgiPath() const;
-        void sendCgiBody();
-        void    readCgiResponse();
+        void sendCgiBody(std::string reqBody);
+        std::string    readCgiResponse();
 };
 
 #endif

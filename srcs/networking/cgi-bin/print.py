@@ -21,17 +21,21 @@ if "action" in form:
     elif form.getvalue("action") == "subtract":
         value -= 1
 
-if value == 0 in form:
-    value == 1
+# if value == 0 in form:
+#     value == 1
         
 print("""
 <html>
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+        <title>print</title>
+    </head>
 <body>
-<form method="POST" action="cgi-bin/print.py">
+<form method="POST" action="/cgi-bin/print.py">
+<input type="hidden" name="number" value="{}">
 <button type="submit" name="action" value="add">+</button>
 <button type="submit" name="action" value="subtract">-</button>
-<input type="hidden" name="number" value="{}">
-<p>{}</p>
 </form>
+<p>{}</p>
 </body>
-</html>""".format('webserv 하세요 webserv 하세요'*value, value))
+</html>""".format(value, 'webservㅁㄴㅇㄹㅁㄴ '*value))

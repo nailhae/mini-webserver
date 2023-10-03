@@ -31,10 +31,6 @@ public:
 	const std::stringstream& GetReceived(void) const;
 	const std::string& GetResponse(void) const;
 	const std::string& GetUri(void) const;
-	const int GetContentSize(void) const;
-	const std::string& GetHeader(int header) const;
-	// const std::string& GetContentSize(void) const;
-	const std::string& GetBody(void) const;
 
 	const AMethod& GetMethod(void) const;
 	int GetFd(void) const;
@@ -53,7 +49,6 @@ public:
 	int ParseHeaderValue(int headerKey, std::string& field);
 	int RecvFromClient(void);
 	int SendToClient(int fd);
-	int ReadCgiResponse(void);
 	int GeneratePostResponse(void);
 
 	std::stringstream mReceived;
