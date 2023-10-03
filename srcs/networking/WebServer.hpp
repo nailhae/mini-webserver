@@ -24,7 +24,7 @@ private:
 	HttpBlock* parseFileOrNull(const std::string& fileName);
 	void deleteHttpBlock(HttpBlock& http);
 	void acceptClientSocket(int fd, const ServerBlock* serverPtr);
-	void closeClientSocket(UserData* udata);
+	void closeClientSocket(UserData* udata, int fd);
 
 	static WebServer* mWebServer;
 	ChangeList mChangeList;

@@ -1,5 +1,4 @@
 #include "UserData.hpp"
-
 #include "ChangeList.hpp"
 #include "Error.hpp"
 #include "WebServer.hpp"
@@ -22,18 +21,18 @@ int UserData::GenerateGETResponse(void)
 	std::ifstream requestedFile;
 	std::string extTemp;
 
-	if (mUri == "/")
-		mUri = "/index.html";
 	extTemp = mUri.substr(mUri.find('.') + 1);
-	requestedFile.open("." + mUri, std::ios::binary);
+	requestedFile.open("../../assets" + mUri, std::ios::binary);
 	if (requestedFile.is_open() == false)
 	{
 		// 4XX error
 		Error::Print("open failed: ." + mUri);
-		write(mFd, "HTTP/1.1 404 Not found\r\n\r\n", 26);
+		write(mFd, "HTTP/1.1 404 Not found\r\nContent-type: text/html\r\ncontent-length: 45\r\n\r\n<!DOCTYPE HTML><HTML><H1>404 ERROR<H1><HTML>", 115);
+		close(mFd);
 	}
 	else
 	{
+		std::cout << Colors::BlueString("open success: ../../assets") << mUri << std::endl;
 		std::stringstream fileContent;
 		requestedFile.seekg(0, std::ios::end);
 		std::streampos fileSize = requestedFile.tellg();
@@ -141,16 +140,10 @@ void UserData::GenerateResponse(void)
 	}
 	else
 	{
-		if (mFillBodyFlag == -1 && ParseRequest(mReceived) == ERROR)
+		if (ParseRequest(mReceived) == ERROR)
 		{
 			// GenerateErrorResponse();
 			std::cout << "Error page 전송해야 함" << std::endl;
-			return;
-		}
-		std::getline(mReceived, temp, static_cast<char>(EOF));
-		mBody += temp;
-		if (mBody.size() < mContentSize)
-		{
 			return;
 		}
 		if (mMethod->GetType() == GET)
@@ -158,7 +151,15 @@ void UserData::GenerateResponse(void)
 		else if (mMethod->GetType() == HEAD)
 			std::cout << "HEAD response 전송해야 함." << std::endl;
 		else if (mMethod->GetType() == POST)
+		{
+			if (mBody.size() < mContentSize)
+			{
+				std::getline(mReceived, temp, static_cast<char>(EOF));
+				mBody += temp;
+				return;
+			}
 			std::cout << "POST response 전송해야 함." << std::endl;
+		}
 		else if (mMethod->GetType() == DELETE)
 			std::cout << "DELETE response 전송해야 함." << std::endl;
 	}
@@ -170,7 +171,11 @@ int UserData::RecvFromClient(void)
 
 	len = read(mFd, mBuf, BUFFER_SIZE);
 	for (int i = 0; i < len; i++)
+	{
 		mReceived << mBuf[i];
+		std::cout << mBuf[i];
+	}
+	std::cout << std::endl;
 	return (len);
 }
 

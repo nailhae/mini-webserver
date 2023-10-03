@@ -1,24 +1,25 @@
+#include <fcntl.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <sys/event.h>
 #include <sys/socket.h>
 #include <sys/time.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <fcntl.h>
-#include "dataSet.hpp"
-#include "Error.hpp"
-#include "Colors.hpp"
+
 #include "ChangeList.hpp"
+#include "Colors.hpp"
+#include "Error.hpp"
 #include "UserData.hpp"
 #include "WebServer.hpp"
+#include "dataSet.hpp"
 #define ERROR -1
 #define MAX_KEVENTS 10
 
-void WebServer::closeClientSocket(UserData* udata)
+void WebServer::closeClientSocket(UserData* udata, int fd)
 {
-	std::cout << Colors::BoldGreen << "close client:" << udata->GetFd() << Colors::Reset << std::endl;
+	std::cout << Colors::BoldBlue << "close client:" << fd << Colors::Reset << std::endl;
+	close(fd);
+	mChangeList.ChangeEvent(fd, EVFILT_READ, EV_DELETE, NULL);
 	delete udata;
-	mChangeList.ChangeEvent(udata->GetFd(), EVFILT_READ, EV_DELETE, NULL);
-	close(udata->GetFd());
 }
 
 static void setSocketKeepAlive(int fd, int cnt, int idle, int interval)
@@ -45,10 +46,11 @@ void WebServer::acceptClientSocket(int fd, const ServerBlock* serverPtr)
 	int sock;
 	struct sockaddr_in adr;
 	socklen_t adrSize;
-	UserData* udata = new UserData(fd);
+	UserData* udata;
 
 	adrSize = sizeof(adr);
-	sock = accept(fd, (struct sockaddr *)&adr, &adrSize);
+	sock = accept(fd, (struct sockaddr*)&adr, &adrSize);
+	udata = new UserData(sock);
 	udata->SetServerPtr(serverPtr);
 	udata->SetSocketType(CLIENT_SOCKET);
 	setSocketKeepAlive(sock, 60, 5, 5);
@@ -97,7 +99,7 @@ void WebServer::WaitForClientConnection(void)
 				readLen = currentUdata->RecvFromClient();
 				if (readLen == 0)
 				{
-					closeClientSocket(currentUdata);
+					closeClientSocket(currentUdata, eventList[i].ident);
 				}
 				else if (readLen < 0)
 				{

@@ -38,6 +38,7 @@ public:
 	const ServerBlock* GetServerPtr(void) const;
 	void SetServerPtr(const ServerBlock *serverPtr);
 	LocationBlock& Setting(void);
+	std::string uriGenerator(std::string);
 	void GenerateResponse(void);
 	int GenerateGETResponse(void);
 	int ParseRequest(std::stringstream& request);
