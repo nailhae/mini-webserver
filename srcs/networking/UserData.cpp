@@ -1,6 +1,6 @@
 #include "UserData.hpp"
-#include "./ChangeList.hpp"
-#include "../cgi/cgi.hpp"
+#include "ChangeList.hpp"
+#include "cgi.hpp"
 
 UserData::UserData(int fd)
 	: mFd(fd)
@@ -81,6 +81,19 @@ LocationBlock& UserData::Setting(void)
 const std::string& UserData::GetUri(void) const
 {
 	return (mUri);
+}
+
+const int UserData::GetContentSize(void) const{
+	return (mContentSize);
+}
+const std::string& UserData::GetHeader(int header) const{
+	return (mHeaders.at(header));
+}
+// const std::string& UserData::GetContentSize(void) const{
+// 	return (mContentSize);
+// }
+const std::string& UserData::GetBody(void) const{
+	return (mBody);
 }
 
 static int checkHeaderLength(std::stringstream& ss)
@@ -191,10 +204,10 @@ int UserData::SendToClient(int fd)
 }
 
 int UserData::GeneratePostResponse(void) {
-	Cgi cgi(mUri);
+	Cgi cgi(mUri, *this);
 	cgi.initCgiEnv();
 	size_t errorCode = 0;
 	cgi.execute(errorCode);
 	cgi.sendCgiBody();
-	cgi.readCgiReesponse()
+	cgi.readCgiResponse()
 }

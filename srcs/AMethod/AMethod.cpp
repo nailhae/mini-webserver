@@ -1,5 +1,5 @@
-#include "./AMethod.hpp"
-#include "../util/MultiTree.hpp"
+#include "AMethod.hpp"
+#include "MultiTree.hpp"
 
 const int AMethod::mSetupFinished = 0x3FFF;
 

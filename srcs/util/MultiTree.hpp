@@ -1,4 +1,3 @@
-#pragma once
 #ifndef MULTITREE_H
 #define MULTITREE_H
 

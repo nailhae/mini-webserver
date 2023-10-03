@@ -1,4 +1,5 @@
 #pragma once
+
 #include <arpa/inet.h>
 #include <cstdio>
 #include <cstdlib>
@@ -27,6 +28,11 @@ public:
 	const std::stringstream& GetReceived(void) const;
 	const std::string& GetResponse(void) const;
 	const std::string& GetUri(void) const;
+	const int GetContentSize(void) const;
+	const std::string& GetHeader(int header) const;
+	// const std::string& GetContentSize(void) const;
+	const std::string& GetBody(void) const;
+
 	const AMethod& GetMethod(void) const;
 	int GetFd(void) const;
 	LocationBlock& Setting(void);

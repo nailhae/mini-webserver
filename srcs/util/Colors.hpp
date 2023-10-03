@@ -1,4 +1,3 @@
-#pragma once
 #ifndef _COLORS_HPP_
 #define _COLORS_HPP_
 #include <iostream>

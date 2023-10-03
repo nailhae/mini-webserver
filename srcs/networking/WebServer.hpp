@@ -1,4 +1,3 @@
-#pragma once
 #ifndef WEBSERVER_HPP
 #define WEBSERVER_HPP
 
@@ -11,8 +10,8 @@
 #include <stack>
 #include <stdlib.h>
 #include <vector>
+#include "../util/MultiTreeNode.hpp"
 #include "MultiTree.hpp"
-#include "MultiTreeNode.hpp"
 
 #define CONF_FILE_PATH "../../config/default.conf"
 

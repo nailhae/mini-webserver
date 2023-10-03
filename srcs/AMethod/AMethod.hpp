@@ -1,6 +1,6 @@
 #pragma once
 #include <map>
-#include "../networking/UserData.hpp"
+#include "UserData.hpp"
 
 enum eSetupFlags
 {

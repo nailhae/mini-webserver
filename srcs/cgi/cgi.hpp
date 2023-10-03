@@ -1,10 +1,10 @@
 #ifndef CGI_HPP
 #define CGI_HPP
 
-#include "../networking/UserData.hpp"
 #include <iostream>
 #include <map>
 #include <unistd.h>
+#include "UserData.hpp"
 
 class Cgi {
     private:
@@ -19,7 +19,7 @@ class Cgi {
         int pipeOut[2];
 
         Cgi();
-        Cgi(std::string path);
+        Cgi(const std::string& uri, const UserData& user);
         ~Cgi();
         Cgi(Cgi const &obj);
         Cgi &operator=(Cgi const &obj);
@@ -32,7 +32,7 @@ class Cgi {
         const pid_t &getCgiPid() const;
         const std::string &getCgiPath() const;
         void sendCgiBody();
-        void    readCgiResponse(Client &c, CgiHandler &cgi);
+        void    readCgiResponse();
 };
 
 #endif

@@ -1,5 +1,5 @@
-#include "./UserData.hpp"
-#include "./ChangeList.hpp"
+#include "UserData.hpp"
+#include "ChangeList.hpp"
 
 static void trimWhiteSpace(std::string& target)
 {
@@ -39,7 +39,7 @@ static int validHeader(std::string& content)
 	else if (content == "if-modified-since")
 		return (IF_MODIFIED_SINCE);
 	else if (content == "host")
-		return (HOST)
+		return (HOST);
 	else
 		return (NONE);
 }

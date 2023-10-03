@@ -13,8 +13,8 @@
 #include <unistd.h>
 #include <vector>
 
-#include "./UserData.hpp"
-#include "../util/Colors.hpp"
+#include "UserData.hpp"
+#include "Colors.hpp"
 
 #define BUFFER_SIZE 1024
 
