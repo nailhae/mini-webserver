@@ -18,6 +18,6 @@ int main()
 	";
 
 	userdataTest.GenerateResponse();
-	// std::cout << userdataTest.mBody << std::endl;
+	std::cout << userdataTest.mBody << std::endl;
 	return (0);
 }

@@ -20,6 +20,7 @@ INCS = \
 	-I$(SRCS_DIR)/util \
 	-I$(SRCS_DIR)/networking \
 	-I$(SRCS_DIR)/AMethod \
+	-I$(SRCS_DIR)/cgi \
 
 SRCS = \
 	$(SRCS_DIR)/AMethod/AMethod.cpp \
@@ -35,6 +36,7 @@ SRCS = \
 	$(SRCS_DIR)/networking/main.cpp \
 	$(SRCS_DIR)/networking/waitForClientConnection.cpp \
 	$(SRCS_DIR)/networking/initServer.cpp \
+	$(SRCS_DIR)/cgi/cgi.cpp \
 
 OBJS		=	$(SRCS:%.cpp=%.o)
 
