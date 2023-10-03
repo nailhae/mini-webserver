@@ -30,7 +30,6 @@ void ChangeList::ChangeEvent(uintptr_t ident, int filter, int flags, UserData *u
 	else
 	{
 		target.udata = udata;
-		udata->SetSocketType(socketType)
 		_keventVector.push_back(target);
 	}
 }

@@ -1,5 +1,12 @@
+#include <sys/event.h>
+#include <sys/socket.h>
+#include <sys/time.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+#include <fcntl.h>
+#include "dataSet.hpp"
+#include "Error.hpp"
+#include "Colors.hpp"
 #include "ChangeList.hpp"
 #include "UserData.hpp"
 #include "WebServer.hpp"
@@ -8,7 +15,7 @@
 
 void WebServer::closeClientSocket(UserData* udata)
 {
-	std::cout << Colors::BoldGreen << "close client:" << udata.GetFd() << Colors::Reset << std::endl;
+	std::cout << Colors::BoldGreen << "close client:" << udata->GetFd() << Colors::Reset << std::endl;
 	delete udata;
 	mChangeList.ChangeEvent(udata->GetFd(), EVFILT_READ, EV_DELETE, NULL);
 	close(udata->GetFd());
@@ -30,17 +37,15 @@ static void setSocketLinger(int fd)
 
 	optVal.l_linger = true;
 	optVal.l_onoff = true;
-	setsockopt(fd, SOL_SOCKET, SO_LINGER, optVal, sizeof(optVal));
+	setsockopt(fd, SOL_SOCKET, SO_LINGER, &optVal, sizeof(optVal));
 }
 
-static void WebServer::acceptClientSocket(int fd, ServerBlock* serverPtr)
+void WebServer::acceptClientSocket(int fd, const ServerBlock* serverPtr)
 {
 	int sock;
 	struct sockaddr_in adr;
 	socklen_t adrSize;
-	UserData* udata;
-	struct linger lingerVal;
-	lingerVal.l_onoff = true;
+	UserData* udata = new UserData(fd);
 
 	adrSize = sizeof(adr);
 	sock = accept(fd, (struct sockaddr *)&adr, &adrSize);
@@ -62,7 +67,7 @@ void WebServer::WaitForClientConnection(void)
 	kq = kqueue();
 	if (kq == -1)
 	{
-		ERROR::Print("Open Error");
+		Error::Print("Open Error");
 		exit(EXIT_FAILURE);
 	}
 
@@ -79,25 +84,26 @@ void WebServer::WaitForClientConnection(void)
 			Error::Print("kevent() error");
 			exit(EXIT_FAILURE);
 		}
-		changeList.ClearEvent();
+		mChangeList.ClearEvent();
 		for (int i = 0; i < occurEventNum; i++)
 		{
 			UserData* currentUdata = static_cast<UserData*>(eventList[i].udata);
-			if (currentUdata.GetSocketType() == SERVER_SOCKET)
+			if (currentUdata->GetSocketType() == SERVER_SOCKET)
 			{
-				acceptClientSocket(eventList[i].ident, currentUdata);
+				acceptClientSocket(eventList[i].ident, currentUdata->GetServerPtr());
 			}
-			else if (currentUdata.GetSocketType() == CLIENT_SOCKET)
+			else if (currentUdata->GetSocketType() == CLIENT_SOCKET)
 			{
 				readLen = currentUdata->RecvFromClient();
 				if (readLen == 0)
 				{
 					closeClientSocket(currentUdata);
 				}
-				else if (len < 0)
+				else if (readLen < 0)
 				{
 					close(eventList[i].ident);
-					Error::Print("recv error: force close client: " + eventList[i].ident);
+					Error::Print("recv error");
+					std::cout << "force close client: " << eventList[i].ident << std::endl;
 				}
 				else
 				{

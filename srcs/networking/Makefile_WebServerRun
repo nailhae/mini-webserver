@@ -22,18 +22,19 @@ INCS = \
 	-I$(SRCS_DIR)/AMethod \
 
 SRCS = \
-	$(SRCS_DIR)/util/Colors.cpp \
-	$(SRCS_DIR)/util/Error.cpp \
-	$(SRCS_DIR)/util/MultiTree.cpp \
-	$(SRCS_DIR)/util/MultiTreeNode.cpp \
 	$(SRCS_DIR)/AMethod/AMethod.cpp \
 	$(SRCS_DIR)/networking/WebServer.cpp \
 	$(SRCS_DIR)/networking/webServerParseFileOrNull.cpp \
 	$(SRCS_DIR)/networking/ChangeList.cpp \
 	$(SRCS_DIR)/networking/UserData.cpp \
 	$(SRCS_DIR)/networking/httpRequestParsing.cpp \
+	$(SRCS_DIR)/util/Colors.cpp \
+	$(SRCS_DIR)/util/Error.cpp \
+	$(SRCS_DIR)/util/MultiTree.cpp \
+	$(SRCS_DIR)/util/MultiTreeNode.cpp \
+	$(SRCS_DIR)/networking/main.cpp \
+	$(SRCS_DIR)/networking/waitForClientConnection.cpp \
 	$(SRCS_DIR)/networking/initServer.cpp \
-	$(SRCS_DIR)/networking/main_WebServerSample.cpp \
 
 OBJS		=	$(SRCS:%.cpp=%.o)
 

@@ -1,13 +1,15 @@
 #include "WebServer.hpp"
 #include "ChangeList.hpp"
+#include "UserData.hpp"
+#include "Colors.hpp"
 #define ERROR -1
 
-static setServerSocketOption(int fd)
+static void setServerSocketOption(int fd)
 {
 	int optVal = true;
 
-	setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &optVal, sizeof(optVal));
-	setsockopt(serverSocket, SOL_SOCKET, SO_REUSEPORT, &optVal, sizeof(optVal));
+	setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &optVal, sizeof(optVal));
+	setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &optVal, sizeof(optVal));
 }
 
 static int createSocket(int port)
@@ -44,20 +46,22 @@ static int createSocket(int port)
 int WebServer::InitServer(void)
 {
 	int serverSocket;
-	UserData *udata = new UserData;
+	UserData *udata;
 
-	for (std::vector<serverBlock>::iterator it = mHttp->serverListserver_list.begin(); it != mHttp->serverList.end();
+	for (std::vector<ServerBlock*>::iterator it = mHttp->serverList.begin(); it != mHttp->serverList.end();
 		 it++)
 	{
-		serverSocket = createSocket(it->listen_port);
+		serverSocket = createSocket((*it)->listenPort);
 		if (serverSocket == ERROR)
 		{
 			std::cerr << "Error: server socket" << std::endl;
 			return (ERROR);		
 		}
-		udata->SetServerPtr(it);
-		udata->SetSocketType = SERVER_SOCKET;
-		changelist.changeEvent(serverSocket, EVFILT_READ, EV_ADD, udata);
+		udata = new UserData(serverSocket);
+		udata->SetServerPtr(*it);
+		udata->SetSocketType(SERVER_SOCKET);
+		mChangeList.ChangeEvent(serverSocket, EVFILT_READ, EV_ADD, udata);
+		std::cout << Colors::BoldGreen << udata->GetServerPtr()->serverName << ": Socket " << serverSocket << " is now listen" << std::endl;
 	}
 	return (0);
 }
