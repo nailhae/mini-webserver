@@ -1,3 +1,5 @@
+#include <dirent.h>
+#include <sys/stat.h>
 #include "UserData.hpp"
 #include "ChangeList.hpp"
 #include "cgi.hpp"
@@ -74,40 +76,126 @@ void generateReturnResponse(int fd, int code, std::string& body)
 	close(fd);
 }
 
+int UserData::loadFolderContent(void)
+{
+	DIR* dirInfo = NULL;
+	struct dirent *dirEntry = NULL;
+	std::stringstream ss;
+
+	dirInfo = opendir(mUri.c_str());
+	if (dirInfo == NULL)
+	{
+		mStatusCode = 404;
+		Error::Print(mUri + "Open Error");
+		return (ERROR);
+	}
+	ss << "<!DOCTYPE HTML>\n<HTML>\n\t<head>\n\t\t<title>Index of "<< mUri <<"</title>\n"<< "<style>\n";
+	ss << "body {font-family: Arial, sans-serif; background-color: #f4f4f4;margin: 0;padding: 0;}\n";
+	ss << "header {background-color: #333;color: #fff;text-align: center;padding: 10px;}\n";
+	ss << ".container {max-width: 600px;margin: 0 auto;padding: 20px;background-color: #fff;border-radius: 5px;box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);}\n";
+	ss << "u1 {list-style-type: none;padding: 0;}\n";
+	ss << "li {margin-bottom: 10px;}\n";
+	ss << "a {text-decoration: none; color: #007bff;}\n";
+	ss << "a:hover {text-decoration: underline;}\n";
+	ss << "</style>" << "\t</head>\n\t<body>\n\t\t<header><h1>Index of " << mUri << "</h1></header>\n\t\t<div class=\"container\"><u1>";
+	while ((dirEntry = readdir(dirInfo)) != NULL)
+	{
+		if (dirEntry->d_type == DT_DIR)
+			dirEntry->d_name[strlen(dirEntry->d_name)] = '/';
+		ss << "\t\t\t<li><a href=\"" << dirEntry->d_name << "\">";
+		ss << dirEntry->d_name;
+		ss << "</br></a></li>\n";
+	}
+	ss << "\t\t</a></div>\n\t</body>\n</HTML>";
+	closedir(dirInfo);
+	mBody = ss.str();
+	std::ofstream fs("../autoIndex/test.html");
+	fs << mBody;
+	return (0);
+}
+
 int UserData::GenerateGETResponse(void)
 {
 	std::ifstream requestedFile;
 	std::string extTemp;
 
-	requestedFile.open(mUri, std::ios::binary);
-	if (requestedFile.is_open() == false)
+	if (*(mUri.end() - 1) == '/')
 	{
-		// 4XX error
-		Error::Print("open failed: " + mUri);
-		write(mFd, "HTTP/1.1 404 Not found\r\nContent-type: text/html\r\ncontent-length: 45\r\n\r\n<!DOCTYPE HTML><HTML><H1>404 ERROR<H1><HTML>", 115);
-		close(mFd);
+		int result = 0;
+		std::cout << "autoindex == " << mSetting.autoindex << std::endl;
+		if (mSetting.autoindex == true)
+		{
+			result = loadFolderContent();
+		}
+		else
+		{
+			mStatusCode = 403;
+			write(mFd, "HTTP/1.1 403 Forbidden\r\nContent-type: text/html\r\ncontent-length: 45\r\n\r\n<!DOCTYPE HTML><HTML><H1>403 ERROR<H1><HTML>", 115);
+			close(mFd);
+			return (0);
+		}
+		if (result == ERROR)
+		{
+			write(mFd, "HTTP/1.1 404 Not Found\r\nContent-type: text/html\r\ncontent-length: 45\r\n\r\n<!DOCTYPE HTML><HTML><H1>404 ERROR<H1><HTML>", 115);
+			close(mFd);
+			return (0);
+		}
+		else
+		{
+			mResponse = "HTTP/1.1 200 OK\r\nContent-type: ";
+			mResponse += "text/html";
+			mResponse += "\r\nContent-length: ";
+			mResponse += std::to_string(mBody.size());
+			mResponse += "\r\n\r\n";
+			mResponse += mBody;
+			SendToClient(mFd);
+		}
 	}
 	else
 	{
-		extTemp = mUri.substr(mUri.find_last_of('.') + 1);
-		std::cout << Colors::BlueString("open success: ") << mUri << std::endl;
-		std::stringstream fileContent;
-		requestedFile.seekg(0, std::ios::end);
-		std::streampos fileSize = requestedFile.tellg();
-		requestedFile.seekg(0, std::ios::beg);
-		mResponse = "HTTP/1.1 200 OK\r\nContent-type: ";
-		if (extTemp == "png")
-			mResponse += "image/";
+		struct stat fileInfo;
+
+		if (stat(mUri.c_str(), &fileInfo) == ERROR)
+		{
+			Error::Print("Not found: " + mUri);
+			write(mFd, "HTTP/1.1 404 Not found\r\nContent-type: text/html\r\ncontent-length: 45\r\n\r\n<!DOCTYPE HTML><HTML><H1>404 ERROR<H1><HTML>", 115);
+			close(mFd);
+		}
+		else if (S_ISDIR(fileInfo.st_mode) == true)
+		{
+			Error::Print("directory can't open in file mode: " + mUri);
+			write(mFd, "HTTP/1.1 403 Forbidden\r\nContent-type: text/html\r\ncontent-length: 45\r\n\r\n<!DOCTYPE HTML><HTML><H1>403 ERROR<H1><HTML>", 115);
+			close(mFd);
+		}
+		requestedFile.open(mUri, std::ios::binary);
+		if (requestedFile.is_open() == false)
+		{
+			Error::Print("open failed: " + mUri);
+			write(mFd, "HTTP/1.1 404 Not found\r\nContent-type: text/html\r\ncontent-length: 45\r\n\r\n<!DOCTYPE HTML><HTML><H1>404 ERROR<H1><HTML>", 115);
+			close(mFd);
+		}
 		else
-			mResponse += "text/";
-		mResponse += extTemp;
-		mResponse += "\r\nContent-length: ";
-		mResponse += std::to_string(fileSize);
-		mResponse += "\r\n\r\n";
-		fileContent << requestedFile.rdbuf();
-		mResponse += fileContent.str();
-		requestedFile.close();
-		SendToClient(mFd);
+		{
+			extTemp = mUri.substr(mUri.find_last_of('.') + 1);
+			std::cout << Colors::BlueString("open success: ") << mUri << std::endl;
+			std::stringstream fileContent;
+			requestedFile.seekg(0, std::ios::end);
+			std::streampos fileSize = requestedFile.tellg();
+			requestedFile.seekg(0, std::ios::beg);
+			mResponse = "HTTP/1.1 200 OK\r\nContent-type: ";
+			if (extTemp == "png" || extTemp == "ico")
+				mResponse += "image/";
+			else
+				mResponse += "text/";
+			mResponse += extTemp;
+			mResponse += "\r\nContent-length: ";
+			mResponse += std::to_string(fileSize);
+			mResponse += "\r\n\r\n";
+			fileContent << requestedFile.rdbuf();
+			mResponse += fileContent.str();
+			requestedFile.close();
+			SendToClient(mFd);
+		}
 	}
 	return (0);
 }
@@ -198,26 +286,30 @@ void UserData::GenerateResponse(void)
 	}
 	else
 	{
+		// 1. 요청 파싱
 		if (ParseRequest(mReceived) == ERROR)
 		{
 			// GenerateErrorResponse();
 			std::cout << "Error page 전송해야 함" << std::endl;
 			return;
 		}
+		// 2. 요청에서 문제가 없을 경우 최하위 노드 찾아서 설정 값 받아오기
 		if (mStatusCode < 1)
 		{
 			mMethod->ResponseConfigSetup(*mServerPtr, mUri, mSetting);
 		}
+		// 2-1. 이미 상태코드가 정의가 된 경우 종료 
 		if (300 <= mStatusCode && mStatusCode < 600)
 		{
-			// TODO 조기종료 시키기
 			// generateReturnResponse(mFd, mSetting.returnPair.first, mSetting.returnPair.second);
 			std::cout << "더 이상 서버 자원을 잡아먹을 필요가 없음. 얼른 보내고 끝내라." << std::endl;
 			return ;
 		}
+		// 3. 설정을 실제 open 해야 할 uri를 구성 
 		mUri = uriGenerator();
+		// 4. 각 method에 따라 응답 메시지 생성
 		std::cout << Colors::BoldCyan << "[Method] " << mMethod->GetType() << std::endl;
-    if (mMethod->GetType() == GET && mSetting.bGetMethod == true)
+    	if (mMethod->GetType() == GET && mSetting.bGetMethod == true)
 		{
 			GenerateGETResponse();
 		}
@@ -287,6 +379,7 @@ int UserData::SendToClient(int fd)
 	std::cout << Colors::BoldBlue << "\nstatus " << mStatusCode << ": " << mStatusText << std::endl;
 	std::cout << Colors::BoldMagenta << "send to client " << fd << "\n" << Colors::Reset << std::endl;
 	len = write(fd, mResponse.c_str(), mResponse.size());
+	len = write(1, mResponse.c_str(), mResponse.size());
 	if (len < 0)
 		Error::Print("send()");
 	InitUserData();

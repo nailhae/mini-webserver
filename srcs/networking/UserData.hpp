@@ -50,6 +50,7 @@ public:
 	int RecvFromClient(void);
 	int SendToClient(int fd);
 	int GeneratePostResponse(void);
+	int loadFolderContent(void);
 
 	std::stringstream mReceived;
 	std::string mBody;
