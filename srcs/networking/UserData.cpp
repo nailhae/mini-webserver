@@ -168,7 +168,7 @@ int UserData::GenerateGETResponse(void)
 			mResponse += std::to_string(mBody.size());
 			mResponse += "\r\n\r\n";
 			mResponse += mBody;
-			SendToClient(mFd);
+			WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_ONESHOT, this);
 		}
 	}
 	else
@@ -223,7 +223,7 @@ int UserData::GenerateGETResponse(void)
 			fileContent << requestedFile.rdbuf();
 			mResponse += fileContent.str();
 			requestedFile.close();
-			SendToClient(mFd);
+			WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_ONESHOT, this);
 		}
 	}
 	return (0);
@@ -382,11 +382,13 @@ void UserData::SetServerPtr(const ServerBlock* serverPtr)
 	mServerPtr = serverPtr;
 }
 
-static int checkHeaderLength(std::stringstream& ss)
+static int checkHeaderLength(std::stringstream& ss, int flag)
 {
 	std::string line;
 
 	// ss.seekg(std::ios::beg); // 필요하지 않다면 빼기
+	if (flag == true)
+		return (true);
 	while (1)
 	{
 		std::getline(ss, line);
@@ -405,7 +407,7 @@ void UserData::GenerateResponse(void)
 {
 	std::string temp;
 
-	mHeaderFlag = checkHeaderLength(mReceived);
+	mHeaderFlag = checkHeaderLength(mReceived, mHeaderFlag);
 	if (mHeaderFlag == ERROR)
 	{
 		mStatusCode = 416;
@@ -418,7 +420,7 @@ void UserData::GenerateResponse(void)
 	}
 	else
 	{
-		// 1. 요청 파싱
+		// 1. 요청 파싱 // 400~
 		if (ParseRequest(mReceived) == ERROR)
 		{
 			// GenerateErrorResponse();
@@ -426,7 +428,7 @@ void UserData::GenerateResponse(void)
 			return;
 		}
 		// 2. 요청에서 문제가 없을 경우 최하위 노드 찾아서 설정 값 받아오기
-		if (mStatusCode < 1)
+		if (mStatusCode < 1) // 초기값
 		{
 			mMethod->ResponseConfigSetup(*mServerPtr, mUri, mSetting);
 		}
@@ -443,6 +445,7 @@ void UserData::GenerateResponse(void)
 		std::cout << Colors::BoldCyan << "[Method] " << mMethod->GetType() << std::endl;
 		if (mMethod->GetType() == GET && mSetting.bGetMethod == true)
 		{
+			// mMethod->GenerateResponse();
 			GenerateGETResponse();
 		}
 		else if (mMethod->GetType() == HEAD && mSetting.bHeadMethod == true)
@@ -456,8 +459,8 @@ void UserData::GenerateResponse(void)
 			{
 				std::getline(mReceived, temp, static_cast<char>(EOF));
 				mBody += temp;
-				std::cout << Colors::BoldCyan << "[body]" << mBody << std::endl;
-				std::cout << Colors::BoldCyan << "[body]" << temp << std::endl;
+				mFillBodyFlag = true;
+				return ;
 			}
 			GeneratePostResponse();
 		}
@@ -511,6 +514,7 @@ int UserData::SendToClient(int fd)
 	std::cout << Colors::BoldBlue << "\nstatus " << mStatusCode << ": " << mStatusText << std::endl;
 	std::cout << Colors::BoldMagenta << "send to client " << fd << "\n" << Colors::Reset << std::endl;
 	len = write(fd, mResponse.c_str(), mResponse.size());
+	len = write(1, mResponse.c_str(), mResponse.size());
 	if (len < 0)
 		Error::Print("send()");
 	InitUserData();
@@ -526,6 +530,7 @@ int UserData::GeneratePostResponse(void)
 	cgi.sendCgiBody(mBody);
 	mResponse = cgi.readCgiResponse();
 
-	SendToClient(mFd);
+	WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_ONESHOT, this);
+	// SendToClient(mFd);
 	return (0);
 }
