@@ -1,13 +1,16 @@
 #include "UserData.hpp"
 #include "ChangeList.hpp"
+#include "cgi.hpp"
 #include "Error.hpp"
 #include "WebServer.hpp"
 
 UserData::UserData(int fd)
 	: mFd(fd)
+	, mSocketType(-1)
 	, mStatusCode(-1)
 	, mHeaderFlag(0)
 	, mFillBodyFlag(-1)
+	, mContentSize(0)
 	, mMethod(NULL)
 {
 }
@@ -213,7 +216,8 @@ void UserData::GenerateResponse(void)
 			return ;
 		}
 		mUri = uriGenerator();
-		if (mMethod->GetType() == GET && mSetting.bGetMethod == true)
+		std::cout << Colors::BoldCyan << "[Method] " << mMethod->GetType() << std::endl;
+    if (mMethod->GetType() == GET && mSetting.bGetMethod == true)
 		{
 			GenerateGETResponse();
 		}
@@ -221,13 +225,17 @@ void UserData::GenerateResponse(void)
 			std::cout << "HEAD response 전송해야 함." << std::endl;
 		else if (mMethod->GetType() == POST && mSetting.bPostMethod == true)
 		{
+			std::cout << Colors::BoldCyan << "[mContentSize]" << mHeaders[CONTENT_LENGTH] << std::endl;
+			mContentSize = strtol(mHeaders[CONTENT_LENGTH].c_str(), NULL, 10);
+			std::cout << Colors::BoldCyan << "[body]" << mContentSize << std::endl;
 			if (mBody.size() < mContentSize)
 			{
 				std::getline(mReceived, temp, static_cast<char>(EOF));
 				mBody += temp;
-				return;
+				std::cout << Colors::BoldCyan << "[body]" << mBody << std::endl;
+				std::cout << Colors::BoldCyan << "[body]" << temp << std::endl;
 			}
-			std::cout << "POST response 전송해야 함." << std::endl;
+			GeneratePostResponse();
 		}
 		else if (mMethod->GetType() == DELETE)
 			std::cout << "DELETE response 전송해야 함." << std::endl;
@@ -283,4 +291,17 @@ int UserData::SendToClient(int fd)
 		Error::Print("send()");
 	InitUserData();
 	return (len);
+}
+
+int UserData::GeneratePostResponse(void) 
+{
+	Cgi cgi(mUri);
+	cgi.initCgiEnv(mUri, mContentSize, mHeaders, mBody);
+	size_t errorCode = 0;
+	cgi.execute(errorCode);
+	cgi.sendCgiBody(mBody);
+	mResponse = cgi.readCgiResponse();
+
+	SendToClient(mFd);
+	return (0);
 }

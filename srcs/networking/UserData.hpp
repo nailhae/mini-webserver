@@ -31,6 +31,7 @@ public:
 	const std::stringstream& GetReceived(void) const;
 	const std::string& GetResponse(void) const;
 	const std::string& GetUri(void) const;
+
 	const AMethod& GetMethod(void) const;
 	int GetFd(void) const;
 	int GetSocketType(void) const;
@@ -47,7 +48,8 @@ public:
 	int ParseOneLine(std::string& oneLine);
 	int ParseHeaderValue(int headerKey, std::string& field);
 	int RecvFromClient(void);
-	int SendToClient(int fd); // 테스트 끝난 뒤 void로 바꿀 예정
+	int SendToClient(int fd);
+	int GeneratePostResponse(void);
 
 	std::stringstream mReceived;
 	std::string mBody;
