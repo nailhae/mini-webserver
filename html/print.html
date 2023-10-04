@@ -14,12 +14,14 @@
             <a class = "nav__link" href="index.html">Webserv</a>
             <nav class="nav">
                 <a class="nav__link" href="index.html">Home</a>
+                <a class="nav__link" href="fileprint.html">filePrint</a>
                 <a class="nav__link" href="print.html">Print</a>
                 <a class="nav__link" href="fileUpload.html">file</a>
                 <a class="nav__link" href="GET.html">GET</a>
                 <a class="nav__link" href="POST.html">POST</a>
                 <a class="nav__link" href="error/404.html">error</a>
-            </nav>
+                <a class="nav__link" href="calculator.html">calculator</a>
+              </nav>
         </div>
     </div>
 </header>
@@ -29,8 +31,10 @@
     <h3>Print</h3>
     <form method="POST" action="/cgi-bin/print.py">
       <div style="display: flex; justify-content:space-around;">
-        <p style="margin-right: 20px;"><input type="submit" value="+"></p>
-        <p><input type="submit" value="-"></p>
+        <p style="margin-right: 20px;">
+          <input type="text" name="input">
+        </p>
+        <p><input type="submit" value="확인"></p>
       </div>
     </form>
   </div>

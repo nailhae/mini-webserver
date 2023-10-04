@@ -21,18 +21,21 @@
                 <a class="nav__link" href="POST.html">POST</a>
                 <a class="nav__link" href="error/404.html">error</a>
                 <a class="nav__link" href="calculator.html">calculator</a>
-              </nav>
+            </nav>
         </div>
     </div>
 </header>
   </head>
   <body>
   <div class ="container_body">
-    <h3>FIlE Upload</h3>
-    <form method="POST" action="/cgi-bin/fileUpload.py" enctype="multipart/form-data">
-      Select file to upload:
-      <input type="file" name="filename" id="fileToUpload">
-      <input type="submit" value="Upload file" name="submit">
+    <h3>계산기</h3>
+    <form method="POST" action="/cgi-bin/calculator.py">
+      <div style="display: flex; justify-content:space-between;">
+            <p><input type="text" name="m">X</p>
+            <p><input type="text" name="n">=</p>
+            <!-- <p><input type="text" value=""></p> -->
+            <p><input type="submit" value="확인"></p>
+        </div>
     </form>
   </div>
   </body>

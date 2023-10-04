@@ -27,12 +27,13 @@
 </header>
   </head>
   <body>
+      <!-- 문장을 쓰고 그 문장을 받아서 기본값 5 이후에 + - 로 추가 -->
   <div class ="container_body">
-    <h3>FIlE Upload</h3>
-    <form method="POST" action="/cgi-bin/fileUpload.py" enctype="multipart/form-data">
-      Select file to upload:
-      <input type="file" name="filename" id="fileToUpload">
-      <input type="submit" value="Upload file" name="submit">
+    <h3>Print</h3>
+    <form method="POST" action="/cgi-bin/fileprint.py">
+      <div style="display: flex; justify-content:space-around;">
+        <p><input type="submit" value="확인"></p>
+      </div>
     </form>
   </div>
   </body>

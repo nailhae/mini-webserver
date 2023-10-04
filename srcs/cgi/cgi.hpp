@@ -25,7 +25,7 @@ class Cgi {
         Cgi &operator=(Cgi const &obj);
 
         void initCgiEnv(std::string httpCgiPath, size_t ContentSize, std::map<int, std::string> Header);
-        void initCgiEnv(std::string httpCgiPath, size_t ContentSize, std::map<int, std::string> Header, std::string Body);
+        void initCgiEnv(std::string httpCgiPath, size_t ContentSize, std::map<int, std::string> Header, std::string Body, size_t MethodType);
         void execute(size_t &errorCode);
         // void clear();
 

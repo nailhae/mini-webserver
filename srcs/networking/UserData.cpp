@@ -227,7 +227,7 @@ int UserData::SendToClient(int fd)
 int UserData::GeneratePostResponse(void) 
 {
 	Cgi cgi(mUri);
-	cgi.initCgiEnv(mUri, mContentSize, mHeaders, mBody);
+	cgi.initCgiEnv(mUri, mContentSize, mHeaders, mBody, mMethod->GetType());
 	size_t errorCode = 0;
 	cgi.execute(errorCode);
 	cgi.sendCgiBody(mBody);

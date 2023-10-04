@@ -46,7 +46,7 @@ std::string getPathInfo(std::string &path) {
 std::string urlEncode(const std::string &path) {
     std::ostringstream oss;
     for (size_t i = 0; i < path.size(); i++) {
-        if (std::isalnum(path[i]) || path[i] == '-' || path[i] == '_' || path[i] == '.' || path[i] == '~') {
+        if (std::iswalnum(path[i]) || path[i] == '-' || path[i] == '_' || path[i] == '.' || path[i] == '~') {
             oss << path[i];
         } else {
             oss << '%' << std::hex << std::uppercase << int((size_t)path[i]);
@@ -65,7 +65,7 @@ int findHostNamePos(const std::string path, const std::string ch)
     return (-1);
 }
 
-void Cgi::initCgiEnv(std::string httpCgiPath, size_t ContentSize, std::map<int, std::string> Header, std::string Body)
+void Cgi::initCgiEnv(std::string httpCgiPath, size_t ContentSize, std::map<int, std::string> Header, std::string Body,size_t MethodType)
 {
     if (httpCgiPath.at(0) == '/')
     {
@@ -75,7 +75,6 @@ void Cgi::initCgiEnv(std::string httpCgiPath, size_t ContentSize, std::map<int, 
 	std::cout << "[Body]" << Body << std::endl;
     this->env["AUTH_TYPE"] = "BASIC";
     this->env["CONTENT_LENGTH"] = ContentSize;
-    // this->env["CONTENT_TYPE"] = Header[CONTENT_TYPE];
     this->env["CONTENT_TYPE"] = Header[CONTENT_TYPE];
     this->env["GATEWAY_INTERFACE"] = "CGI/1.1";
     this->env["PATH_INFO"] = httpCgiPath;
@@ -84,7 +83,10 @@ void Cgi::initCgiEnv(std::string httpCgiPath, size_t ContentSize, std::map<int, 
     this->env["REMOTE_ADDR"] = Header[HOST];
     // this->env["REMOTE_HOST"]
     // this->env["REMOTE_USER"]
-    this->env["REQUEST_METHOD"] = POST;
+    if (MethodType == POST)
+        this->env["REQUEST_METHOD"] = "POST";
+    else
+        this->env["REQUEST_METHOD"] = "GET";
     this->env["SCRIPT_NAME"] = httpCgiPath;
     // this->env["SCRIPT_FILENAME"] = "3OfD_0ON3b5Mw9GmxClakX77pOo2tHJnNugH0kaRM3-yJ6NBID2Xbb-pG9sd0z-RAgBEwBFP1tijbVV5Qe8aFA.webp";
     size_t pos = findHostNamePos(Header[HOST], ":");
@@ -185,11 +187,12 @@ void Cgi::sendCgiBody(std::string mBody)
 std::string    Cgi::readCgiResponse()
 {
     std::string responseContent;
-    char    buffer[BUFFER_SIZE];
+    // char    buffer[BUFFER_SIZE];
+    char    buffer[4000000];
     int     readBytes = 0;
     responseContent.insert(0, "HTTP/1.1 200 OK\r\n");
 
-    readBytes = read(pipeOut[0], buffer, 40000);
+    readBytes = read(pipeOut[0], buffer, 4000000);
     if (readBytes == 0)
     {
         close(pipeIn[0]);
