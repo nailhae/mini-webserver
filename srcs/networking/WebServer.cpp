@@ -43,6 +43,11 @@ WebServer::~WebServer()
 {
 }
 
+void WebServer::ChangeEvent(int ident, int nFilter, int nFlags, UserData *udata)
+{
+	mChangeList.ChangeEvent(ident, nFilter, nFlags, udata);
+}
+
 WebServer* WebServer::GetInstance()
 {
 	if (mWebServer == NULL)

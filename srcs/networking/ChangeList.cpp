@@ -29,6 +29,8 @@ void ChangeList::ChangeEvent(uintptr_t ident, int filter, int flags, UserData *u
 	}
 	else
 	{
+		if ((filter & EVFILT_WRITE) == true)
+			std::cout << Colors::BoldRed << "write 킨다" << Colors::Reset << std::endl;
 		target.udata = udata;
 		_keventVector.push_back(target);
 	}
