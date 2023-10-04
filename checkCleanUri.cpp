@@ -1,13 +1,13 @@
-#include <string>
 #include <iostream>
+#include <string>
 
-bool	checkCleanUri(std::string& input)
+bool checkCleanUri(std::string& input)
 {
 	if (input.find("/../") != std::string::npos || input.find("//") != std::string::npos)
 	{
 		return false;
 	}
-	for (std::string::iterator it = input.begin() + 1; it!= input.end(); it++)
+	for (std::string::iterator it = input.begin() + 1; it != input.end(); it++)
 	{
 		char c = *it;
 		if (!(isalnum(c) || c == '/' || c == '-' || c == '_' || c == '.' || c == '~'))
@@ -18,7 +18,7 @@ bool	checkCleanUri(std::string& input)
 			return false;
 		}
 	}
-	size_t	pos = input.find("/./");
+	size_t pos = input.find("/./");
 	while (pos != std::string::npos)
 	{
 		input.erase(pos, 2);
@@ -27,7 +27,7 @@ bool	checkCleanUri(std::string& input)
 	return true;
 }
 
-//int	main(void)
+// int	main(void)
 //{
 //	std::string path1 = "/user_profile/-____--.....42";
 //	std::string path2 = "/images/logo.jpg";
@@ -47,4 +47,4 @@ bool	checkCleanUri(std::string& input)
 //	std::cout << checkCleanUri(path7) << path7 <<std::endl; //1
 //
 //	return 0;
-//}
+// }

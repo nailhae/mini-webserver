@@ -1,8 +1,9 @@
 #include "UserData.hpp"
+
 #include "ChangeList.hpp"
-#include "cgi.hpp"
 #include "Error.hpp"
 #include "WebServer.hpp"
+#include "cgi.hpp"
 
 UserData::UserData(int fd)
 	: mFd(fd)
@@ -30,7 +31,10 @@ int UserData::GenerateGETResponse(void)
 	{
 		// 4XX error
 		Error::Print("open failed: ." + mUri);
-		write(mFd, "HTTP/1.1 404 Not found\r\nContent-type: text/html\r\ncontent-length: 45\r\n\r\n<!DOCTYPE HTML><HTML><H1>404 ERROR<H1><HTML>", 115);
+		write(mFd,
+			  "HTTP/1.1 404 Not found\r\nContent-type: text/html\r\ncontent-length: 45\r\n\r\n<!DOCTYPE "
+			  "HTML><HTML><H1>404 ERROR<H1><HTML>",
+			  115);
 		close(mFd);
 	}
 	else
@@ -107,11 +111,13 @@ void UserData::SetServerPtr(const ServerBlock* serverPtr)
 	mServerPtr = serverPtr;
 }
 
-static int checkHeaderLength(std::stringstream& ss)
+static int checkHeaderLength(std::stringstream& ss, int flag)
 {
 	std::string line;
 
 	// ss.seekg(std::ios::beg); // 필요하지 않다면 빼기
+	if (flag == true)
+		return (true);
 	while (1)
 	{
 		std::getline(ss, line);
@@ -130,7 +136,7 @@ void UserData::GenerateResponse(void)
 {
 	std::string temp;
 
-	mHeaderFlag = checkHeaderLength(mReceived);
+	mHeaderFlag = checkHeaderLength(mReceived, mHeaderFlag);
 	if (mHeaderFlag == ERROR)
 	{
 		mStatusCode = 416;
@@ -140,6 +146,24 @@ void UserData::GenerateResponse(void)
 	else if (mHeaderFlag == false)
 	{
 		return;
+	}
+	else if (mFillBodyFlag == true)
+	{
+		if (mBody.size() < mContentSize)
+		{
+			int i = 0;
+			while (mBody.size() < mContentSize && i < BUFFER_SIZE)
+			{
+				mBody.push_back(mBuf[i]);
+				i++;
+			}
+			std::cout << Colors::Red << "[bodysize]" << mBody.size() << " " << mContentSize << Colors::Reset
+					  << std::endl;
+			if (mBody.size() < mContentSize && i < BUFFER_SIZE)
+				return;
+			else
+				GeneratePostResponse();
+		}
 	}
 	else
 	{
@@ -158,15 +182,23 @@ void UserData::GenerateResponse(void)
 		{
 			std::cout << Colors::BoldCyan << "[mContentSize]" << mHeaders[CONTENT_LENGTH] << std::endl;
 			mContentSize = strtol(mHeaders[CONTENT_LENGTH].c_str(), NULL, 10);
-			std::cout << Colors::BoldCyan << "[body]" << mContentSize << std::endl;
+			mBody.reserve(mContentSize);
 			if (mBody.size() < mContentSize)
 			{
-				std::getline(mReceived, temp, static_cast<char>(EOF));
-				mBody += temp;
-				std::cout << Colors::BoldCyan << "[body]" << mBody << std::endl;
-				std::cout << Colors::BoldCyan << "[body]" << temp << std::endl;
+				int i = 0;
+				while (mBody.size() < mContentSize && i < BUFFER_SIZE)
+				{
+					mBody.push_back(mBuf[i]);
+					i++;
+				}
+				if (mBody.size() < mContentSize && i < BUFFER_SIZE)
+				{
+					mFillBodyFlag = true;
+					return;
+				}
+				else
+					GeneratePostResponse();
 			}
-			GeneratePostResponse();
 		}
 		else if (mMethod->GetType() == DELETE)
 			std::cout << "DELETE response 전송해야 함." << std::endl;
@@ -224,15 +256,18 @@ int UserData::SendToClient(int fd)
 	return (len);
 }
 
-int UserData::GeneratePostResponse(void) 
+int UserData::GeneratePostResponse(void)
 {
 	Cgi cgi(mUri);
 	cgi.initCgiEnv(mUri, mContentSize, mHeaders, mBody, mMethod->GetType());
 	size_t errorCode = 0;
+	std::cout << Colors::Magenta << "[send]"
+			  << "send" << std::endl;
 	cgi.execute(errorCode);
+	std::cout << Colors::Magenta << "[read]"
+			  << "read" << std::endl;
 	cgi.sendCgiBody(mBody);
 	mResponse = cgi.readCgiResponse();
-
 	SendToClient(mFd);
 	return (0);
 }

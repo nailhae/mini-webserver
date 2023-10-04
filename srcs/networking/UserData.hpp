@@ -18,7 +18,7 @@
 #include "AMethod.hpp"
 #include "dataSet.hpp"
 
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 1023
 
 class AMethod;
 
@@ -37,7 +37,7 @@ public:
 	int GetSocketType(void) const;
 	void SetSocketType(int socketType);
 	const ServerBlock* GetServerPtr(void) const;
-	void SetServerPtr(const ServerBlock *serverPtr);
+	void SetServerPtr(const ServerBlock* serverPtr);
 	LocationBlock& Setting(void);
 	std::string uriGenerator(std::string);
 	void GenerateResponse(void);
@@ -52,7 +52,7 @@ public:
 	int GeneratePostResponse(void);
 
 	std::stringstream mReceived;
-	std::string mBody;
+	std::vector<unsigned char> mBody;
 
 private:
 	UserData(void);
@@ -72,5 +72,5 @@ private:
 	std::string mResponse;
 	std::map<int, std::string> mHeaders;
 	const ServerBlock* mServerPtr;
-	AMethod *mMethod;
+	AMethod* mMethod;
 };

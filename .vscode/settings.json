@@ -63,5 +63,6 @@
         "algorithm": "cpp"
     },
     "liveServer.settings.port": 5501,
-    "C_Cpp.errorSquiggles": "enabled"
+    "C_Cpp.errorSquiggles": "enabled",
+    "editor.formatOnSave": true, // 저장시 format 자동 적용
 }

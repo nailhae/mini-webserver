@@ -29,7 +29,14 @@ if __name__ == "__main__":
     html_text += '<h3>Hello world by python cgi</h3>'
 
     if m and n:
-        html_text += f'String from browser: {m * n}'
+        try:
+            m_int = int(m)
+            n_int = int(n)
+            result_string = 'String from browser: {}'.format(m_int * n_int)
+        except ValueError:
+            result_string = 'Invalid input'
+
+        html_text += f'<p>{result_string}</p>'
 
     html_text += '</body>\n</html>\n'
 
