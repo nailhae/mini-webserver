@@ -95,14 +95,21 @@ int UserData::loadFolderContent(void)
 	ss << ".container {max-width: 600px;margin: 0 auto;padding: 20px;background-color: #fff;border-radius: 5px;box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);}\n";
 	ss << "u1 {list-style-type: none;padding: 0;}\n";
 	ss << "li {margin-bottom: 10px;}\n";
-	ss << "a {text-decoration: none; color: #007bff;}\n";
-	ss << "a:hover {text-decoration: underline;}\n";
+	ss << ".file {color: #007bff; text-decoration: none;}";
+	ss << ".file:hover {background-color: #F0FFF0;text-decoration: underline;}";
+	ss << ".dir {color: #B22222; text-decoration: none;}";
+	ss << ".dir:hover {background-color: #F0FFF0;text-decoration: underline;}";
+
 	ss << "</style>" << "\t</head>\n\t<body>\n\t\t<header><h1>Index of " << mUri << "</h1></header>\n\t\t<div class=\"container\"><u1>";
 	while ((dirEntry = readdir(dirInfo)) != NULL)
 	{
 		if (dirEntry->d_type == DT_DIR)
+		{
 			dirEntry->d_name[strlen(dirEntry->d_name)] = '/';
-		ss << "\t\t\t<li><a href=\"" << dirEntry->d_name << "\">";
+			ss << "\t\t\t<li><a class=\"dir\" href=\"" << dirEntry->d_name << "\">";
+		}
+		else
+			ss << "\t\t\t<li><a class=\"file\" href=\"" << dirEntry->d_name << "\">";
 		ss << dirEntry->d_name;
 		ss << "</br></a></li>\n";
 	}
@@ -119,7 +126,7 @@ int UserData::GenerateGETResponse(void)
 	std::ifstream requestedFile;
 	std::string extTemp;
 
-	if (*(mUri.end() - 1) == '/')
+	if (*(mUri.end() - 1) == '/') // 폴더에 대한 요청은 무조건 autoindex로
 	{
 		int result = 0;
 		std::cout << "autoindex == " << mSetting.autoindex << std::endl;
@@ -379,7 +386,6 @@ int UserData::SendToClient(int fd)
 	std::cout << Colors::BoldBlue << "\nstatus " << mStatusCode << ": " << mStatusText << std::endl;
 	std::cout << Colors::BoldMagenta << "send to client " << fd << "\n" << Colors::Reset << std::endl;
 	len = write(fd, mResponse.c_str(), mResponse.size());
-	len = write(1, mResponse.c_str(), mResponse.size());
 	if (len < 0)
 		Error::Print("send()");
 	InitUserData();

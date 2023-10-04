@@ -24,9 +24,9 @@ void AMethod::applySettingLocationBlock(LocationBlock& valueSet, const LocationB
 		valueSet.alias = valueToSet->alias;
 		mSetupFlags |= ALIAS;
 	}
-	if (!(B_AUTOINDEX & mSetupFlags) && valueToSet->autoindex == true)
+	if (!(B_AUTOINDEX & mSetupFlags) && valueToSet->autoindex != -1)
 	{
-		valueSet.autoindex = true;
+		valueSet.autoindex = valueToSet->autoindex;
 		mSetupFlags |= B_AUTOINDEX;
 	}
 	if (!((B_DELETE_SETTING & mSetupFlags) || (B_GET_SETTING & mSetupFlags) || (B_POST_SETTING & mSetupFlags) ||

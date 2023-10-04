@@ -80,7 +80,7 @@ struct LocationBlock
 	bool bPostMethod;	// default false;
 	bool bDeleteMethod; // default false;
 	bool bHeadMethod;	// default false;
-	bool autoindex;		// default false
+	int autoindex;		// default false
 	std::string index;	// default "index.html"
 	std::string rootPath;
 	std::string alias;

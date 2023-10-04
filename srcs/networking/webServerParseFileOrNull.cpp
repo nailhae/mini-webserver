@@ -260,7 +260,7 @@ static void initLocationBlock(LocationBlock& location)
 	location.bGetMethod = false;
 	location.bPostMethod = false;
 	location.bDeleteMethod = false;
-	location.autoindex = false;
+	location.autoindex = -1;
 	location.rootPath = "";
 	location.index = "index.html";
 	location.returnPair.first = 0;
