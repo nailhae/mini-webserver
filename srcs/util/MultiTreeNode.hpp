@@ -18,7 +18,7 @@ public:
 	const LocationBlock* GetLocationBlock(void) const;
 	const std::string& GetURI(void) const;
 	const std::vector<MultiTreeNode*>& GetChildren(void);
-	const MultiTreeNode* GetParentNode(void);
+	MultiTreeNode* ParentNode(void);
 	std::vector<MultiTreeNode*>& Children(void);
 	void AddChildNode(LocationBlock* target);
 	void PrintData(void) const;

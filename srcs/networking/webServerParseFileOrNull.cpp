@@ -263,6 +263,7 @@ static void initLocationBlock(LocationBlock& location)
 	location.autoindex = false;
 	location.rootPath = "";
 	location.index = "index.html";
+	location.returnPair.first = 0;
 }
 
 static int serverParser(ServerBlock& server, std::ifstream& file)
