@@ -1,10 +1,12 @@
+#include "UserData.hpp"
+
 #include <dirent.h>
 #include <sys/stat.h>
-#include "UserData.hpp"
+
 #include "ChangeList.hpp"
-#include "cgi.hpp"
 #include "Error.hpp"
 #include "WebServer.hpp"
+#include "cgi.hpp"
 
 UserData::UserData(int fd)
 	: mFd(fd)
@@ -21,20 +23,20 @@ UserData::~UserData(void)
 {
 }
 
-static void	replaceToContent(std::string& contents, std::string& findString, std::string& replaceString)
+static void replaceToContent(std::string& contents, std::string& findString, std::string& replaceString)
 {
-	size_t	found = 0;
+	size_t found = 0;
 
 	found = contents.find(findString, found);
 	if (found == std::string::npos)
-		return ;
+		return;
 	else
 	{
 		contents.erase(found, findString.size());
 		contents.insert(found, replaceString);
 		found += replaceString.size();
 	}
-	return ;
+	return;
 }
 
 std::string UserData::uriGenerator(void)
@@ -54,12 +56,12 @@ std::string UserData::uriGenerator(void)
 	}
 	if (mSetting.rootPath.size() > 0)
 	{
-		std::cout << "root: "<< Colors::BoldCyanString(mSetting.rootPath) << mUri << std::endl;
+		std::cout << "root: " << Colors::BoldCyanString(mSetting.rootPath) << mUri << std::endl;
 		mUri.insert(0, mSetting.rootPath);
 	}
 	else
 	{
-		std::cout << "root: "<< Colors::BoldCyanString(mServerPtr->rootPath) << mUri << std::endl;
+		std::cout << "root: " << Colors::BoldCyanString(mServerPtr->rootPath) << mUri << std::endl;
 		mUri.insert(0, mServerPtr->rootPath);
 	}
 	return (mUri);
@@ -69,7 +71,8 @@ void generateReturnResponse(int fd, int code, std::string& body)
 {
 	std::stringstream returnResponse;
 
-	returnResponse << "HTTP/1.1 " << code << " message" << "\r\n";
+	returnResponse << "HTTP/1.1 " << code << " message"
+				   << "\r\n";
 	returnResponse << "location: " << body << "\r\n\r\n";
 	// returnResponse << "Content-type: text\r\n\r\n" << body;
 	write(fd, returnResponse.str().c_str(), returnResponse.str().size());
@@ -79,7 +82,7 @@ void generateReturnResponse(int fd, int code, std::string& body)
 int UserData::loadFolderContent(void)
 {
 	DIR* dirInfo = NULL;
-	struct dirent *dirEntry = NULL;
+	struct dirent* dirEntry = NULL;
 	std::stringstream ss;
 
 	dirInfo = opendir(mUri.c_str());
@@ -89,10 +92,12 @@ int UserData::loadFolderContent(void)
 		Error::Print(mUri + "Open Error");
 		return (ERROR);
 	}
-	ss << "<!DOCTYPE HTML>\n<HTML>\n\t<head>\n\t\t<title>Index of "<< mUri <<"</title>\n"<< "<style>\n";
+	ss << "<!DOCTYPE HTML>\n<HTML>\n\t<head>\n\t\t<title>Index of " << mUri << "</title>\n"
+	   << "<style>\n";
 	ss << "body {font-family: Arial, sans-serif; background-color: #f4f4f4;margin: 0;padding: 0;}\n";
 	ss << "header {background-color: #333;color: #fff;text-align: center;padding: 10px;}\n";
-	ss << ".container {max-width: 600px;margin: 0 auto;padding: 20px;background-color: #fff;border-radius: 5px;box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);}\n";
+	ss << ".container {max-width: 600px;margin: 0 auto;padding: 20px;background-color: #fff;border-radius: "
+		  "5px;box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);}\n";
 	ss << "u1 {list-style-type: none;padding: 0;}\n";
 	ss << "li {margin-bottom: 10px;}\n";
 	ss << ".file {color: #007bff; text-decoration: none;}";
@@ -100,7 +105,9 @@ int UserData::loadFolderContent(void)
 	ss << ".dir {color: #B22222; text-decoration: none;}";
 	ss << ".dir:hover {background-color: #F0FFF0;text-decoration: underline;}";
 
-	ss << "</style>" << "\t</head>\n\t<body>\n\t\t<header><h1>Index of " << mUri << "</h1></header>\n\t\t<div class=\"container\"><u1>";
+	ss << "</style>"
+	   << "\t</head>\n\t<body>\n\t\t<header><h1>Index of " << mUri
+	   << "</h1></header>\n\t\t<div class=\"container\"><u1>";
 	while ((dirEntry = readdir(dirInfo)) != NULL)
 	{
 		if (dirEntry->d_type == DT_DIR)
@@ -137,13 +144,19 @@ int UserData::GenerateGETResponse(void)
 		else
 		{
 			mStatusCode = 403;
-			write(mFd, "HTTP/1.1 403 Forbidden\r\nContent-type: text/html\r\ncontent-length: 45\r\n\r\n<!DOCTYPE HTML><HTML><H1>403 ERROR<H1><HTML>", 115);
+			write(mFd,
+				  "HTTP/1.1 403 Forbidden\r\nContent-type: text/html\r\ncontent-length: 45\r\n\r\n<!DOCTYPE "
+				  "HTML><HTML><H1>403 ERROR<H1><HTML>",
+				  115);
 			close(mFd);
 			return (0);
 		}
 		if (result == ERROR)
 		{
-			write(mFd, "HTTP/1.1 404 Not Found\r\nContent-type: text/html\r\ncontent-length: 45\r\n\r\n<!DOCTYPE HTML><HTML><H1>404 ERROR<H1><HTML>", 115);
+			write(mFd,
+				  "HTTP/1.1 404 Not Found\r\nContent-type: text/html\r\ncontent-length: 45\r\n\r\n<!DOCTYPE "
+				  "HTML><HTML><H1>404 ERROR<H1><HTML>",
+				  115);
 			close(mFd);
 			return (0);
 		}
@@ -165,20 +178,29 @@ int UserData::GenerateGETResponse(void)
 		if (stat(mUri.c_str(), &fileInfo) == ERROR)
 		{
 			Error::Print("Not found: " + mUri);
-			write(mFd, "HTTP/1.1 404 Not found\r\nContent-type: text/html\r\ncontent-length: 45\r\n\r\n<!DOCTYPE HTML><HTML><H1>404 ERROR<H1><HTML>", 115);
+			write(mFd,
+				  "HTTP/1.1 404 Not found\r\nContent-type: text/html\r\ncontent-length: 45\r\n\r\n<!DOCTYPE "
+				  "HTML><HTML><H1>404 ERROR<H1><HTML>",
+				  115);
 			close(mFd);
 		}
 		else if (S_ISDIR(fileInfo.st_mode) == true)
 		{
 			Error::Print("directory can't open in file mode: " + mUri);
-			write(mFd, "HTTP/1.1 403 Forbidden\r\nContent-type: text/html\r\ncontent-length: 45\r\n\r\n<!DOCTYPE HTML><HTML><H1>403 ERROR<H1><HTML>", 115);
+			write(mFd,
+				  "HTTP/1.1 403 Forbidden\r\nContent-type: text/html\r\ncontent-length: 45\r\n\r\n<!DOCTYPE "
+				  "HTML><HTML><H1>403 ERROR<H1><HTML>",
+				  115);
 			close(mFd);
 		}
 		requestedFile.open(mUri, std::ios::binary);
 		if (requestedFile.is_open() == false)
 		{
 			Error::Print("open failed: " + mUri);
-			write(mFd, "HTTP/1.1 404 Not found\r\nContent-type: text/html\r\ncontent-length: 45\r\n\r\n<!DOCTYPE HTML><HTML><H1>404 ERROR<H1><HTML>", 115);
+			write(mFd,
+				  "HTTP/1.1 404 Not found\r\nContent-type: text/html\r\ncontent-length: 45\r\n\r\n<!DOCTYPE "
+				  "HTML><HTML><H1>404 ERROR<H1><HTML>",
+				  115);
 			close(mFd);
 		}
 		else
@@ -204,6 +226,109 @@ int UserData::GenerateGETResponse(void)
 			SendToClient(mFd);
 		}
 	}
+	return (0);
+}
+
+static void sendErrorPage(int clientSocket, int responseCode)
+{
+	std::string firstLine;
+	std::string htmlContent;
+
+	switch (responseCode)
+	{
+	case 403:
+		firstLine = "HTTP/1.1 403 Forbidden\r\n";
+		htmlContent = "<html>\n"
+					  "  <head>\n"
+					  "    <title>403 Forbidden</title>\n"
+					  "  </head>\n"
+					  "  <body>\n"
+					  "    <h1>403 Forbidden</h1>\n"
+					  "    <p>You do not have permission to access this resource.</p>\n"
+					  "  </body>\n"
+					  "</html>";
+		break;
+
+	case 404:
+		firstLine = "HTTP/1.1 404 Not Found\r\n";
+		htmlContent = "<html>\n"
+					  "  <head>\n"
+					  "    <title>404 Not Found</title>\n"
+					  "  </head>\n"
+					  "  <body>\n"
+					  "    <h1>404 Not Found</h1>\n"
+					  "    <p>The requested page was not found.</p>\n"
+					  "  </body>\n"
+					  "</html>";
+		break;
+
+	case 500:
+		firstLine = "HTTP/1.1 500 Internal Server Error\r\n";
+		htmlContent = "<html>\n"
+					  "  <head>\n"
+					  "    <title>500 Internal Server Error</title>\n"
+					  "  </head>\n"
+					  "  <body>\n"
+					  "    <h1>500 Internal Server Error</h1>\n"
+					  "    <p>There was an internal server error while processing your request.</p>\n"
+					  "  </body>\n"
+					  "</html>";
+		break;
+
+	default:
+		firstLine = "HTTP/1.1 501 Not Implemented\r\n";
+		htmlContent = "<html>\n"
+					  "  <head>\n"
+					  "    <title>501 Not Implemented</title>\n"
+					  "  </head>\n"
+					  "  <body>\n"
+					  "    <h1>501 Not Implemented</h1>\n"
+					  "    <p>The requested functionality is not implemented on this server.</p>\n"
+					  "  </body>\n"
+					  "</html>";
+		break;
+	}
+
+	std::ostringstream response;
+	response << firstLine << "Content-Type: text/html\r\n"
+			 << "Content-Length: " << htmlContent.length() << "\r\n"
+			 << "\r\n"
+			 << htmlContent;
+
+	write(clientSocket, response.str().c_str(), response.str().length());
+}
+
+int UserData::GenerateDeleteResponse(void)
+{
+	if (access(mUri.c_str(), F_OK) == ERROR)
+	{
+		Error::Print("404 Not Found");
+		sendErrorPage(mFd, 404);
+		close(mFd);
+		return ERROR;
+	}
+	if (access(mUri.c_str(), W_OK) == ERROR)
+	{
+		Error::Print("403 Forbidden");
+		sendErrorPage(mFd, 403);
+		close(mFd);
+		return ERROR;
+	}
+	if (std::remove(mUri.c_str()) == ERROR)
+	{
+		Error::Print("500 Internal Server Error");
+		sendErrorPage(mFd, 500);
+		close(mFd);
+		return ERROR;
+	}
+	std::cout << "Success remove file" << std::endl;
+	// TODO apply date method
+	write(mFd,
+		  "HTTP/1.1 200 OK\r\nContent-type: text/plain\r\nContent-length: 76\r\nDate: Wed, 21 Oct 2015 07:28:00 "
+		  "GMT<html>  <body>    <h1>File deleted.</h1>  </body></html>",
+		  154);
+	close(mFd);
+
 	return (0);
 }
 
@@ -305,18 +430,18 @@ void UserData::GenerateResponse(void)
 		{
 			mMethod->ResponseConfigSetup(*mServerPtr, mUri, mSetting);
 		}
-		// 2-1. 이미 상태코드가 정의가 된 경우 종료 
+		// 2-1. 이미 상태코드가 정의가 된 경우 종료
 		if (300 <= mStatusCode && mStatusCode < 600)
 		{
 			// generateReturnResponse(mFd, mSetting.returnPair.first, mSetting.returnPair.second);
 			std::cout << "더 이상 서버 자원을 잡아먹을 필요가 없음. 얼른 보내고 끝내라." << std::endl;
-			return ;
+			return;
 		}
-		// 3. 설정을 실제 open 해야 할 uri를 구성 
+		// 3. 설정을 실제 open 해야 할 uri를 구성
 		mUri = uriGenerator();
 		// 4. 각 method에 따라 응답 메시지 생성
 		std::cout << Colors::BoldCyan << "[Method] " << mMethod->GetType() << std::endl;
-    	if (mMethod->GetType() == GET && mSetting.bGetMethod == true)
+		if (mMethod->GetType() == GET && mSetting.bGetMethod == true)
 		{
 			GenerateGETResponse();
 		}
@@ -337,7 +462,7 @@ void UserData::GenerateResponse(void)
 			GeneratePostResponse();
 		}
 		else if (mMethod->GetType() == DELETE)
-			std::cout << "DELETE response 전송해야 함." << std::endl;
+			GenerateDeleteResponse();
 	}
 }
 
@@ -392,7 +517,7 @@ int UserData::SendToClient(int fd)
 	return (len);
 }
 
-int UserData::GeneratePostResponse(void) 
+int UserData::GeneratePostResponse(void)
 {
 	Cgi cgi(mUri);
 	cgi.initCgiEnv(mUri, mContentSize, mHeaders, mBody);

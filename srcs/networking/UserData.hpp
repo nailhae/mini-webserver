@@ -37,11 +37,12 @@ public:
 	int GetSocketType(void) const;
 	void SetSocketType(int socketType);
 	const ServerBlock* GetServerPtr(void) const;
-	void SetServerPtr(const ServerBlock *serverPtr);
+	void SetServerPtr(const ServerBlock* serverPtr);
 	LocationBlock& Setting(void);
 	std::string uriGenerator(void);
 	void GenerateResponse(void);
 	int GenerateGETResponse(void);
+	int GenerateDeleteResponse(void);
 	int ParseRequest(std::stringstream& request);
 	int ParseFirstLine(std::stringstream& request);
 	int ParseHeaderKey(std::string& headerKey);
@@ -73,5 +74,5 @@ private:
 	std::string mResponse;
 	std::map<int, std::string> mHeaders;
 	const ServerBlock* mServerPtr;
-	AMethod *mMethod;
+	AMethod* mMethod;
 };
