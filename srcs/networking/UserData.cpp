@@ -19,23 +19,78 @@ UserData::~UserData(void)
 {
 }
 
+static void	replaceToContent(std::string& contents, std::string& findString, std::string& replaceString)
+{
+	size_t	found = 0;
+
+	found = contents.find(findString, found);
+	if (found == std::string::npos)
+		return ;
+	else
+	{
+		contents.erase(found, findString.size());
+		contents.insert(found, replaceString);
+		found += replaceString.size();
+	}
+	return ;
+}
+
+std::string UserData::uriGenerator(void)
+{
+	std::string result;
+
+	if (mSetting.alias.size() > 0)
+	{
+		replaceToContent(mUri, mSetting.uri, mSetting.alias);
+		return (mUri);
+	}
+	if (mUri[0] == '/')
+	{
+		mUri.erase(0, 1);
+		if (mUri.size() == 0)
+			mUri = mSetting.index;
+	}
+	if (mSetting.rootPath.size() > 0)
+	{
+		std::cout << "root: "<< Colors::BoldCyanString(mSetting.rootPath) << mUri << std::endl;
+		mUri.insert(0, mSetting.rootPath);
+	}
+	else
+	{
+		std::cout << "root: "<< Colors::BoldCyanString(mServerPtr->rootPath) << mUri << std::endl;
+		mUri.insert(0, mServerPtr->rootPath);
+	}
+	return (mUri);
+}
+
+void generateReturnResponse(int fd, int code, std::string& body)
+{
+	std::stringstream returnResponse;
+
+	returnResponse << "HTTP/1.1 " << code << " message" << "\r\n";
+	returnResponse << "location: " << body << "\r\n\r\n";
+	// returnResponse << "Content-type: text\r\n\r\n" << body;
+	write(fd, returnResponse.str().c_str(), returnResponse.str().size());
+	close(fd);
+}
+
 int UserData::GenerateGETResponse(void)
 {
 	std::ifstream requestedFile;
 	std::string extTemp;
 
-	extTemp = mUri.substr(mUri.find('.') + 1);
-	requestedFile.open("../../html" + mUri, std::ios::binary);
+	requestedFile.open(mUri, std::ios::binary);
 	if (requestedFile.is_open() == false)
 	{
 		// 4XX error
-		Error::Print("open failed: ." + mUri);
+		Error::Print("open failed: " + mUri);
 		write(mFd, "HTTP/1.1 404 Not found\r\nContent-type: text/html\r\ncontent-length: 45\r\n\r\n<!DOCTYPE HTML><HTML><H1>404 ERROR<H1><HTML>", 115);
 		close(mFd);
 	}
 	else
 	{
-		std::cout << Colors::BlueString("open success: ../../html") << mUri << std::endl;
+		extTemp = mUri.substr(mUri.find_last_of('.') + 1);
+		std::cout << Colors::BlueString("open success: ") << mUri << std::endl;
 		std::stringstream fileContent;
 		requestedFile.seekg(0, std::ios::end);
 		std::streampos fileSize = requestedFile.tellg();
@@ -149,12 +204,26 @@ void UserData::GenerateResponse(void)
 			std::cout << "Error page 전송해야 함" << std::endl;
 			return;
 		}
-		std::cout << Colors::BoldCyan << "[Method]" << mMethod->GetType() << std::endl;
-		if (mMethod->GetType() == GET)
+		if (mStatusCode < 1)
+		{
+			mMethod->ResponseConfigSetup(*mServerPtr, mUri, mSetting);
+		}
+		if (300 <= mStatusCode && mStatusCode < 600)
+		{
+			// TODO 조기종료 시키기
+			// generateReturnResponse(mFd, mSetting.returnPair.first, mSetting.returnPair.second);
+			std::cout << "더 이상 서버 자원을 잡아먹을 필요가 없음. 얼른 보내고 끝내라." << std::endl;
+			return ;
+		}
+		mUri = uriGenerator();
+		std::cout << Colors::BoldCyan << "[Method] " << mMethod->GetType() << std::endl;
+    if (mMethod->GetType() == GET && mSetting.bGetMethod == true)
+		{
 			GenerateGETResponse();
-		else if (mMethod->GetType() == HEAD)
+		}
+		else if (mMethod->GetType() == HEAD && mSetting.bHeadMethod == true)
 			std::cout << "HEAD response 전송해야 함." << std::endl;
-		else if (mMethod->GetType() == POST)
+		else if (mMethod->GetType() == POST && mSetting.bPostMethod == true)
 		{
 			std::cout << Colors::BoldCyan << "[mContentSize]" << mHeaders[CONTENT_LENGTH] << std::endl;
 			mContentSize = strtol(mHeaders[CONTENT_LENGTH].c_str(), NULL, 10);

@@ -43,7 +43,9 @@ static MultiTreeNode* findNodeOrNullRecursive(MultiTreeNode* node, std::string& 
 	if (node == NULL)
 		return (NULL);
 	else if (node->GetURI() != target.substr(0, node->GetURI().size()))
+	{
 		return (NULL);
+	}
 	target.erase(0, node->GetURI().size());
 	if (target.size() == 0)
 		return (node);
@@ -59,9 +61,13 @@ static MultiTreeNode* findNodeOrNullRecursive(MultiTreeNode* node, std::string& 
 	}
 	result = findNodeOrNullRecursive(temp, target);
 	if (result == NULL)
+	{
 		return (node);
+	}
 	else
+	{
 		return (result);
+	}
 }
 
 MultiTreeNode* MultiTree::GetRoot(void) const
