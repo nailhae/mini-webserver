@@ -29,7 +29,7 @@ public:
 
 	void initCgiEnv(std::string httpCgiPath, size_t ContentSize, std::map<int, std::string> Header);
 	void initCgiEnv(std::string httpCgiPath, size_t ContentSize, std::map<int, std::string> Header,
-					std::vector<unsigned char>& Body, size_t MethodType);
+					std::vector<unsigned char>& Body);
 	void execute(size_t& errorCode);
 	// void clear();
 

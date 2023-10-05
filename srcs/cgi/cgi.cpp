@@ -60,7 +60,7 @@ std::string getPathInfo(std::string& path)
 	return (end == std::string::npos ? tmp : tmp.substr(0, end));
 }
 
-std::string urlEncode(const std::string& path)
+std::string urlEncode(const std::vector<unsigned char>& path)
 {
 	std::ostringstream oss;
 	for (size_t i = 0; i < path.size(); i++)
@@ -88,33 +88,26 @@ int findHostNamePos(const std::string path, const std::string ch)
 }
 
 void Cgi::initCgiEnv(std::string httpCgiPath, size_t ContentSize, std::map<int, std::string> Header,
-					 std::vector<unsigned char>& Body, size_t MethodType)
+					 std::vector<unsigned char>& Body)
 {
 	if (httpCgiPath.at(0) == '/')
 	{
 		httpCgiPath.erase(0, 1);
 	}
-	// std::cout << "[Path]" << httpCgiPath << std::endl;
-	std::cout << "[Body] ";
-	for (unsigned long i = 0; i < Body.size(); i++)
-	{
-		std::cout << Body[i];
-	}
-	std::cout << std::endl;
+	std::cout << "[Path]" << httpCgiPath << std::endl;
+	std::cout << "[Body]" << Body.data() << std::endl;
 	this->env["AUTH_TYPE"] = "BASIC";
 	this->env["CONTENT_LENGTH"] = ContentSize;
+	// this->env["CONTENT_TYPE"] = Header[CONTENT_TYPE];
 	this->env["CONTENT_TYPE"] = Header[CONTENT_TYPE];
 	this->env["GATEWAY_INTERFACE"] = "CGI/1.1";
 	this->env["PATH_INFO"] = httpCgiPath;
 	this->env["PATH_TRANSLATED"] = this->env["PATH_INFO"];
-	// this->env["QUERY_STRING"] = urlEncode(Body);
+	this->env["QUERY_STRING"] = urlEncode(Body);
 	this->env["REMOTE_ADDR"] = Header[HOST];
 	// this->env["REMOTE_HOST"]
 	// this->env["REMOTE_USER"]
-	if (MethodType == POST)
-		this->env["REQUEST_METHOD"] = "POST";
-	else
-		this->env["REQUEST_METHOD"] = "GET";
+	this->env["REQUEST_METHOD"] = POST;
 	this->env["SCRIPT_NAME"] = httpCgiPath;
 	// this->env["SCRIPT_FILENAME"] =
 	// "3OfD_0ON3b5Mw9GmxClakX77pOo2tHJnNugH0kaRM3-yJ6NBID2Xbb-pG9sd0z-RAgBEwBFP1tijbVV5Qe8aFA.webp";
@@ -184,44 +177,16 @@ void Cgi::execute(size_t& errorCode)
 
 void Cgi::sendCgiBody(std::vector<unsigned char>& reqBody)
 {
-	// std::string reqBody = mBody;
 	size_t bodySize;
 
-	std::cout << "123123" << '\n';
-	size_t i = 0;
-	while (i < reqBody.size())
-	{
-		std::cout << reqBody[i];
-		i++;
-	}
-	if (reqBody.size() >= 400000)
-	{
-		bodySize = write(pipeIn[1], reqBody.data(), 400000);
-		// std::cout << "123123" << reqBody.data() << '\n';
-	}
-	else
-	{
-		bodySize = write(pipeIn[1], reqBody.data(), reqBody.size());
-		// std::cout << "123123123" << reqBody.data() << '\n';
-	}
-
+	bodySize = write(pipeIn[1], reqBody.data(), reqBody.size());
 	if (bodySize < 0)
 	{
 		// error(500);
-		//  break;
 	}
-	else if (bodySize == 0 || bodySize == reqBody.size())
-	{
-		close(pipeIn[1]);
-		close(pipeOut[1]);
-		// break;
-	}
-	// else
-	// {
-	//     reqBody = reqBody.substr(bodySize);
-	// }
-	// }
-	return;
+	close(pipeIn[1]);
+	close(pipeOut[1]);
+	std::cout << "[read]" << std::endl;
 }
 
 std::string Cgi::readCgiResponse()

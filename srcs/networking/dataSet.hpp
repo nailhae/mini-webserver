@@ -17,16 +17,16 @@ class MultiTreeNode;
 
 enum eSetupFlags
 {
-	URI = 0x10,
-	B_GET_SETTING = 0x20,
-	B_POST_SETTING = 0x40,
-	B_DELETE_SETTING = 0x80,
-	B_HEAD_SETTING = 0x100,
-	B_AUTOINDEX = 0x200,
-	INDEX_PAGE = 0x400,
-	LOCATION_ROOT_PATH = 0x800,
-	ALIAS = 0x1000,
-	RETURN_PAIR_VEC = 0x2000,
+	URI = 0x0001,
+	B_GET_SETTING = 0x0002,
+	B_POST_SETTING = 0x0004,
+	B_DELETE_SETTING = 0x0008,
+	B_HEAD_SETTING = 0x0010,
+	B_AUTOINDEX = 0x0020,
+	INDEX_PAGE = 0x0040,
+	LOCATION_ROOT_PATH = 0x0080,
+	ALIAS = 0x0100,
+	RETURN_PAIR_VEC = 0x0200,
 };
 
 enum eHeaders
@@ -80,7 +80,7 @@ struct LocationBlock
 	bool bPostMethod;	// default false;
 	bool bDeleteMethod; // default false;
 	bool bHeadMethod;	// default false;
-	bool autoindex;		// default false
+	int autoindex;		// default false
 	std::string index;	// default "index.html"
 	std::string rootPath;
 	std::string alias;
@@ -95,10 +95,4 @@ struct HttpBlock
 	int clientMaxBodySize;				  // default unit kB
 	int clientBodyTimeout;				  // default unit sec.
 	int workerConnections;
-};
-
-struct ResponseSetup
-{
-	ServerBlock server;
-	LocationBlock location;
 };

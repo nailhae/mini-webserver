@@ -11,6 +11,7 @@ public:
 	static WebServer* GetInstance();
 	static void DeleteInstance();
 	const HttpBlock* GetHttp() const;
+	void ChangeEvent(int ident, int nFilter, int nFlags, UserData *udata);
 	void WaitForClientConnection(void);
 	int InitServer(void);
 
