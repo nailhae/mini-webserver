@@ -154,19 +154,19 @@ int UserData::ParseHeaderKey(std::string& header)
 		return (headerKey);
 }
 
-int UserData::ParseFirstLine(std::stringstream& request)
+int UserData::ParseFirstLine(std::string& firstLine)
 {
-	std::string temp;
+	std::stringstream ss(firstLine);
+	std::string line;
 
-	request.seekg(std::ios::beg);
-	request >> temp;
-	if (temp == "GET")
+	ss >> line;
+	if (line == "GET")
 		mMethod = new MethodGet(GET);
-	else if (temp == "HEAD")
+	else if (line == "HEAD")
 		mMethod = new MethodGet(HEAD);
-	else if (temp == "POST")
+	else if (line == "POST")
 		mMethod = new MethodGet(POST);
-	else if (temp == "DELETE")
+	else if (line == "DELETE")
 		mMethod = new MethodGet(DELETE);
 	else
 	{
@@ -176,12 +176,12 @@ int UserData::ParseFirstLine(std::stringstream& request)
 		// 이 경우 헤더에 Allow: GET, POST, DELETE 추가해야 함.
 		return (ERROR);
 	}
-	request >> mUri;
-	std::getline(request, temp);
-	if (*(temp.end() - 1) == '\r')
-		temp.erase(temp.size() - 1);
-	trimWhiteSpace(temp);
-	if (temp != "HTTP/1.1")
+	ss >> mUri;
+	std::getline(ss, line);
+	if (*(line.end() - 1) == '\r')
+		line.erase(line.size() - 1);
+	trimWhiteSpace(line);
+	if (line != "HTTP/1.1")
 	{
 		mStatusCode = 505;
 		mStatusText = "HTTP Version Not Supported";
@@ -217,22 +217,33 @@ int UserData::ParseOneLine(std::string& oneLine)
 	return (0);
 }
 
-int UserData::ParseRequest(std::stringstream& request)
+int UserData::ParseRequest(std::vector<unsigned char>& request)
 {
-	std::string temp;
+	std::vector<unsigned char>::iterator pos = request.begin();
+	std::string line;
 
-	if (ParseFirstLine(request) == ERROR)
-		return (ERROR);
-	while (1)
+
+	for (std::vector<unsigned char>::iterator it = request.begin(); it != request.end();)
 	{
-		std::getline(request, temp, '\n');
-		if (*(temp.end() - 1) == '\r')
-			temp.erase(temp.size() - 1);
-		if (temp.size() == 0)
-			break;
-		else if (ParseOneLine(temp) == ERROR)
+		pos = std::find(pos, request.end(), '\n');
+		if (pos == request.end())
+			return (false);
+		line.assign(it, pos);
+		if (it == request.begin() && ParseFirstLine(line) == ERROR)
 			return (ERROR);
+		if (*(line.end() - 1) == '\r')
+			line.erase(line.size() - 1);
+		if (line.size() == 0)
+			break ;
+		else if (ParseOneLine(line) == ERROR)
+			return (ERROR);
+		else
+		{
+			pos += 1;
+			it = pos;
+		}
 	}
+	mReceived.erase(request.begin(), pos);
 	if (mMethod->GetType() == POST)
 	{
 		if (mHeaders[CONTENT_LENGTH] == "" || mHeaders[CONTENT_TYPE] == "")
