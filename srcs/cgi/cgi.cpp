@@ -187,9 +187,13 @@ void Cgi::sendCgiBody(std::vector<unsigned char>& reqBody)
 	// std::string reqBody = mBody;
 	size_t bodySize;
 
-	std::cout << "123123" << reqBody.data() << '\n';
-	// while (reqBody.size() >= 0)
-	// {
+	std::cout << "123123" << '\n';
+	size_t i = 0;
+	while (i < reqBody.size())
+	{
+		std::cout << reqBody[i];
+		i++;
+	}
 	if (reqBody.size() >= 400000)
 	{
 		bodySize = write(pipeIn[1], reqBody.data(), 400000);
