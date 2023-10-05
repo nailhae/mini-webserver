@@ -2,6 +2,7 @@
 
 #include <dirent.h>
 #include <sys/stat.h>
+#include <algorithm>
 
 #include "ChangeList.hpp"
 #include "Error.hpp"
@@ -83,7 +84,7 @@ int UserData::loadFolderContent(void)
 {
 	DIR* dirInfo = NULL;
 	struct dirent* dirEntry = NULL;
-	std::stringstream ss;
+	std::string html;
 
 	dirInfo = opendir(mUri.c_str());
 	if (dirInfo == NULL)
@@ -92,39 +93,43 @@ int UserData::loadFolderContent(void)
 		Error::Print(mUri + "Open Error");
 		return (ERROR);
 	}
-	ss << "<!DOCTYPE HTML>\n<HTML>\n\t<head>\n\t\t<title>Index of " << mUri << "</title>\n"
-	   << "<style>\n";
-	ss << "body {font-family: Arial, sans-serif; background-color: #f4f4f4;margin: 0;padding: 0;}\n";
-	ss << "header {background-color: #333;color: #fff;text-align: center;padding: 10px;}\n";
-	ss << ".container {max-width: 600px;margin: 0 auto;padding: 20px;background-color: #fff;border-radius: "
+	html += "<!DOCTYPE HTML>\n<HTML>\n\t<head>\n\t\t<title>Index of ";
+	html += mUri;
+	html += "</title>\n";
+	html += "<style>\n";
+	html += "body {font-family: Arial, sans-serif; background-color: #f4f4f4;margin: 0;padding: 0;}\n";
+	html += "header {background-color: #333;color: #fff;text-align: center;padding: 10px;}\n";
+	html += ".container {max-width: 600px;margin: 0 auto;padding: 20px;background-color: #fff;border-radius: "
 		  "5px;box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);}\n";
-	ss << "u1 {list-style-type: none;padding: 0;}\n";
-	ss << "li {margin-bottom: 10px;}\n";
-	ss << ".file {color: #007bff; text-decoration: none;}";
-	ss << ".file:hover {background-color: #F0FFF0;text-decoration: underline;}";
-	ss << ".dir {color: #B22222; text-decoration: none;}";
-	ss << ".dir:hover {background-color: #F0FFF0;text-decoration: underline;}";
-
-	ss << "</style>"
-	   << "\t</head>\n\t<body>\n\t\t<header><h1>Index of " << mUri
-	   << "</h1></header>\n\t\t<div class=\"container\"><u1>";
+	html += "u1 {list-style-type: none;padding: 0;}\n";
+	html += "li {margin-bottom: 10px;}\n";
+	html += ".file {color: #007bff; text-decoration: none;}";
+	html += ".file:hover {background-color: #F0FFF0;text-decoration: underline;}";
+	html += ".dir {color: #B22222; text-decoration: none;}";
+	html += ".dir:hover {background-color: #F0FFF0;text-decoration: underline;}";
+	html += "a {font-size: 16px;}";
+	html += "a:hover {font-size: 32px; background-color: #F0FFF0;}";
+	html += "</style>";
+	html += "\t</head>\n\t<body>\n\t\t<header><h1>Index of ";
+	html += mUri;
+	html += "</h1></header>\n\t\t<div class=\"container\"><u1>";
 	while ((dirEntry = readdir(dirInfo)) != NULL)
 	{
 		if (dirEntry->d_type == DT_DIR)
 		{
 			dirEntry->d_name[strlen(dirEntry->d_name)] = '/';
-			ss << "\t\t\t<li><a class=\"dir\" href=\"" << dirEntry->d_name << "\">";
+			html += "\t\t\t<li><a class=\"dir\" href=\"";
 		}
 		else
-			ss << "\t\t\t<li><a class=\"file\" href=\"" << dirEntry->d_name << "\">";
-		ss << dirEntry->d_name;
-		ss << "</br></a></li>\n";
+			html += "\t\t\t<li><a class=\"file\" href=\"";
+		html += dirEntry->d_name;
+		html += "\">";
+		html += dirEntry->d_name;
+		html += "</br></a></li>\n";
 	}
-	ss << "\t\t</a></div>\n\t</body>\n</HTML>";
+	html += "\t\t</a></div>\n\t</body>\n</HTML>";
 	closedir(dirInfo);
-	mBody = ss.str();
-	std::ofstream fs("../autoIndex/test.html");
-	fs << mBody;
+	mBody.insert(mBody.end(), html.begin(), html.end());
 	return (0);
 }
 
@@ -167,7 +172,7 @@ int UserData::GenerateGETResponse(void)
 			mResponse += "\r\nContent-length: ";
 			mResponse += std::to_string(mBody.size());
 			mResponse += "\r\n\r\n";
-			mResponse += mBody;
+			mResponse.insert(mResponse.end(), mBody.begin(), mBody.end());
 			WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_ONESHOT, this);
 		}
 	}
@@ -332,7 +337,7 @@ int UserData::GenerateDeleteResponse(void)
 	return (0);
 }
 
-const std::stringstream& UserData::GetReceived(void) const
+const std::vector<unsigned char>& UserData::GetReceived(void) const
 {
 	return (mReceived);
 }
@@ -382,25 +387,32 @@ void UserData::SetServerPtr(const ServerBlock* serverPtr)
 	mServerPtr = serverPtr;
 }
 
-static int checkHeaderLength(std::stringstream& ss, int flag)
+static int checkHeaderLength(std::vector<unsigned char>& received, int flag)
 {
+	std::vector<unsigned char>::iterator pos = received.begin();
 	std::string line;
 
-	// ss.seekg(std::ios::beg); // 필요하지 않다면 빼기
 	if (flag == true)
 		return (true);
-	while (1)
+	if (received.size() > 1024)
+		return (ERROR);
+	for (std::vector<unsigned char>::iterator it = received.begin(); it != received.end();)
 	{
-		std::getline(ss, line);
-		if (ss.eof() == true)
+		pos = std::find(pos, received.end(), '\n');
+		if (pos == received.end())
 			return (false);
-		else if (line == "\r" || line == "")
-			return (true);
-		else if (ss.tellg() > 1024)
-			return (ERROR);
+		//it ~~ pos 까지 저장하고 비교
+		line.assign(it, pos);
+		if (line == "\r" || line == "")
+			break ;
 		else
-			continue;
+		{
+			pos += 1; // 현재 pos는 \n을 가리키고 있기 때문.
+			it = pos; // 찾기 시작하는 위치 저장.
+			continue ;
+		}
 	}
+	return (true);
 }
 
 void UserData::GenerateResponse(void)
@@ -417,6 +429,15 @@ void UserData::GenerateResponse(void)
 	else if (mHeaderFlag == false)
 	{
 		return;
+	}
+	else if (mFillBodyFlag == true)
+	{
+		if (mReceived.size() < mContentSize)
+		{
+			mFillBodyFlag = true;
+			return ;
+		}
+		GeneratePostResponse();
 	}
 	else
 	{
@@ -455,10 +476,8 @@ void UserData::GenerateResponse(void)
 			std::cout << Colors::BoldCyan << "[mContentSize]" << mHeaders[CONTENT_LENGTH] << std::endl;
 			mContentSize = strtol(mHeaders[CONTENT_LENGTH].c_str(), NULL, 10);
 			std::cout << Colors::BoldCyan << "[body]" << mContentSize << std::endl;
-			if (mBody.size() < mContentSize)
+			if (mReceived.size() < mContentSize)
 			{
-				std::getline(mReceived, temp, static_cast<char>(EOF));
-				mBody += temp;
 				mFillBodyFlag = true;
 				return ;
 			}
@@ -474,11 +493,7 @@ int UserData::RecvFromClient(void)
 	int len;
 
 	len = read(mFd, mBuf, BUFFER_SIZE);
-	for (int i = 0; i < len; i++)
-	{
-		mReceived << mBuf[i];
-		std::cout << mBuf[i];
-	}
+	mReceived.insert(mReceived.begin(), &mBuf[0], &mBuf[len]);
 	std::cout << std::endl;
 	return (len);
 }
@@ -496,7 +511,8 @@ void UserData::InitUserData(void)
 	mFillBodyFlag = -1;
 	mStatusText.clear();
 	mUri.clear();
-	mReceived.str("");
+	mBody.clear();
+	mReceived.clear();
 	mResponse.clear();
 	mHeaders.clear();
 }
@@ -531,6 +547,5 @@ int UserData::GeneratePostResponse(void)
 	mResponse = cgi.readCgiResponse();
 
 	WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_ONESHOT, this);
-	// SendToClient(mFd);
 	return (0);
 }

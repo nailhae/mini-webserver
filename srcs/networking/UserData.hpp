@@ -28,7 +28,7 @@ public:
 	UserData(int fd);
 	~UserData(void);
 	void InitUserData(void);
-	const std::stringstream& GetReceived(void) const;
+	const std::vector<unsigned char>& GetReceived(void) const;
 	const std::string& GetResponse(void) const;
 	const std::string& GetUri(void) const;
 
@@ -43,8 +43,8 @@ public:
 	void GenerateResponse(void);
 	int GenerateGETResponse(void);
 	int GenerateDeleteResponse(void);
-	int ParseRequest(std::stringstream& request);
-	int ParseFirstLine(std::stringstream& request);
+	int ParseRequest(std::vector<unsigned char>& request);
+	int ParseFirstLine(std::string& request);
 	int ParseHeaderKey(std::string& headerKey);
 	int ParseOneLine(std::string& oneLine);
 	int ParseHeaderValue(int headerKey, std::string& field);
@@ -53,8 +53,8 @@ public:
 	int GeneratePostResponse(void);
 	int loadFolderContent(void);
 
-	std::stringstream mReceived;
-	std::string mBody;
+	std::vector<unsigned char> mReceived;
+	std::vector<unsigned char> mBody;
 
 private:
 	UserData(void);
