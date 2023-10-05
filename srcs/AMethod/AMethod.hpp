@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+
 #include "dataSet.hpp"
 
 class AMethod
@@ -9,7 +10,9 @@ public:
 	AMethod(int type);
 	virtual ~AMethod();
 
-	virtual int GenerateResponse(UserData&) = 0;
+	virtual int GenerateResponse(std::string mUri, int autoindex, int& mStatusCode, std::string mResponse,
+								 std::map<int, std::string>& mStatusMap, int mFd, UserData& userData,
+								 std::map<int, std::string>& mHeaders, LocationBlock& mSetting) = 0;
 	void ResponseConfigSetup(const ServerBlock& server, std::string& uri, LocationBlock& setting);
 	int GetType() const;
 	void SetSetupFlag(eSetupFlags flag);
