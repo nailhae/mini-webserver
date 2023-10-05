@@ -8,6 +8,30 @@
 #include "WebServer.hpp"
 #include "cgi.hpp"
 
+#define STATUS_NUM 18
+
+std::pair<int, std::string> UserData::mStatusPair[] = {std::make_pair(200, "200 OK"),
+													   std::make_pair(201, "201 Created"),
+													   std::make_pair(204, "204 No Content"),
+													   std::make_pair(301, "301 Moved Permanently"),
+													   std::make_pair(302, "302 Found"),
+													   std::make_pair(303, "303 See Other"),
+													   std::make_pair(304, "304 Not Modified"),
+													   std::make_pair(307, "307 Temporary Redirect"),
+													   std::make_pair(308, "308 Permanet Redirect"),
+													   std::make_pair(400, "400 Bad Request"),
+													   std::make_pair(403, "403 Forbidden"),
+													   std::make_pair(404, "404 Not Found"),
+													   std::make_pair(405, "405 Method Not Allowed"),
+													   std::make_pair(416, "416 Requested Range Not Satisfiable"),
+													   std::make_pair(500, "500 Internal Server Error"),
+													   std::make_pair(501, "501 Not Implemented"),
+													   std::make_pair(502, "502 Bad Gateway"),
+													   std::make_pair(504, "504 Gateway Timeout"),
+													   std::make_pair(505, "505 HTTP Version Not Supported")};
+
+std::map<int, std::string> UserData::mStatusMap(mStatusPair, mStatusPair + STATUS_NUM);
+
 UserData::UserData(int fd)
 	: mFd(fd)
 	, mSocketType(-1)
@@ -128,106 +152,98 @@ int UserData::loadFolderContent(void)
 	return (0);
 }
 
-int UserData::GenerateGETResponse(void)
-{
-	std::ifstream requestedFile;
-	std::string extTemp;
+// int UserData::GenerateGETResponse(void)
+// {
+// 	std::ifstream requestedFile;
+// 	std::string extTemp;
 
-	if (*(mUri.end() - 1) == '/') // 폴더에 대한 요청은 무조건 autoindex로
-	{
-		int result = 0;
-		std::cout << "autoindex == " << mSetting.autoindex << std::endl;
-		if (mSetting.autoindex == true)
-		{
-			result = loadFolderContent();
-		}
-		else
-		{
-			mStatusCode = 403;
-			write(mFd,
-				  "HTTP/1.1 403 Forbidden\r\nContent-type: text/html\r\ncontent-length: 45\r\n\r\n<!DOCTYPE "
-				  "HTML><HTML><H1>403 ERROR<H1><HTML>",
-				  115);
-			close(mFd);
-			return (0);
-		}
-		if (result == ERROR)
-		{
-			write(mFd,
-				  "HTTP/1.1 404 Not Found\r\nContent-type: text/html\r\ncontent-length: 45\r\n\r\n<!DOCTYPE "
-				  "HTML><HTML><H1>404 ERROR<H1><HTML>",
-				  115);
-			close(mFd);
-			return (0);
-		}
-		else
-		{
-			mResponse = "HTTP/1.1 200 OK\r\nContent-type: ";
-			mResponse += "text/html";
-			mResponse += "\r\nContent-length: ";
-			mResponse += std::to_string(mBody.size());
-			mResponse += "\r\n\r\n";
-			mResponse += mBody;
-			WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_ONESHOT, this);
-		}
-	}
-	else
-	{
-		struct stat fileInfo;
+// 	if (*(mUri.end() - 1) == '/') // 폴더에 대한 요청은 무조건 autoindex로
+// 	{
+// 		int result = 0;
+// 		std::cout << "autoindex == " << mSetting.autoindex << std::endl;
+// 		if (mSetting.autoindex == true)
+// 		{
+// 			result = loadFolderContent();
+// 		}
+// 		else
+// 		{
+// 			mStatusCode = 403;
+// 			write(mFd,
+// 				  "HTTP/1.1 403 Forbidden\r\nContent-type: text/html\r\ncontent-length: 45\r\n\r\n<!DOCTYPE "
+// 				  "HTML><HTML><H1>403 ERROR<H1><HTML>",
+// 				  115);
+// 			close(mFd);
+// 			return (0);
+// 		}
+// 		if (result == ERROR)
+// 		{
+// 			write(mFd,
+// 				  "HTTP/1.1 404 Not Found\r\nContent-type: text/html\r\ncontent-length: 45\r\n\r\n<!DOCTYPE "
+// 				  "HTML><HTML><H1>404 ERROR<H1><HTML>",
+// 				  115);
+// 			close(mFd);
+// 			return (0);
+// 		}
+// 		else
+// 		{
+// 			mResponse = "HTTP/1.1 200 OK\r\nContent-type: ";
+// 			mResponse += "text/html\r\n";
+// 			mResponse += "\r\nContent-length: ";
+// 			mResponse += intToString(mBody.size());
+// 			mResponse += "\r\n\r\n";
+// 			mResponse += mBody;
+// WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_ONESHOT, this);
+// 		}
+// 	}
+// 	else
+// 	{
+// 		struct stat fileInfo;
 
-		if (stat(mUri.c_str(), &fileInfo) == ERROR)
-		{
-			Error::Print("Not found: " + mUri);
-			write(mFd,
-				  "HTTP/1.1 404 Not found\r\nContent-type: text/html\r\ncontent-length: 45\r\n\r\n<!DOCTYPE "
-				  "HTML><HTML><H1>404 ERROR<H1><HTML>",
-				  115);
-			close(mFd);
-		}
-		else if (S_ISDIR(fileInfo.st_mode) == true)
-		{
-			Error::Print("directory can't open in file mode: " + mUri);
-			write(mFd,
-				  "HTTP/1.1 403 Forbidden\r\nContent-type: text/html\r\ncontent-length: 45\r\n\r\n<!DOCTYPE "
-				  "HTML><HTML><H1>403 ERROR<H1><HTML>",
-				  115);
-			close(mFd);
-		}
-		requestedFile.open(mUri, std::ios::binary);
-		if (requestedFile.is_open() == false)
-		{
-			Error::Print("open failed: " + mUri);
-			write(mFd,
-				  "HTTP/1.1 404 Not found\r\nContent-type: text/html\r\ncontent-length: 45\r\n\r\n<!DOCTYPE "
-				  "HTML><HTML><H1>404 ERROR<H1><HTML>",
-				  115);
-			close(mFd);
-		}
-		else
-		{
-			extTemp = mUri.substr(mUri.find_last_of('.') + 1);
-			std::cout << Colors::BlueString("open success: ") << mUri << std::endl;
-			std::stringstream fileContent;
-			requestedFile.seekg(0, std::ios::end);
-			std::streampos fileSize = requestedFile.tellg();
-			requestedFile.seekg(0, std::ios::beg);
-			mResponse = "HTTP/1.1 200 OK\r\nContent-type: ";
-			if (extTemp == "png" || extTemp == "ico")
-				mResponse += "image/";
-			else
-				mResponse += "text/";
-			mResponse += extTemp;
-			mResponse += "\r\nContent-length: ";
-			mResponse += std::to_string(fileSize);
-			mResponse += "\r\n\r\n";
-			fileContent << requestedFile.rdbuf();
-			mResponse += fileContent.str();
-			requestedFile.close();
-			WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_ONESHOT, this);
-		}
-	}
-	return (0);
-}
+// 		if (stat(mUri.c_str(), &fileInfo) == ERROR)
+// 		{
+// 			Error::Print("Not found: " + mUri);
+// 			write(mFd,
+// 				  "HTTP/1.1 404 Not found\r\nContent-type: text/html\r\ncontent-length: 45\r\n\r\n<!DOCTYPE "
+// 				  "HTML><HTML><H1>404 ERROR<H1><HTML>",
+// 				  115);
+// 			close(mFd);
+// 		}
+// 		else if (S_ISDIR(fileInfo.st_mode) == true)
+// 		{
+// 			Error::Print("directory can't open in file mode: " + mUri);
+// 			write(mFd,
+// 				  "HTTP/1.1 403 Forbidden\r\nContent-type: text/html\r\ncontent-length: 45\r\n\r\n<!DOCTYPE "
+// 				  "HTML><HTML><H1>403 ERROR<H1><HTML>",
+// 				  115);
+// 			close(mFd);
+// 		}
+// 		requestedFile.open(mUri, std::ios::binary);
+// 		if (requestedFile.is_open() == false)
+// 		{
+// 			Error::Print("open failed: " + mUri);
+// 			write(mFd,
+// 				  "HTTP/1.1 404 Not found\r\nContent-type: text/html\r\ncontent-length: 45\r\n\r\n<!DOCTYPE "
+// 				  "HTML><HTML><H1>404 ERROR<H1><HTML>",
+// 				  115);
+// 			close(mFd);
+// 		}
+// 		else
+// 		{
+// 			extTemp = mUri.substr(mUri.find_last_of('.') + 1);
+// 			std::cout << Colors::BlueString("open success: ") << mUri << std::endl;
+// 			mStatusCode = 200;
+// 			mResponse = generateResponseStatusLine(mStatusMap[mStatusCode]);
+// 			generateResponseHeaders(extTemp, requestedFile);
+// 			if (mStatusCode != 304)
+// 			{
+// 				mResponse += generateResponseBody(requestedFile);
+// 			}
+// 			requestedFile.close();
+// 			WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_ONESHOT, this);
+// 		}
+// 	}
+// 	return (0);
+// }
 
 static void sendErrorPage(int clientSocket, int responseCode)
 {
@@ -403,7 +419,7 @@ static int checkHeaderLength(std::stringstream& ss, int flag)
 	}
 }
 
-void UserData::GenerateResponse(void)
+void UserData::ReadResponse(void)
 {
 	std::string temp;
 
@@ -445,8 +461,9 @@ void UserData::GenerateResponse(void)
 		std::cout << Colors::BoldCyan << "[Method] " << mMethod->GetType() << std::endl;
 		if (mMethod->GetType() == GET && mSetting.bGetMethod == true)
 		{
-			// mMethod->GenerateResponse();
-			GenerateGETResponse();
+			mMethod->GenerateResponse(mUri, mSetting.autoindex, mStatusCode, mResponse, mStatusMap, mFd, *this,
+									  mHeaders, mSetting);
+			// GenerateGETResponse();
 		}
 		else if (mMethod->GetType() == HEAD && mSetting.bHeadMethod == true)
 			std::cout << "HEAD response 전송해야 함." << std::endl;
@@ -460,7 +477,7 @@ void UserData::GenerateResponse(void)
 				std::getline(mReceived, temp, static_cast<char>(EOF));
 				mBody += temp;
 				mFillBodyFlag = true;
-				return ;
+				return;
 			}
 			GeneratePostResponse();
 		}

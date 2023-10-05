@@ -40,8 +40,7 @@ public:
 	void SetServerPtr(const ServerBlock* serverPtr);
 	LocationBlock& Setting(void);
 	std::string uriGenerator(void);
-	void GenerateResponse(void);
-	int GenerateGETResponse(void);
+	void ReadResponse(void);
 	int GenerateDeleteResponse(void);
 	int ParseRequest(std::stringstream& request);
 	int ParseFirstLine(std::stringstream& request);
@@ -75,4 +74,6 @@ private:
 	std::map<int, std::string> mHeaders;
 	const ServerBlock* mServerPtr;
 	AMethod* mMethod;
+	static std::map<int, std::string> mStatusMap;
+	static std::pair<int, std::string> mStatusPair[];
 };
