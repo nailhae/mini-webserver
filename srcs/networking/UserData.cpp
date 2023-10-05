@@ -184,15 +184,12 @@ void UserData::GenerateResponse(void)
 			mContentSize = strtol(mHeaders[CONTENT_LENGTH].c_str(), NULL, 10);
 			if (mBody.size() < mContentSize)
 			{
-				int i = 0;
 				char temp;
-				mReceived.get(temp);
-				while (mBody.size() < mContentSize && i < BUFFER_SIZE)
+				while (mReceived.get(temp))
 				{
-					mBody.push_back(mBuf[i]);
-					i++;
+					mBody.push_back(temp);
 				}
-				if (mBody.size() < mContentSize && i < BUFFER_SIZE)
+				if (mBody.size() < mContentSize)
 				{
 					mFillBodyFlag = true;
 					return;
@@ -249,13 +246,13 @@ int UserData::SendToClient(int fd)
 		std::cout << it->first << ": " << it->second << std::endl;
 	}
 	std::cout << Colors::BoldBlue << "\nstatus " << mStatusCode << ": " << mStatusText << std::endl;
-	std::cout << Colors::BoldMagenta << "send to client " << fd << "\n" << Colors::Reset << std::endl;
 	len = write(fd, mResponse.c_str(), mResponse.size());
 	len = write(1, mResponse.c_str(), mResponse.size());
 	std::cout << "\n";
 	if (len < 0)
 		Error::Print("send()");
 	InitUserData();
+	std::cout << Colors::BoldMagenta << "send to client " << fd << "\n" << Colors::Reset << std::endl;
 	return (len);
 }
 
