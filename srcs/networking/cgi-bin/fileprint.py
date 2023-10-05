@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 import cgi
 
-print("Content-type: text/html\r\n\r\n")
+print("Content-Type: text/html; charset=UTF-8")
+# print("Location: /test.html")
+print()
 
 form = cgi.FieldStorage()
 user_input = form.getvalue("input")
 
-filename = "cgi-bin/test.html"
+filename = "html/test.html"
 
 try:
     with open(filename, 'r') as f:
@@ -33,10 +35,11 @@ elif "decrement" in form:
 
 with open(filename, 'w') as f:
     f.write("<!DOCTYPE HTML>\n")
+    f.write("<a href='/fileprint.html'>Home</a>")
     f.write("<HTML><H1>Print</H1>")
     f.write("current value: " + str(value) + '\n')
     Max = value
-    f.write('<form method="POST">\n')
+    f.write('<form method="POST" action="/cgi-bin/fileprint.py">\n')
     f.write('<input type="submit" name="increment" value="+">\n')
     f.write('<input type="submit" name="decrement" value="-">\n')
     f.write('</form>')
@@ -46,4 +49,3 @@ with open(filename, 'w') as f:
 
 with open(filename, 'r') as f:
     print(f.read())
-
