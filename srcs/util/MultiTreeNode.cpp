@@ -40,7 +40,7 @@ const std::vector<MultiTreeNode*>& MultiTreeNode::GetChildren(void)
 	return (mChildren);
 }
 
-const MultiTreeNode* MultiTreeNode::GetParentNode(void)
+MultiTreeNode* MultiTreeNode::ParentNode(void)
 {
 	return (mParentNode);
 }

@@ -96,23 +96,29 @@ void WebServer::WaitForClientConnection(void)
 			}
 			else if (currentUdata->GetSocketType() == CLIENT_SOCKET)
 			{
-				readLen = currentUdata->RecvFromClient();
-				if (readLen == 0)
-				{
-					closeClientSocket(currentUdata, eventList[i].ident);
-				}
-				else if (readLen < 0)
-				{
-					close(eventList[i].ident);
-					Error::Print("recv error");
-					std::cout << "force close client: " << eventList[i].ident << std::endl;
-				}
-				else
+				if (eventList[i].filter == EVFILT_READ)
 				{
 					// AMethod 완성 되면 이걸로 돌려보기
 					// currentUdata->GetMethod().GenerateResponse();
 					// * 임시 *
-					currentUdata->GenerateResponse();
+					readLen = currentUdata->RecvFromClient();
+					if (readLen == 0)
+					{
+						closeClientSocket(currentUdata, eventList[i].ident);
+					}
+					else if (readLen < 0)
+					{
+						close(eventList[i].ident);
+						Error::Print("recv error");
+						std::cout << "force close client: " << eventList[i].ident << std::endl;
+					}
+					else
+						currentUdata->GenerateResponse();
+				}
+				else if (eventList[i].filter == EVFILT_WRITE)
+				{
+					std::cout << Colors::BoldBlueString("쓸 거야") << std::endl;
+					currentUdata->SendToClient(eventList[i].ident);
 				}
 			}
 		}

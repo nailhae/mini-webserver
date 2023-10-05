@@ -10,7 +10,7 @@ public:
 	virtual ~AMethod();
 
 	virtual int GenerateResponse(UserData&) = 0;
-	void ResponseConfigSetup(ServerBlock& server, UserData& target);
+	void ResponseConfigSetup(const ServerBlock& server, std::string& uri, LocationBlock& setting);
 	int GetType() const;
 	void SetSetupFlag(eSetupFlags flag);
 	bool IsFinishSetupFlags(void) const;
@@ -21,7 +21,6 @@ private:
 	AMethod(const AMethod& other);
 	AMethod& operator=(const AMethod& other);
 
-	static const int mSetupFinished;
 	int mType;
 	int mSetupFlags;
 };
