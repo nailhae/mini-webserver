@@ -242,10 +242,6 @@ int UserData::ParseRequest(std::stringstream& request)
 			return (ERROR);
 		}
 	}
-	std::getline(request, temp, static_cast<char>(EOF));
-	for (int i = 0; i < temp.size(); i++)
-	{
-		mBody.push_back(temp[i]);
-	}
+	// 여기서 헤더 뺴고 body만 넣어줘야 함.
 	return (0);
 }

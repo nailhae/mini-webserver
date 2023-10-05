@@ -115,7 +115,7 @@ static int checkHeaderLength(std::stringstream& ss, int flag)
 {
 	std::string line;
 
-	// ss.seekg(std::ios::beg); // 필요하지 않다면 빼기
+	// ss.seekg(std::ios::beg);
 	if (flag == true)
 		return (true);
 	while (1)
@@ -157,7 +157,7 @@ void UserData::GenerateResponse(void)
 				mBody.push_back(mBuf[i]);
 				i++;
 			}
-			std::cout << Colors::Red << "[bodysize]" << mBody.size() << " " << mContentSize << Colors::Reset
+			std::cout << Colors::Red << "[body size]" << mBody.size() << " " << mContentSize << Colors::Reset
 					  << std::endl;
 			if (mBody.size() < mContentSize && i < BUFFER_SIZE)
 				return;
@@ -182,10 +182,11 @@ void UserData::GenerateResponse(void)
 		{
 			std::cout << Colors::BoldCyan << "[mContentSize]" << mHeaders[CONTENT_LENGTH] << std::endl;
 			mContentSize = strtol(mHeaders[CONTENT_LENGTH].c_str(), NULL, 10);
-			mBody.reserve(mContentSize);
 			if (mBody.size() < mContentSize)
 			{
 				int i = 0;
+				char temp;
+				mReceived.get(temp);
 				while (mBody.size() < mContentSize && i < BUFFER_SIZE)
 				{
 					mBody.push_back(mBuf[i]);
@@ -213,7 +214,7 @@ int UserData::RecvFromClient(void)
 	for (int i = 0; i < len; i++)
 	{
 		mReceived << mBuf[i];
-		std::cout << mBuf[i];
+		// std::cout << mBuf[i];
 	}
 	std::cout << std::endl;
 	return (len);
@@ -250,6 +251,8 @@ int UserData::SendToClient(int fd)
 	std::cout << Colors::BoldBlue << "\nstatus " << mStatusCode << ": " << mStatusText << std::endl;
 	std::cout << Colors::BoldMagenta << "send to client " << fd << "\n" << Colors::Reset << std::endl;
 	len = write(fd, mResponse.c_str(), mResponse.size());
+	len = write(1, mResponse.c_str(), mResponse.size());
+	std::cout << "\n";
 	if (len < 0)
 		Error::Print("send()");
 	InitUserData();
@@ -262,10 +265,10 @@ int UserData::GeneratePostResponse(void)
 	cgi.initCgiEnv(mUri, mContentSize, mHeaders, mBody, mMethod->GetType());
 	size_t errorCode = 0;
 	std::cout << Colors::Magenta << "[send]"
-			  << "send" << std::endl;
+			  << " send" << std::endl;
 	cgi.execute(errorCode);
 	std::cout << Colors::Magenta << "[read]"
-			  << "read" << std::endl;
+			  << " read" << Colors::Reset << std::endl;
 	cgi.sendCgiBody(mBody);
 	mResponse = cgi.readCgiResponse();
 	SendToClient(mFd);
