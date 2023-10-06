@@ -299,7 +299,7 @@ std::string Cgi::readCgiResponse()
 	if (readBytes == 0)
 	{
 		close(pipeIn[0]);
-		close(pipeIn[0]);
+		close(pipeOut[0]);
 		int status;
 		waitpid(getCgiPid(), &status, 0);
 		if (WEXITSTATUS(status) != 0)
@@ -310,7 +310,7 @@ std::string Cgi::readCgiResponse()
 	else if (readBytes < 0)
 	{
 		close(pipeIn[0]);
-		close(pipeOut[0]);
+		close(pipeIn[1]);
 		close(pipeOut[0]);
 		// error(500);
 	}
