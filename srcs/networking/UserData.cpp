@@ -238,7 +238,7 @@ void UserData::ReadResponse(void)
 			GeneratePostResponse();
 		}
 		else if (mMethod->GetType() == DELETE && mSetting.bDeleteMethod == true)
-			GenerateDeleteResponse();
+			mMethod->GenerateResponse(mUri, mSetting, mHeaders);
 		else
 			mMethod->GenerateErrorResponse(403);
 	}

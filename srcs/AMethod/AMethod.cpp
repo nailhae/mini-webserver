@@ -214,7 +214,6 @@ void AMethod::GenerateErrorResponse(int code)
 	std::ifstream errorPage;
 
 	// errorUri = WebServer::GetErrorPage(code)
-	std::cout << "들어오지를 않음.. " << std::endl;
 	GenerateResponseStatusLine(code);
 	SetContentType("html");
 	errorPage.open(errorUri.c_str(), std::ios::binary);
@@ -284,6 +283,7 @@ void AMethod::ResponseConfigSetup(const ServerBlock& server, std::string& uri, L
 	for (std::vector<MultiTree*>::const_iterator it = server.root.begin(); it != server.root.end(); it++)
 	{
 		subString = uri.substr(0, (*it)->GetRoot()->GetURI().size());
+		(*it)->PrintEveryNodes();
 		if ((*it)->GetRoot()->GetURI() == subString)
 		{
 			if (targetTree == NULL || targetTree->GetRoot()->GetURI().size() < subString.size())
