@@ -161,13 +161,13 @@ int UserData::ParseFirstLine(std::string& firstLine)
 
 	ss >> line;
 	if (line == "GET")
-		mMethod = new MethodGet(GET);
+		mMethod = new MethodGet(mFd);
 	else if (line == "HEAD")
-		mMethod = new MethodGet(HEAD);
+		mMethod = new MethodGet(mFd);
 	else if (line == "POST")
-		mMethod = new MethodGet(POST);
+		mMethod = new MethodGet(mFd);
 	else if (line == "DELETE")
-		mMethod = new MethodGet(DELETE);
+		mMethod = new MethodGet(mFd);
 	else
 	{
 		mMethod = new MethodGet(ERROR);

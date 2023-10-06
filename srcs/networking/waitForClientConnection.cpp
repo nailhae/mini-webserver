@@ -113,7 +113,7 @@ void WebServer::WaitForClientConnection(void)
 						std::cout << "force close client: " << eventList[i].ident << std::endl;
 					}
 					else
-						currentUdata->GenerateResponse();
+						currentUdata->ReadResponse();
 				}
 				else if (eventList[i].filter == EVFILT_WRITE)
 				{

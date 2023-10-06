@@ -1,28 +1,17 @@
 #pragma once
 
 #include "AMethod.hpp"
+#include "UserData.hpp"
 
 class MethodGet : public AMethod
 {
 public:
 	// temp
-	MethodGet(int type)
-		: AMethod(type)
-	{
-	}
+	MethodGet(int fd);
+	~MethodGet(void);
 
-	// temp
-	~MethodGet(void)
-	{
-	}
-
-	// temp
-	int GenerateResponse(UserData& userData)
-	{
-		const int temp = 0;
-		(void)userData;
-		return temp;
-	}
+	int GenerateResponse(std::string mUri, LocationBlock& mSetting, std::map<int, std::string>& mHeaders);
+	int AutoIndexResponse(std::string& mUri);
 
 private:
 	const MethodGet& operator=(const MethodGet& rhs);
