@@ -171,7 +171,7 @@ static int checkHeaderLength(std::vector<unsigned char>& received, int flag)
 	return (true);
 }
 
-void UserData::ReadResponse(void)
+void UserData::ReadRequest(void)
 {
 	std::string temp;
 
@@ -193,15 +193,14 @@ void UserData::ReadResponse(void)
 			mFillBodyFlag = true;
 			return;
 		}
-		GeneratePostResponse();
+		mMethod->GenerateResponse(mUri, mSetting, mHeaders);
 	}
 	else
 	{
 		// 1. 요청 파싱 // 400~
 		if (ParseRequest(mReceived) == ERROR)
 		{
-			// GenerateErrorResponse();
-			std::cout << "Error page 전송해야 함" << std::endl;
+			mMethod->GenerateErrorResponse(mStatusCode);
 			return;
 		}
 		// 2. 요청에서 문제가 없을 경우 최하위 노드 찾아서 설정 값 받아오기
@@ -212,14 +211,14 @@ void UserData::ReadResponse(void)
 		// 2-1. 이미 상태코드가 정의가 된 경우 종료
 		if (300 <= mStatusCode && mStatusCode < 600)
 		{
-			mMethod->GenerateRedirectionResponse(mStatusCode,
-												 mSetting); // TODO 에러와 함께 처리가 되고 있는지 보아야 함.
+			// TODO 에러와 함께 처리가 되고 있는지 보아야 함.
+			mMethod->GenerateRedirectionResponse(mStatusCode, mSetting);
+			return;
 		}
 		// 3. 설정을 실제 open 해야 할 uri를 구성
 		mUri = uriGenerator();
 		// 4. 각 method에 따라 응답 메시지 생성
 		std::cout << Colors::BoldCyan << "[Method] " << mMethod->GetType() << std::endl;
-		std::cout << "??? " << mMethod->GetType() << " Get == 0 " << mSetting.bGetMethod << std::endl;
 		if (mMethod->GetType() == GET && mSetting.bGetMethod == true)
 		{
 			mMethod->GenerateResponse(mUri, mSetting, mHeaders);
@@ -227,19 +226,19 @@ void UserData::ReadResponse(void)
 		else if (mMethod->GetType() == HEAD && mSetting.bHeadMethod == true)
 		{
 			// std::cout << "HEAD response 전송해야 함." << std::endl;
-			mMethod->GenerateResponse(mUri, mSetting, mHeaders);
+			mMethod->GenerateErrorResponse(405);
+			// mMethod->GenerateResponse(mUri, mSetting, mHeaders);
 		}
 		else if (mMethod->GetType() == POST && mSetting.bPostMethod == true)
 		{
 			std::cout << Colors::BoldCyan << "[mContentSize]" << mHeaders[CONTENT_LENGTH] << std::endl;
-			mContentSize = strtol(mHeaders[CONTENT_LENGTH].c_str(), NULL, 10);
 			std::cout << Colors::BoldCyan << "[body]" << mContentSize << std::endl;
 			if (mReceived.size() < mContentSize)
 			{
 				mFillBodyFlag = true;
 				return;
 			}
-			GeneratePostResponse();
+			mMethod->GenerateResponse(mUri, mSetting, mHeaders);
 		}
 		else if (mMethod->GetType() == DELETE && mSetting.bDeleteMethod == true)
 			mMethod->GenerateResponse(mUri, mSetting, mHeaders);
@@ -297,19 +296,4 @@ int UserData::SendToClient(int fd)
 	InitUserData();
 	std::cout << Colors::BoldMagenta << "send to client " << fd << "\n" << Colors::Reset << std::endl;
 	return (len);
-}
-
-int UserData::GeneratePostResponse(void)
-{
-	Cgi cgi(mUri);
-	cgi.initCgiEnv(mUri, mContentSize, mHeaders, mReceived);
-	size_t errorCode = 0;
-	std::cout << Colors::Magenta << "[send]"
-			  << " send" << std::endl;
-	cgi.execute(errorCode);
-	cgi.sendCgiBody(mBody);
-	// mResponse = cgi.readCgiResponse();
-
-	WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_ONESHOT, this);
-	return (0);
 }

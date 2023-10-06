@@ -109,11 +109,10 @@ void WebServer::WaitForClientConnection(void)
 						std::cout << "force close client: " << eventList[i].ident << std::endl;
 					}
 					else
-						currentUdata->ReadResponse();
+						currentUdata->ReadRequest();
 				}
 				else if (eventList[i].filter == EVFILT_WRITE)
 				{
-					std::cout << Colors::BoldBlueString("쓸 거야") << std::endl;
 					currentUdata->SendToClient(eventList[i].ident);
 				}
 			}

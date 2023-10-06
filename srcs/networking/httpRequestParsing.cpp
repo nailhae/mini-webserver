@@ -1,7 +1,7 @@
 #include "ChangeList.hpp"
 #include "Error.hpp"
-#include "MethodGet.hpp"
 #include "MethodDelete.hpp"
+#include "MethodGet.hpp"
 #include "UserData.hpp"
 #include "dataSet.hpp"
 
@@ -171,9 +171,8 @@ int UserData::ParseFirstLine(std::string& firstLine)
 		mMethod = new MethodDelete(mFd);
 	else
 	{
-		mMethod = new MethodGet(ERROR);
+		mMethod = new MethodGet(mFd);
 		mStatusCode = 405;
-		mStatusText = "Method is not allowed";
 		// 이 경우 헤더에 Allow: GET, POST, DELETE 추가해야 함.
 		return (ERROR);
 	}
@@ -243,7 +242,8 @@ int UserData::ParseRequest(std::vector<unsigned char>& request)
 			it = pos;
 		}
 	}
-	mReceived.erase(request.begin(), pos + 1);
+	if (pos != mReceived.end())
+		mReceived.erase(request.begin(), pos + 1);
 	if (mMethod->GetType() == POST)
 	{
 		if (mHeaders[CONTENT_LENGTH] == "" || mHeaders[CONTENT_TYPE] == "")

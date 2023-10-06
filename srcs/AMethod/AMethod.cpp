@@ -27,7 +27,6 @@ void AMethod::GenerateRedirectionResponse(int code, LocationBlock& mSetting)
 	mResponse += "\r\n";
 }
 
-
 void AMethod::SetCurrentTime(const char* headerType)
 {
 	time_t rawTime;
@@ -112,7 +111,7 @@ int AMethod::SetETag(const std::string& mUri, const std::string& etagHeader)
 }
 
 int AMethod::GenerateResponseHeaders(std::ifstream& requestedFile, LocationBlock& mSetting, std::string mUri,
-										std::map<int, std::string>& mHeaders)
+									 std::map<int, std::string>& mHeaders)
 {
 	std::string headers;
 	std::string extTemp = mUri.substr(mUri.find_last_of('.') + 1);
@@ -283,7 +282,6 @@ void AMethod::ResponseConfigSetup(const ServerBlock& server, std::string& uri, L
 	for (std::vector<MultiTree*>::const_iterator it = server.root.begin(); it != server.root.end(); it++)
 	{
 		subString = uri.substr(0, (*it)->GetRoot()->GetURI().size());
-		(*it)->PrintEveryNodes();
 		if ((*it)->GetRoot()->GetURI() == subString)
 		{
 			if (targetTree == NULL || targetTree->GetRoot()->GetURI().size() < subString.size())

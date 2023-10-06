@@ -40,7 +40,7 @@ public:
 	void SetServerPtr(const ServerBlock* serverPtr);
 	LocationBlock& Setting(void);
 	std::string uriGenerator(void);
-	void ReadResponse(void);
+	void ReadRequest(void);
 	int GenerateDeleteResponse(void);
 	int ParseRequest(std::vector<unsigned char>& request);
 	int ParseFirstLine(std::string& request);
