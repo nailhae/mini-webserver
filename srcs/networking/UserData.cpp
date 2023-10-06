@@ -2,6 +2,7 @@
 
 #include <dirent.h>
 #include <sys/stat.h>
+#include <algorithm>
 
 #include "ChangeList.hpp"
 #include "Error.hpp"
@@ -97,7 +98,7 @@ int UserData::GenerateDeleteResponse(void)
 	return (0);
 }
 
-const std::stringstream& UserData::GetReceived(void) const
+const std::vector<unsigned char>& UserData::GetReceived(void) const
 {
 	return (mReceived);
 }
@@ -142,25 +143,32 @@ void UserData::SetServerPtr(const ServerBlock* serverPtr)
 	mServerPtr = serverPtr;
 }
 
-static int checkHeaderLength(std::stringstream& ss, int flag)
+static int checkHeaderLength(std::vector<unsigned char>& received, int flag)
 {
+	std::vector<unsigned char>::iterator pos = received.begin();
 	std::string line;
 
-	// ss.seekg(std::ios::beg); // 필요하지 않다면 빼기
 	if (flag == true)
 		return (true);
-	while (1)
+	if (received.size() > 1024)
+		return (ERROR);
+	for (std::vector<unsigned char>::iterator it = received.begin(); it != received.end();)
 	{
-		std::getline(ss, line);
-		if (ss.eof() == true)
+		pos = std::find(pos, received.end(), '\n');
+		if (pos == received.end())
 			return (false);
-		else if (line == "\r" || line == "")
-			return (true);
-		else if (ss.tellg() > 1024)
-			return (ERROR);
+		//it ~~ pos 까지 저장하고 비교
+		line.assign(it, pos);
+		if (line == "\r" || line == "")
+			break ;
 		else
-			continue;
+		{
+			pos += 1; // 현재 pos는 \n을 가리키고 있기 때문.
+			it = pos; // 찾기 시작하는 위치 저장.
+			continue ;
+		}
 	}
+	return (true);
 }
 
 void UserData::ReadResponse(void)
@@ -177,6 +185,15 @@ void UserData::ReadResponse(void)
 	else if (mHeaderFlag == false)
 	{
 		return;
+	}
+	else if (mFillBodyFlag == true)
+	{
+		if (mReceived.size() < mContentSize)
+		{
+			mFillBodyFlag = true;
+			return ;
+		}
+		GeneratePostResponse();
 	}
 	else
 	{
@@ -212,10 +229,8 @@ void UserData::ReadResponse(void)
 			std::cout << Colors::BoldCyan << "[mContentSize]" << mHeaders[CONTENT_LENGTH] << std::endl;
 			mContentSize = strtol(mHeaders[CONTENT_LENGTH].c_str(), NULL, 10);
 			std::cout << Colors::BoldCyan << "[body]" << mContentSize << std::endl;
-			if (mBody.size() < mContentSize)
+			if (mReceived.size() < mContentSize)
 			{
-				std::getline(mReceived, temp, static_cast<char>(EOF));
-				mBody += temp;
 				mFillBodyFlag = true;
 				return;
 			}
@@ -234,11 +249,7 @@ int UserData::RecvFromClient(void)
 	int len;
 
 	len = read(mFd, mBuf, BUFFER_SIZE);
-	for (int i = 0; i < len; i++)
-	{
-		mReceived << mBuf[i];
-		std::cout << mBuf[i];
-	}
+	mReceived.insert(mReceived.begin(), &mBuf[0], &mBuf[len]);
 	std::cout << std::endl;
 	return (len);
 }
@@ -256,7 +267,8 @@ void UserData::InitUserData(void)
 	mFillBodyFlag = -1;
 	mStatusText.clear();
 	mUri.clear();
-	mReceived.str("");
+	mBody.clear();
+	mReceived.clear();
 	mHeaders.clear();
 }
 
@@ -290,6 +302,5 @@ int UserData::GeneratePostResponse(void)
 	// mResponse = cgi.readCgiResponse();
 
 	WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_ONESHOT, this);
-	// SendToClient(mFd);
 	return (0);
 }

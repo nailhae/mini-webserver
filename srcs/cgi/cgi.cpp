@@ -43,7 +43,7 @@ std::string getPathInfo(std::string &path) {
     return (end == std::string::npos ? tmp : tmp.substr(0, end));
 }
 
-std::string urlEncode(const std::string &path) {
+std::string urlEncode(const std::vector<unsigned char> &path) {
     std::ostringstream oss;
     for (size_t i = 0; i < path.size(); i++) {
         if (std::isalnum(path[i]) || path[i] == '-' || path[i] == '_' || path[i] == '.' || path[i] == '~') {
@@ -65,14 +65,18 @@ int findHostNamePos(const std::string path, const std::string ch)
     return (-1);
 }
 
-void Cgi::initCgiEnv(std::string httpCgiPath, size_t ContentSize, std::map<int, std::string> Header, std::string Body)
+void Cgi::initCgiEnv(std::string httpCgiPath, size_t ContentSize, std::map<int, std::string> Header, std::vector<unsigned char>& Body)
 {
     if (httpCgiPath.at(0) == '/')
     {
         httpCgiPath.erase(0, 1);
     }
-	std::cout << "[Path]" << httpCgiPath << std::endl;
-	std::cout << "[Body]" << Body << std::endl;
+	std::cout << "[Path]" << httpCgiPath << "\n[Body]" << std::endl;
+    for (std::vector<unsigned char>::iterator it = Body.begin(); it != Body.end(); it++)
+    {
+        std::cout << *it;
+    }
+    std::cout << std::endl;
     this->env["AUTH_TYPE"] = "BASIC";
     this->env["CONTENT_LENGTH"] = ContentSize;
     // this->env["CONTENT_TYPE"] = Header[CONTENT_TYPE];
@@ -149,25 +153,24 @@ void Cgi::execute(size_t &errorCode)
     return ;
 }
 
-void Cgi::sendCgiBody(std::string mBody)
+void Cgi::sendCgiBody(std::vector<unsigned char>& mBody)
 {
-    std::string reqBody = mBody;
     size_t bodySize;
 
-    while (reqBody.length() >= 0)
+    while (mBody.size() >= 0)
     {
-        if (reqBody.length() >= BUFFER_SIZE){
-            bodySize = write(pipeIn[1], reqBody.c_str(), BUFFER_SIZE);
+        if (mBody.size() >= BUFFER_SIZE){
+            bodySize = write(pipeIn[1], mBody.data(), BUFFER_SIZE);
         }
         else
-            bodySize = write(pipeIn[1], reqBody.c_str(), reqBody.length());
+            bodySize = write(pipeIn[1], mBody.data(), mBody.size());
 
         if (bodySize < 0)
         {
             //error(500);
             break;
         }
-        else if (bodySize == 0 || bodySize == reqBody.length())
+        else if (bodySize == 0 || bodySize == mBody.size())
         {
             close(pipeIn[1]);
             close(pipeOut[1]);
@@ -176,7 +179,7 @@ void Cgi::sendCgiBody(std::string mBody)
         }
         else
         {
-            reqBody = reqBody.substr(bodySize);
+            // mBody = mBody.substr(bodySize);
         }
     }
     return ;
