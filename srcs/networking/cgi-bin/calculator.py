@@ -9,7 +9,7 @@ print("Content-type: text/html\r\n\r\n")
 if __name__ == "__main__":
     len = os.getenv("CONTENT_LENGTH")
     query_str = sys.stdin.read()
-
+    print(query_str)
     m = ''
     n = ''
     if query_str:
@@ -20,9 +20,9 @@ if __name__ == "__main__":
                 m = value
             elif key == 'n':
                 n = value
-    html_text = '<!DOCTYPE html>\n<html>\n<head>\n'
+    html_text = "<!DOCTYPE html>\n<html>\n<head>\n"
     html_text += '\t<title>'+'test'+'</title>\n'
-    html_text += '\t<meta charset="utf-8">\n'
+    html_text += "\t<meta charset='utf-8'>\n<a href='/index.html'>Home</a>"
     html_text += '</head>\n\n'
     html_text += '<body>\n'
 

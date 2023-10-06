@@ -494,7 +494,7 @@ int UserData::RecvFromClient(void)
 	int len;
 
 	len = read(mFd, mBuf, BUFFER_SIZE);
-	mReceived.insert(mReceived.begin(), &mBuf[0], &mBuf[len]);
+	mReceived.insert(mReceived.end(), &mBuf[0], &mBuf[len]);
 	std::cout << std::endl;
 	return (len);
 }
@@ -542,14 +542,14 @@ int UserData::SendToClient(int fd)
 int UserData::GeneratePostResponse(void)
 {
 	Cgi cgi(mUri);
-	cgi.initCgiEnv(mUri, mContentSize, mHeaders, mBody);
+	cgi.initCgiEnv(mUri, mContentSize, mHeaders, mReceived);
 	size_t errorCode = 0;
 	std::cout << Colors::Magenta << "[send]"
 			  << " send" << std::endl;
 	cgi.execute(errorCode);
 	std::cout << Colors::Magenta << "[read]"
 			  << " read" << Colors::Reset << std::endl;
-	cgi.sendCgiBody(mBody);
+	cgi.sendCgiBody(mReceived);
 	mResponse = cgi.readCgiResponse();
 
 	WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_ONESHOT, this);

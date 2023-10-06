@@ -1,5 +1,7 @@
 #include "cgi.hpp"
 
+#include "Colors.hpp"
+
 Cgi::Cgi()
 	: chEnv(NULL)
 	, argv(NULL)
@@ -60,7 +62,25 @@ std::string getPathInfo(std::string& path)
 	return (end == std::string::npos ? tmp : tmp.substr(0, end));
 }
 
-std::string urlEncode(const std::vector<unsigned char>& path)
+// std::string urlEncode(const std::vector<unsigned char>& path)
+// {
+// 	std::ostringstream oss;
+// 	for (size_t i = 0; i < path.size(); i++)
+// 	{
+// 		if (std::iswalnum(path[i]) || path[i] == '-' || path[i] == '_' || path[i] == '.' || path[i] == '~')
+// 		{
+// 			oss << path[i];
+// 		}
+// 		else
+// 		{
+// 			oss << '%' << std::hex << std::uppercase << int((size_t)path[i]);
+// 		}
+// 	}
+// 	// std::cout << "123123123 " << oss.str() << '\n';
+// 	return (oss.str());
+// }
+
+std::string urlEncode(const std::string& path)
 {
 	std::ostringstream oss;
 	for (size_t i = 0; i < path.size(); i++)
@@ -74,7 +94,35 @@ std::string urlEncode(const std::vector<unsigned char>& path)
 			oss << '%' << std::hex << std::uppercase << int((size_t)path[i]);
 		}
 	}
+	std::cout << Colors::Red << oss.str() << Colors::Reset << '\n';
 	return (oss.str());
+}
+
+std::string urlDecode(const std::string& str)
+{
+	std::ostringstream oss;
+	for (std::size_t i = 0; i < str.size(); ++i)
+	{
+		if (str[i] == '%')
+		{
+			int ii;
+			std::istringstream iss(str.substr(i + 1, 2));
+			iss >> std::hex >> ii;
+			char ch = static_cast<char>(ii);
+			oss << ch;
+			i += 2;
+		}
+		else if (str[i] == '+')
+		{
+			oss << ' ';
+		}
+		else
+		{
+			oss << str[i];
+		}
+	}
+	std::cout << Colors::Red << oss.str() << Colors::Reset << '\n';
+	return oss.str();
 }
 
 int findHostNamePos(const std::string path, const std::string ch)
@@ -94,8 +142,16 @@ void Cgi::initCgiEnv(std::string httpCgiPath, size_t ContentSize, std::map<int, 
 	{
 		httpCgiPath.erase(0, 1);
 	}
+	std::string bodyStr(reinterpret_cast<char*>(Body.data()), Body.size());
 	std::cout << "[Path]" << httpCgiPath << std::endl;
-	std::cout << "[Body]" << Body.data() << std::endl;
+	std::cout << "[Body]" << Body.size() << std::endl;
+	// for (size_t i = 0; i < Body.size(); ++i)
+	// {
+	// 	std::cout << Body[i];
+	// }
+	// std::cout << '\n';
+	// std::cout << " " << urlEncode(bodyStr) << std::endl;
+	// std::cout << " " << bodyStr << std::endl;
 	this->env["AUTH_TYPE"] = "BASIC";
 	this->env["CONTENT_LENGTH"] = ContentSize;
 	// this->env["CONTENT_TYPE"] = Header[CONTENT_TYPE];
@@ -103,11 +159,19 @@ void Cgi::initCgiEnv(std::string httpCgiPath, size_t ContentSize, std::map<int, 
 	this->env["GATEWAY_INTERFACE"] = "CGI/1.1";
 	this->env["PATH_INFO"] = httpCgiPath;
 	this->env["PATH_TRANSLATED"] = this->env["PATH_INFO"];
-	this->env["QUERY_STRING"] = urlEncode(Body);
+	// std::string body;
+	// body.assign(Body.begin(), Body.end());
+	// size_t p = Header[CONTENT_TYPE].find("multipart");
+	// if (p != std::string::npos)
+	// {
+	// 	std::cout << "123123" << std::endl;
+	// 	this->env["QUERY_STRING"] = urlDecode(body);
+	// }
+	// this->env["QUERY_STRING"] = bodyStr;
 	this->env["REMOTE_ADDR"] = Header[HOST];
 	// this->env["REMOTE_HOST"]
 	// this->env["REMOTE_USER"]
-	this->env["REQUEST_METHOD"] = POST;
+	this->env["REQUEST_METHOD"] = "POST";
 	this->env["SCRIPT_NAME"] = httpCgiPath;
 	// this->env["SCRIPT_FILENAME"] =
 	// "3OfD_0ON3b5Mw9GmxClakX77pOo2tHJnNugH0kaRM3-yJ6NBID2Xbb-pG9sd0z-RAgBEwBFP1tijbVV5Qe8aFA.webp";
@@ -175,18 +239,53 @@ void Cgi::execute(size_t& errorCode)
 	return;
 }
 
-void Cgi::sendCgiBody(std::vector<unsigned char>& reqBody)
+void Cgi::sendCgiBody(std::vector<unsigned char>& Body)
 {
 	size_t bodySize;
 
-	bodySize = write(pipeIn[1], reqBody.data(), reqBody.size());
-	if (bodySize < 0)
+	std::string reqBody;
+	reqBody.assign(Body.begin(), Body.end());
+	// std::string decodebody = urlDecode(body);
+	// bodySize = write(pipeIn[1], decodebody.c_str(), decodebody.size());
+	// while (body.size() > 0)
+	// {
+	// 	bodySize = write(pipeIn[1], body.c_str(), BUFFER_SIZE);
+	// }
+	// if (bodySize < 0)
+	// {
+	// 	// error(500);
+	// }
+	// close(pipeIn[1]);
+	// close(pipeOut[1]);
+	while (reqBody.size() >= 0)
 	{
-		// error(500);
+		if (reqBody.size() >= BUFFER_SIZE)
+		{
+			bodySize = write(pipeIn[1], reqBody.c_str(), BUFFER_SIZE);
+			// std::cout << "123123" << reqBody.data() << '\n';
+		}
+		else
+		{
+			bodySize = write(pipeIn[1], reqBody.c_str(), reqBody.size());
+			// std::cout << "123123123" << reqBody.data() << '\n';
+		}
+
+		if (bodySize < 0)
+		{
+			// error(500);
+			break;
+		}
+		else if (bodySize == 0 || bodySize == reqBody.size())
+		{
+			close(pipeIn[1]);
+			close(pipeOut[1]);
+			break;
+		}
+		else
+		{
+			reqBody = reqBody.substr(bodySize);
+		}
 	}
-	close(pipeIn[1]);
-	close(pipeOut[1]);
-	std::cout << "[read]" << std::endl;
 }
 
 std::string Cgi::readCgiResponse()

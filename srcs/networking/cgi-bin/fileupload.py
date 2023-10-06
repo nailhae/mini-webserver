@@ -5,13 +5,12 @@ import cgi, os, sys
 print("Content-type: text/html\r\n\r\n")
 
 form = cgi.FieldStorage()
-
+# print(form)
 # A nested FieldStorage instance holds the file
 fileitem = form['filename']
 
 # Test if the file was uploaded
 if fileitem.filename:
-
     # strip leading path from file name
     # to avoid directory traversal attacks
     fn = os.path.basename(fileitem.filename)
@@ -22,7 +21,9 @@ else:
     message = 'No file was uploaded'
 
 print ("""\
-<html><body>
+<html>
+    <a href='/index.html'>Home</a>
+<body>
 <p>%s</p>
 </body></html>
 """ % (message,))

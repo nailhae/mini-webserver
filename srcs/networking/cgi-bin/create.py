@@ -23,7 +23,6 @@ print('''<!doctype html>
 </head>
 <body>
   <h1><a href="/index.html">WEB</a></h1>
-  <a href="cgi-bin/create.py">create</a>
   <ol>{listStr}</ol>
   <form action="process_create.py" method="post">
     <p><input type="text" name="title" placeholder="title"></p>

@@ -242,7 +242,7 @@ int UserData::ParseRequest(std::vector<unsigned char>& request)
 			it = pos;
 		}
 	}
-	mReceived.erase(request.begin(), pos);
+	mReceived.erase(request.begin(), pos + 1);
 	if (mMethod->GetType() == POST)
 	{
 		if (mHeaders[CONTENT_LENGTH] == "" || mHeaders[CONTENT_TYPE] == "")
