@@ -96,11 +96,11 @@ int main()
 			close(writeFdToCgi);
 			close(readFdFromWebserv);
 
-			if (i == 0)
+			if (i % 2 == 1)
 			{
 				fileUpload(writeFdToWebserv);
 			}
-			else if (i == 1)
+			else if (i % 2 == 0)
 			{
 				calculate(writeFdToWebserv);
 			}
@@ -122,7 +122,7 @@ int main()
 	struct kevent* currEvent;
 	int finishedCnt = 0;
 
-	//	while (finishedCnt < NUM_REQUEST - 1)
+	// while (finishedCnt < NUM_REQUEST)
 	while (1)
 	{
 		// 이벤트 감시 시작
