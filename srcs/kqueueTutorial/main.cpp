@@ -20,20 +20,6 @@ void changeEvents(std::vector<struct kevent>& changeList, uintptr_t ident, int16
 	changeList.push_back(temp_event);
 }
 
-void fileUpload(int fd)
-{
-	std::string msg = "File upload success! fd:" + std::to_string(fd);
-	write(fd, msg.c_str(), msg.length());
-	close(fd);
-}
-
-void calculate(int fd)
-{
-	std::string msg = "Calculate success! fd:" + std::to_string(fd);
-	write(fd, msg.c_str(), msg.length());
-	close(fd);
-}
-
 int main()
 {
 	std::cout << "NUM_REQUEST: " << NUM_REQUEST << std::endl;
@@ -89,23 +75,27 @@ int main()
 		/* child */
 		if (pid == 0)
 		{
-			//			srand(time(nullptr) * getpid());
-			//			int waitTime = rand() % 3 + 0;
-			//			sleep(waitTime);
 
 			close(writeFdToCgi);
 			close(readFdFromWebserv);
 
-			if (i % 2 == 1)
+			int readLen;
+			while (1)
 			{
-				fileUpload(writeFdToWebserv);
+				readLen = read(readFdFromCgi, buffer, bufferSize);
+				if (readLen > 0)
+					break;
 			}
-			else if (i % 2 == 0)
-			{
-				calculate(writeFdToWebserv);
-			}
-			read(readFdFromCgi, buffer, bufferSize);
-			std::cout << buffer << std::endl;
+
+			srand(time(nullptr) * getpid());
+			int waitTime = rand() % 3 + 0;
+			sleep(waitTime);
+
+			buffer[readLen] = '\0';
+			std::string buf = buffer;
+			std::string msg = buf + "-response-";
+			write(writeFdToWebserv, msg.c_str(), msg.length());
+			std::cout << msg << std::endl;
 			/* Closes child */
 			exit(0);
 		}
@@ -114,7 +104,11 @@ int main()
 			close(writeFdToWebserv);
 			close(readFdFromCgi);
 
+			// send
 			changeEvents(changeList, readFdFromWebserv, EVFILT_READ, EV_ADD, 0, 0, NULL);
+			std::string msg = std::to_string(writeFdToCgi) + "-send-";
+			write(writeFdToCgi, msg.c_str(), msg.length());
+			std::cout << msg << std::endl;
 		}
 	}
 
@@ -122,8 +116,8 @@ int main()
 	struct kevent* currEvent;
 	int finishedCnt = 0;
 
-	// while (finishedCnt < NUM_REQUEST)
-	while (1)
+	// while (1)
+	while (finishedCnt < NUM_REQUEST)
 	{
 		// 이벤트 감시 시작
 		newEvents = kevent(kq, &changeList[0], changeList.size(), eventList, 8, NULL);
@@ -143,13 +137,15 @@ int main()
 			if (bytes > 0)
 			{
 				buffer[bytes] = '\0';
-				printf("ReadFromCgi: %s\n", buffer);
-				std::string msg = "Thank you " + std::to_string(fds[i][WEBSERV][STDOUT_FILENO]);
-				write(fds[i][CGI_PROGRAM][STDOUT_FILENO], msg.c_str(), msg.length());
+				std::string buf = buffer;
+				std::string msg = buf + "-receive!\n";
+				write(STDOUT_FILENO, msg.c_str(), msg.length());
+
 				close(fds[i][CGI_PROGRAM][STDOUT_FILENO]);
 				close(fds[i][WEBSERV][STDIN_FILENO]);
 
 				finishedCnt++;
+				std::cout << "\tFinished " << finishedCnt << "/" << NUM_REQUEST << std::endl;
 			}
 		}
 	}
