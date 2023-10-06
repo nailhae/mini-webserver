@@ -10,6 +10,7 @@ class WebServer
 public:
 	static WebServer* GetInstance();
 	static void DeleteInstance();
+	static const std::string& GetStatusText(int code);
 	const HttpBlock* GetHttp() const;
 	void ChangeEvent(int ident, int nFilter, int nFlags, UserData *udata);
 	void WaitForClientConnection(void);
@@ -30,4 +31,6 @@ private:
 	static WebServer* mWebServer;
 	ChangeList mChangeList;
 	HttpBlock* mHttp;
+	static std::pair<int, std::string> mStatusPair[];
+	static std::map<int, std::string> mStatusMap;
 };

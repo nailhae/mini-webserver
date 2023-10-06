@@ -70,10 +70,7 @@ private:
 	LocationBlock mSetting;
 	std::string mStatusText;
 	std::string mUri;
-	std::string mResponse;
 	std::map<int, std::string> mHeaders;
 	const ServerBlock* mServerPtr;
 	AMethod* mMethod;
-	static std::map<int, std::string> mStatusMap;
-	static std::pair<int, std::string> mStatusPair[];
 };
