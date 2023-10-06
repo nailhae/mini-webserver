@@ -18,7 +18,7 @@
 #include "AMethod.hpp"
 #include "dataSet.hpp"
 
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 1023
 
 class AMethod;
 

@@ -16,8 +16,6 @@
 
 #include "dataSet.hpp"
 
-#define BUFFER_SIZE 1024
-
 class ChangeList // 얘는 kqueue manage class가 될 수 있음.
 {
 public:

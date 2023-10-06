@@ -334,7 +334,7 @@ static int serverParser(ServerBlock& server, std::ifstream& file)
 			}
 			if (!value.empty())
 			{
-				server.rootPath = value + '/';
+				server.rootPath = value;
 			}
 			else
 			{
@@ -435,7 +435,7 @@ static int locationParser(LocationBlock& location, std::ifstream& file, MultiTre
 			}
 			if (!(value.empty()))
 			{
-				location.rootPath = value + '/';
+				location.rootPath = value;
 			}
 			else
 			{
@@ -467,7 +467,6 @@ static int locationParser(LocationBlock& location, std::ifstream& file, MultiTre
 			{
 				return error;
 			}
-			value.erase(value.size() - 1);
 			location.index = value;
 		}
 		else if (key == "alias")

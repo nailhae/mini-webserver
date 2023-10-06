@@ -222,7 +222,6 @@ int UserData::ParseRequest(std::vector<unsigned char>& request)
 	std::vector<unsigned char>::iterator pos = request.begin();
 	std::string line;
 
-
 	for (std::vector<unsigned char>::iterator it = request.begin(); it != request.end();)
 	{
 		pos = std::find(pos, request.end(), '\n');
@@ -234,7 +233,7 @@ int UserData::ParseRequest(std::vector<unsigned char>& request)
 		if (*(line.end() - 1) == '\r')
 			line.erase(line.size() - 1);
 		if (line.size() == 0)
-			break ;
+			break;
 		else if (ParseOneLine(line) == ERROR)
 			return (ERROR);
 		else
@@ -243,7 +242,7 @@ int UserData::ParseRequest(std::vector<unsigned char>& request)
 			it = pos;
 		}
 	}
-	mReceived.erase(request.begin(), pos);
+	mReceived.erase(request.begin(), pos + 1);
 	if (mMethod->GetType() == POST)
 	{
 		if (mHeaders[CONTENT_LENGTH] == "" || mHeaders[CONTENT_TYPE] == "")
@@ -253,5 +252,6 @@ int UserData::ParseRequest(std::vector<unsigned char>& request)
 			return (ERROR);
 		}
 	}
+	// 여기서 헤더 뺴고 body만 넣어줘야 함.
 	return (0);
 }

@@ -1,4 +1,5 @@
 #include "AMethod.hpp"
+
 #include "MultiTree.hpp"
 #include "UserData.hpp"
 
@@ -244,8 +245,8 @@ void AMethod::applySettingLocationBlock(LocationBlock& valueSet, const LocationB
 		mSetupFlags |= B_AUTOINDEX;
 	}
 	if (!((B_DELETE_SETTING & mSetupFlags) || (B_GET_SETTING & mSetupFlags) || (B_POST_SETTING & mSetupFlags) ||
-		(B_HEAD_SETTING & mSetupFlags)) \
-		&& (valueToSet->bDeleteMethod + valueToSet->bGetMethod + valueToSet->bHeadMethod + valueToSet->bPostMethod > 0))
+		  (B_HEAD_SETTING & mSetupFlags)) &&
+		(valueToSet->bDeleteMethod + valueToSet->bGetMethod + valueToSet->bHeadMethod + valueToSet->bPostMethod > 0))
 	{
 		valueSet.bDeleteMethod = valueToSet->bDeleteMethod;
 		valueSet.bGetMethod = valueToSet->bGetMethod;
@@ -289,6 +290,8 @@ void AMethod::ResponseConfigSetup(const ServerBlock& server, std::string& uri, L
 				targetTree = *it;
 		}
 	}
+	if (targetTree == NULL)
+		return;
 	targetTreeNode = targetTree->searchNodeOrNull(uri);
 	if (targetTreeNode == NULL)
 		return;

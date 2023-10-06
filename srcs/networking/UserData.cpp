@@ -1,8 +1,8 @@
 #include "UserData.hpp"
 
+#include <algorithm>
 #include <dirent.h>
 #include <sys/stat.h>
-#include <algorithm>
 
 #include "ChangeList.hpp"
 #include "Error.hpp"
@@ -157,15 +157,15 @@ static int checkHeaderLength(std::vector<unsigned char>& received, int flag)
 		pos = std::find(pos, received.end(), '\n');
 		if (pos == received.end())
 			return (false);
-		//it ~~ pos 까지 저장하고 비교
+		// it ~~ pos 까지 저장하고 비교
 		line.assign(it, pos);
 		if (line == "\r" || line == "")
-			break ;
+			break;
 		else
 		{
 			pos += 1; // 현재 pos는 \n을 가리키고 있기 때문.
 			it = pos; // 찾기 시작하는 위치 저장.
-			continue ;
+			continue;
 		}
 	}
 	return (true);
@@ -191,7 +191,7 @@ void UserData::ReadResponse(void)
 		if (mReceived.size() < mContentSize)
 		{
 			mFillBodyFlag = true;
-			return ;
+			return;
 		}
 		GeneratePostResponse();
 	}
@@ -218,6 +218,7 @@ void UserData::ReadResponse(void)
 		mUri = uriGenerator();
 		// 4. 각 method에 따라 응답 메시지 생성
 		std::cout << Colors::BoldCyan << "[Method] " << mMethod->GetType() << std::endl;
+		std::cout << "??? " << mMethod->GetType() << " Get == 0 " << mSetting.bGetMethod << std::endl;
 		if (mMethod->GetType() == GET && mSetting.bGetMethod == true)
 		{
 			mMethod->GenerateResponse(mUri, mSetting, mHeaders);
@@ -249,7 +250,7 @@ int UserData::RecvFromClient(void)
 	int len;
 
 	len = read(mFd, mBuf, BUFFER_SIZE);
-	mReceived.insert(mReceived.begin(), &mBuf[0], &mBuf[len]);
+	mReceived.insert(mReceived.end(), &mBuf[0], &mBuf[len]);
 	std::cout << std::endl;
 	return (len);
 }
@@ -290,14 +291,17 @@ int UserData::SendToClient(int fd)
 	if (len < 0)
 		Error::Print("send()");
 	InitUserData();
+	std::cout << Colors::BoldMagenta << "send to client " << fd << "\n" << Colors::Reset << std::endl;
 	return (len);
 }
 
 int UserData::GeneratePostResponse(void)
 {
 	Cgi cgi(mUri);
-	cgi.initCgiEnv(mUri, mContentSize, mHeaders, mBody);
+	cgi.initCgiEnv(mUri, mContentSize, mHeaders, mReceived);
 	size_t errorCode = 0;
+	std::cout << Colors::Magenta << "[send]"
+			  << " send" << std::endl;
 	cgi.execute(errorCode);
 	cgi.sendCgiBody(mBody);
 	// mResponse = cgi.readCgiResponse();
