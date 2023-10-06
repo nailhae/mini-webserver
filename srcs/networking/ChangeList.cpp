@@ -13,7 +13,7 @@ ChangeList::~ChangeList(void)
 {
 }
 
-void ChangeList::ChangeEvent(uintptr_t ident, int filter, int flags, UserData *udata)
+void ChangeList::ChangeEvent(uintptr_t ident, int filter, int flags, UserData* udata)
 {
 	// fflags로 CGI 처리와 signal 등 처리 해야함.
 	struct kevent target;
@@ -23,6 +23,7 @@ void ChangeList::ChangeEvent(uintptr_t ident, int filter, int flags, UserData *u
 	target.flags = flags;
 	target.fflags = 0;
 	target.data = 0;
+	target.udata = NULL;
 	if (flags == EV_DELETE)
 	{
 		kevent(ident, &target, 1, NULL, 0, 0);

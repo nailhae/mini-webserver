@@ -219,6 +219,7 @@ void UserData::ReadResponse(void)
 		mUri = uriGenerator();
 		// 4. 각 method에 따라 응답 메시지 생성
 		std::cout << Colors::BoldCyan << "[Method] " << mMethod->GetType() << std::endl;
+		std::cout << "??? " << mMethod->GetType() << " Get == 0 " << mSetting.bGetMethod << std::endl;
 		if (mMethod->GetType() == GET && mSetting.bGetMethod == true)
 		{
 			mMethod->GenerateResponse(mUri, mSetting, mHeaders);
@@ -241,7 +242,7 @@ void UserData::ReadResponse(void)
 			GeneratePostResponse();
 		}
 		else if (mMethod->GetType() == DELETE && mSetting.bDeleteMethod == true)
-			GenerateDeleteResponse();
+			mMethod->GenerateResponse(mUri, mSetting, mHeaders);
 		else
 			mMethod->GenerateErrorResponse(403);
 	}
@@ -253,7 +254,7 @@ int UserData::RecvFromClient(void)
 	int len;
 
 	len = read(mFd, mBuf, BUFFER_SIZE);
-	mReceived.insert(mReceived.begin(), &mBuf[0], &mBuf[len]);
+	mReceived.insert(mReceived.end(), &mBuf[0], &mBuf[len]);
 	std::cout << std::endl;
 	return (len);
 }
@@ -294,14 +295,17 @@ int UserData::SendToClient(int fd)
 	if (len < 0)
 		Error::Print("send()");
 	InitUserData();
+	std::cout << Colors::BoldMagenta << "send to client " << fd << "\n" << Colors::Reset << std::endl;
 	return (len);
 }
 
 int UserData::GeneratePostResponse(void)
 {
 	Cgi cgi(mUri);
-	cgi.initCgiEnv(mUri, mContentSize, mHeaders, mBody);
+	cgi.initCgiEnv(mUri, mContentSize, mHeaders, mReceived);
 	size_t errorCode = 0;
+	std::cout << Colors::Magenta << "[send]"
+			  << " send" << std::endl;
 	cgi.execute(errorCode);
 	cgi.sendCgiBody(mBody);
 	// mResponse = cgi.readCgiResponse();

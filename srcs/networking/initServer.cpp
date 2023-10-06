@@ -1,7 +1,7 @@
-#include "WebServer.hpp"
 #include "ChangeList.hpp"
-#include "UserData.hpp"
 #include "Colors.hpp"
+#include "UserData.hpp"
+#include "WebServer.hpp"
 #define ERROR -1
 
 static void setServerSocketOption(int fd)
@@ -46,22 +46,22 @@ static int createSocket(int port)
 int WebServer::InitServer(void)
 {
 	int serverSocket;
-	UserData *udata;
+	UserData* udata;
 
-	for (std::vector<ServerBlock*>::iterator it = mHttp->serverList.begin(); it != mHttp->serverList.end();
-		 it++)
+	for (std::vector<ServerBlock*>::iterator it = mHttp->serverList.begin(); it != mHttp->serverList.end(); it++)
 	{
 		serverSocket = createSocket((*it)->listenPort);
 		if (serverSocket == ERROR)
 		{
 			std::cerr << "Error: server socket" << std::endl;
-			return (ERROR);		
+			return (ERROR);
 		}
 		udata = new UserData(serverSocket);
 		udata->SetServerPtr(*it);
 		udata->SetSocketType(SERVER_SOCKET);
 		mChangeList.ChangeEvent(serverSocket, EVFILT_READ, EV_ADD, udata);
-		std::cout << Colors::BoldGreen << udata->GetServerPtr()->serverName << ": Socket " << serverSocket << " is now listen" << std::endl;
+		std::cout << Colors::BoldGreen << udata->GetServerPtr()->serverName << ": Socket " << serverSocket
+				  << " is now listen" << std::endl;
 	}
 	return (0);
 }

@@ -18,8 +18,8 @@ void WebServer::closeClientSocket(UserData* udata, int fd)
 {
 	std::cout << Colors::BoldBlue << "close client:" << fd << Colors::Reset << std::endl;
 	close(fd);
-	mChangeList.ChangeEvent(fd, EVFILT_READ, EV_DELETE, NULL);
 	delete udata;
+	mChangeList.ChangeEvent(fd, EVFILT_READ, EV_DELETE, NULL);
 }
 
 static void setSocketKeepAlive(int fd, int cnt, int idle, int interval)
@@ -98,9 +98,6 @@ void WebServer::WaitForClientConnection(void)
 			{
 				if (eventList[i].filter == EVFILT_READ)
 				{
-					// AMethod 완성 되면 이걸로 돌려보기
-					// currentUdata->GetMethod().GenerateResponse();
-					// * 임시 *
 					readLen = currentUdata->RecvFromClient();
 					if (readLen == 0)
 					{
@@ -108,8 +105,7 @@ void WebServer::WaitForClientConnection(void)
 					}
 					else if (readLen < 0)
 					{
-						close(eventList[i].ident);
-						Error::Print("recv error");
+						closeClientSocket(currentUdata, eventList[i].ident);
 						std::cout << "force close client: " << eventList[i].ident << std::endl;
 					}
 					else
