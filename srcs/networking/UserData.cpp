@@ -1,8 +1,8 @@
 #include "UserData.hpp"
 
+#include <algorithm>
 #include <dirent.h>
 #include <sys/stat.h>
-#include <algorithm>
 
 #include "ChangeList.hpp"
 #include "Error.hpp"
@@ -157,15 +157,15 @@ static int checkHeaderLength(std::vector<unsigned char>& received, int flag)
 		pos = std::find(pos, received.end(), '\n');
 		if (pos == received.end())
 			return (false);
-		//it ~~ pos 까지 저장하고 비교
+		// it ~~ pos 까지 저장하고 비교
 		line.assign(it, pos);
 		if (line == "\r" || line == "")
-			break ;
+			break;
 		else
 		{
 			pos += 1; // 현재 pos는 \n을 가리키고 있기 때문.
 			it = pos; // 찾기 시작하는 위치 저장.
-			continue ;
+			continue;
 		}
 	}
 	return (true);
@@ -191,7 +191,7 @@ void UserData::ReadResponse(void)
 		if (mReceived.size() < mContentSize)
 		{
 			mFillBodyFlag = true;
-			return ;
+			return;
 		}
 		GeneratePostResponse();
 	}
@@ -212,7 +212,8 @@ void UserData::ReadResponse(void)
 		// 2-1. 이미 상태코드가 정의가 된 경우 종료
 		if (300 <= mStatusCode && mStatusCode < 600)
 		{
-			mMethod->GenerateRedirectionResponse(mStatusCode, mSetting); //TODO 에러와 함께 처리가 되고 있는지 보아야 함.
+			mMethod->GenerateRedirectionResponse(mStatusCode,
+												 mSetting); // TODO 에러와 함께 처리가 되고 있는지 보아야 함.
 		}
 		// 3. 설정을 실제 open 해야 할 uri를 구성
 		mUri = uriGenerator();
@@ -223,7 +224,10 @@ void UserData::ReadResponse(void)
 			mMethod->GenerateResponse(mUri, mSetting, mHeaders);
 		}
 		else if (mMethod->GetType() == HEAD && mSetting.bHeadMethod == true)
-			std::cout << "HEAD response 전송해야 함." << std::endl;
+		{
+			// std::cout << "HEAD response 전송해야 함." << std::endl;
+			mMethod->GenerateResponse(mUri, mSetting, mHeaders);
+		}
 		else if (mMethod->GetType() == POST && mSetting.bPostMethod == true)
 		{
 			std::cout << Colors::BoldCyan << "[mContentSize]" << mHeaders[CONTENT_LENGTH] << std::endl;

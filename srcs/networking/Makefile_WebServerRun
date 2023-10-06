@@ -25,6 +25,7 @@ INCS = \
 SRCS = \
 	$(SRCS_DIR)/AMethod/AMethod.cpp \
 	$(SRCS_DIR)/AMethod/MethodGet.cpp \
+	$(SRCS_DIR)/AMethod/MethodHead.cpp \
 	$(SRCS_DIR)/networking/WebServer.cpp \
 	$(SRCS_DIR)/networking/webServerParseFileOrNull.cpp \
 	$(SRCS_DIR)/networking/ChangeList.cpp \
