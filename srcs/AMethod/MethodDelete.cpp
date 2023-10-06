@@ -13,6 +13,8 @@ MethodDelete::~MethodDelete(void)
 
 int MethodDelete::GenerateResponse(std::string mUri, LocationBlock& mSetting, std::map<int, std::string>& mHeaders)
 {
+	(void)mSetting;
+	(void)mHeaders;
 	if (access(mUri.c_str(), F_OK) == ERROR)
 	{
 		Error::Print("404 Not Found");
@@ -33,7 +35,8 @@ int MethodDelete::GenerateResponse(std::string mUri, LocationBlock& mSetting, st
 	}
 	std::cout << "Success remove file" << std::endl;
 	// TODO apply date method
-	mResponse += "HTTP/1.1 200 OK\r\nContent-type: text/plain\r\nContent-length: 76\r\nDate: Wed, 21 Oct 2015 07:28:00 "
-		  		 "GMT<html>  <body>    <h1>File deleted.</h1>  </body></html>";
+	GenerateResponseStatusLine(200);
+	mResponse += "Content-type: text/plain\r\nContent-length: 71\r\nDate: Wed, 21 Oct 2015 07:28:00 GMT\r\n\r\n";
+	mResponse += "<!DOCTYPE HTML><html>  <body>    <h1>File deleted.</h1>  </body></html>";
 	return (0);
 }

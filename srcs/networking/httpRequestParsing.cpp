@@ -1,6 +1,7 @@
 #include "ChangeList.hpp"
 #include "Error.hpp"
 #include "MethodGet.hpp"
+#include "MethodDelete.hpp"
 #include "UserData.hpp"
 #include "dataSet.hpp"
 
@@ -167,7 +168,7 @@ int UserData::ParseFirstLine(std::string& firstLine)
 	else if (line == "POST")
 		mMethod = new MethodGet(mFd);
 	else if (line == "DELETE")
-		mMethod = new MethodGet(mFd);
+		mMethod = new MethodDelete(mFd);
 	else
 	{
 		mMethod = new MethodGet(ERROR);
