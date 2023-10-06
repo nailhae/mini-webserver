@@ -285,7 +285,8 @@ int UserData::SendToClient(int fd)
 	std::cout << Colors::BoldBlue << "\nstatus " << mStatusCode << ": " << mStatusText << std::endl;
 	std::cout << Colors::BoldMagenta << "send to client " << fd << "\n" << Colors::Reset << std::endl;
 	len = write(fd, mMethod->GetResponse().c_str(), mMethod->GetResponse().size());
-	len = write(1, mMethod->GetResponse().c_str(), mMethod->GetResponse().size());
+	// TODO 얘도 나눠서 써야 함.
+	// WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_ONESHOT, this);
 	if (len < 0)
 		Error::Print("send()");
 	InitUserData();
