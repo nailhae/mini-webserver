@@ -6,8 +6,8 @@
 
 #include "ChangeList.hpp"
 #include "Error.hpp"
+#include "MethodGet.hpp"
 #include "WebServer.hpp"
-#include "cgi.hpp"
 
 UserData::UserData(int fd)
 	: mFd(fd)
@@ -178,9 +178,8 @@ void UserData::ReadRequest(void)
 	mHeaderFlag = checkHeaderLength(mReceived, mHeaderFlag);
 	if (mHeaderFlag == ERROR)
 	{
-		mStatusCode = 416;
-		mStatusText = "Requested Range Not Satisfiable";
-		return;
+		mMethod = new MethodGet(mFd);
+		mMethod->GenerateErrorResponse(mStatusCode);
 	}
 	else if (mHeaderFlag == false)
 	{
@@ -201,6 +200,7 @@ void UserData::ReadRequest(void)
 		if (ParseRequest(mReceived) == ERROR)
 		{
 			mMethod->GenerateErrorResponse(mStatusCode);
+			WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_ONESHOT, this);
 			return;
 		}
 		// 2. 요청에서 문제가 없을 경우 최하위 노드 찾아서 설정 값 받아오기
@@ -213,37 +213,39 @@ void UserData::ReadRequest(void)
 		{
 			// TODO 에러와 함께 처리가 되고 있는지 보아야 함.
 			mMethod->GenerateRedirectionResponse(mStatusCode, mSetting);
-			return;
 		}
-		// 3. 설정을 실제 open 해야 할 uri를 구성
-		mUri = uriGenerator();
-		// 4. 각 method에 따라 응답 메시지 생성
-		std::cout << Colors::BoldCyan << "[Method] " << mMethod->GetType() << std::endl;
-		if (mMethod->GetType() == GET && mSetting.bGetMethod == true)
-		{
-			mMethod->GenerateResponse(mUri, mSetting, mHeaders);
-		}
-		else if (mMethod->GetType() == HEAD && mSetting.bHeadMethod == true)
-		{
-			// std::cout << "HEAD response 전송해야 함." << std::endl;
-			mMethod->GenerateErrorResponse(405);
-			// mMethod->GenerateResponse(mUri, mSetting, mHeaders);
-		}
-		else if (mMethod->GetType() == POST && mSetting.bPostMethod == true)
-		{
-			std::cout << Colors::BoldCyan << "[mContentSize]" << mHeaders[CONTENT_LENGTH] << std::endl;
-			std::cout << Colors::BoldCyan << "[body]" << mContentSize << std::endl;
-			if (mReceived.size() < mContentSize)
-			{
-				mFillBodyFlag = true;
-				return;
-			}
-			mMethod->GenerateResponse(mUri, mSetting, mHeaders);
-		}
-		else if (mMethod->GetType() == DELETE && mSetting.bDeleteMethod == true)
-			mMethod->GenerateResponse(mUri, mSetting, mHeaders);
 		else
-			mMethod->GenerateErrorResponse(403);
+		{
+			// 3. 설정을 실제 open 해야 할 uri를 구성
+			mUri = uriGenerator();
+			// 4. 각 method에 따라 응답 메시지 생성
+			std::cout << Colors::BoldCyan << "[Method] " << mMethod->GetType() << std::endl;
+			if (mMethod->GetType() == GET && mSetting.bGetMethod == true)
+			{
+				mMethod->GenerateResponse(mUri, mSetting, mHeaders);
+			}
+			else if (mMethod->GetType() == HEAD && mSetting.bHeadMethod == true)
+			{
+				// std::cout << "HEAD response 전송해야 함." << std::endl;
+				mMethod->GenerateErrorResponse(405);
+				// mMethod->GenerateResponse(mUri, mSetting, mHeaders);
+			}
+			else if (mMethod->GetType() == POST && mSetting.bPostMethod == true)
+			{
+				std::cout << Colors::BoldCyan << "[mContentSize]" << mHeaders[CONTENT_LENGTH] << std::endl;
+				std::cout << Colors::BoldCyan << "[body]" << mContentSize << std::endl;
+				if (mReceived.size() < mContentSize)
+				{
+					mFillBodyFlag = true;
+					return;
+				}
+				mMethod->GenerateResponse(mUri, mSetting, mHeaders);
+			}
+			else if (mMethod->GetType() == DELETE && mSetting.bDeleteMethod == true)
+				mMethod->GenerateResponse(mUri, mSetting, mHeaders);
+			else
+				mMethod->GenerateErrorResponse(403);
+		}
 	}
 	WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_ONESHOT, this);
 }
@@ -254,6 +256,8 @@ int UserData::RecvFromClient(void)
 
 	len = read(mFd, mBuf, BUFFER_SIZE);
 	mReceived.insert(mReceived.end(), &mBuf[0], &mBuf[len]);
+	for (int i = 0; i < len; i++)
+		std::cout << mBuf[i];
 	std::cout << std::endl;
 	return (len);
 }
@@ -282,18 +286,19 @@ int UserData::SendToClient(int fd)
 
 	// test code
 	std::cout << Colors::BoldCyan << "[Headers]" << std::endl;
+	std::cout << "Method address: " << mMethod << std::endl;
 	for (std::map<int, std::string>::iterator it = mHeaders.begin(); it != mHeaders.end(); it++)
 	{
 		std::cout << it->first << ": " << it->second << std::endl;
 	}
 	std::cout << Colors::BoldBlue << "\nstatus " << mStatusCode << ": " << mStatusText << std::endl;
-	std::cout << Colors::BoldMagenta << "send to client " << fd << "\n" << Colors::Reset << std::endl;
 	len = write(fd, mMethod->GetResponse().c_str(), mMethod->GetResponse().size());
+	len = write(1, mMethod->GetResponse().c_str(), mMethod->GetResponse().size());
 	// TODO 얘도 나눠서 써야 함.
 	// WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_ONESHOT, this);
 	if (len < 0)
 		Error::Print("send()");
-	InitUserData();
 	std::cout << Colors::BoldMagenta << "send to client " << fd << "\n" << Colors::Reset << std::endl;
+	InitUserData();
 	return (len);
 }

@@ -10,13 +10,11 @@ MethodPost::MethodPost(int type)
 {
 }
 
-MethodPost::~MethodPost(void)
-{
-}
-
 int MethodPost::GenerateResponse(std::string& uri, LocationBlock& setting, std::map<int, std::string>& headers)
 {
 	size_t size;
+
+	(void)setting;
 	size = strtol(headers[CONTENT_LENGTH].c_str(), NULL, 10);
 	initCgiEnv(uri, size, headers);
 	execute();

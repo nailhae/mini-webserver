@@ -2,6 +2,8 @@
 #include "Error.hpp"
 #include "MethodDelete.hpp"
 #include "MethodGet.hpp"
+#include "MethodHead.hpp"
+#include "MethodPost.hpp"
 #include "UserData.hpp"
 #include "dataSet.hpp"
 
@@ -74,6 +76,7 @@ static int checkValueQuote(std::string& value)
 
 static int checkValidHeaderKey(int headerKey, std::string& value)
 {
+	std::cout << headerKey << ": " << value << std::endl;
 	if (checkValueQuote(value) == ERROR)
 		return (ERROR);
 	if (headerKey == CONNECTION)
@@ -132,10 +135,18 @@ int UserData::ParseHeaderValue(int headerKey, std::string& value)
 {
 	if (headerKey == NONE)
 		return (0);
-	if (mHeaders[headerKey] != "" || checkValidHeaderKey(headerKey, value) == ERROR)
+	if (mHeaders.find(headerKey) != mHeaders.end())
 	{
 		mStatusCode = 400;
 		mStatusText = "Bad Request";
+		std::cout << "header is duplicated (key: value) (" << headerKey << ": " << value << ")" << std::endl;
+		return (ERROR);
+	}
+	else if (checkValidHeaderKey(headerKey, value) == ERROR)
+	{
+		mStatusCode = 400;
+		mStatusText = "Bad Request";
+		std::cout << "header field  not valid (key: value) (" << headerKey << ": " << value << ")" << std::endl;
 		return (ERROR);
 	}
 	else
@@ -164,9 +175,9 @@ int UserData::ParseFirstLine(std::string& firstLine)
 	if (line == "GET")
 		mMethod = new MethodGet(mFd);
 	else if (line == "HEAD")
-		mMethod = new MethodGet(mFd);
+		mMethod = new MethodHead(mFd);
 	else if (line == "POST")
-		mMethod = new MethodGet(mFd);
+		mMethod = new MethodPost(mFd);
 	else if (line == "DELETE")
 		mMethod = new MethodDelete(mFd);
 	else
@@ -184,7 +195,6 @@ int UserData::ParseFirstLine(std::string& firstLine)
 	if (line != "HTTP/1.1")
 	{
 		mStatusCode = 505;
-		mStatusText = "HTTP Version Not Supported";
 		return (ERROR);
 	}
 	return (0);
@@ -243,13 +253,14 @@ int UserData::ParseRequest(std::vector<unsigned char>& request)
 		}
 	}
 	if (pos != mReceived.end())
-		mReceived.erase(request.begin(), pos + 1);
+		mReceived.erase(mReceived.begin(), pos + 1);
 	if (mMethod->GetType() == POST)
 	{
 		if (mHeaders[CONTENT_LENGTH] == "" || mHeaders[CONTENT_TYPE] == "")
 		{
 			mStatusCode = 400;
 			mStatusText = "Bad Request";
+			std::cout << "Post's Content is empty" << std::endl;
 			return (ERROR);
 		}
 	}
