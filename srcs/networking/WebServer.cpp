@@ -24,24 +24,25 @@
 #define STATUS_NUM 18
 
 std::pair<int, std::string> WebServer::mStatusPair[] = {std::make_pair(200, "200 OK"),
-													   std::make_pair(201, "201 Created"),
-													   std::make_pair(204, "204 No Content"),
-													   std::make_pair(301, "301 Moved Permanently"),
-													   std::make_pair(302, "302 Found"),
-													   std::make_pair(303, "303 See Other"),
-													   std::make_pair(304, "304 Not Modified"),
-													   std::make_pair(307, "307 Temporary Redirect"),
-													   std::make_pair(308, "308 Permanent Redirect"),
-													   std::make_pair(400, "400 Bad Request"),
-													   std::make_pair(403, "403 Forbidden"),
-													   std::make_pair(404, "404 Not Found"),
-													   std::make_pair(405, "405 Method Not Allowed"),
-													   std::make_pair(416, "416 Requested Range Not Satisfiable"),
-													   std::make_pair(500, "500 Internal Server Error"),
-													   std::make_pair(501, "501 Not Implemented"),
-													   std::make_pair(502, "502 Bad Gateway"),
-													   std::make_pair(504, "504 Gateway Timeout"),
-													   std::make_pair(505, "505 HTTP Version Not Supported")};
+														std::make_pair(201, "201 Created"),
+														std::make_pair(204, "204 No Content"),
+														std::make_pair(301, "301 Moved Permanently"),
+														std::make_pair(302, "302 Found"),
+														std::make_pair(303, "303 See Other"),
+														std::make_pair(304, "304 Not Modified"),
+														std::make_pair(307, "307 Temporary Redirect"),
+														std::make_pair(308, "308 Permanent Redirect"),
+														std::make_pair(400, "400 Bad Request"),
+														std::make_pair(403, "403 Forbidden"),
+														std::make_pair(404, "404 Not Found"),
+														std::make_pair(405, "405 Method Not Allowed"),
+														std::make_pair(411, "411 Length Required"),
+														std::make_pair(416, "416 Requested Range Not Satisfiable"),
+														std::make_pair(500, "500 Internal Server Error"),
+														std::make_pair(501, "501 Not Implemented"),
+														std::make_pair(502, "502 Bad Gateway"),
+														std::make_pair(504, "504 Gateway Timeout"),
+														std::make_pair(505, "505 HTTP Version Not Supported")};
 
 std::map<int, std::string> WebServer::mStatusMap(mStatusPair, mStatusPair + STATUS_NUM);
 
@@ -67,7 +68,7 @@ WebServer::~WebServer()
 {
 }
 
-void WebServer::ChangeEvent(int ident, int nFilter, int nFlags, UserData *udata)
+void WebServer::ChangeEvent(int ident, int nFilter, int nFlags, UserData* udata)
 {
 	mChangeList.ChangeEvent(ident, nFilter, nFlags, udata);
 }
@@ -109,7 +110,6 @@ const std::string& WebServer::GetStatusText(int code)
 {
 	return (mStatusMap[code]);
 }
-
 
 void printTreeStructure(MultiTreeNode* node, int depth = 0)
 {

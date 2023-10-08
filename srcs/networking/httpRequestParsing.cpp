@@ -46,6 +46,8 @@ static int validHeader(std::string& content)
 		return (IF_MODIFIED_SINCE);
 	else if (content == "host")
 		return (HOST);
+	else if (content == "transfer-encoding")
+		return (TRANSFER_ENCODING);
 	else
 		return (NONE);
 }
@@ -76,7 +78,6 @@ static int checkValueQuote(std::string& value)
 
 static int checkValidHeaderKey(int headerKey, std::string& value)
 {
-	std::cout << headerKey << ": " << value << std::endl;
 	if (checkValueQuote(value) == ERROR)
 		return (ERROR);
 	if (headerKey == CONNECTION)
@@ -89,6 +90,7 @@ static int checkValidHeaderKey(int headerKey, std::string& value)
 		/* MIME type 체크
 			HTTP block의 TYPE map을 순회하고, 발견하지 못한 경우 application/octet-stream 으로 설정
 		*/
+		value = "application/octet-stream";
 	}
 	else if (headerKey == CONTENT_LENGTH)
 	{
@@ -139,7 +141,8 @@ int UserData::ParseHeaderValue(int headerKey, std::string& value)
 	{
 		mStatusCode = 400;
 		mStatusText = "Bad Request";
-		std::cout << "header is duplicated (key: value) (" << headerKey << ": " << value << ")" << std::endl;
+		std::cout << mHeaders[headerKey] << " header is duplicated (key: value) (" << headerKey << ": " << value << ")"
+				  << std::endl;
 		return (ERROR);
 	}
 	else if (checkValidHeaderKey(headerKey, value) == ERROR)
@@ -150,7 +153,9 @@ int UserData::ParseHeaderValue(int headerKey, std::string& value)
 		return (ERROR);
 	}
 	else
+	{
 		mHeaders[headerKey] = value;
+	}
 	return (0);
 }
 
@@ -246,24 +251,27 @@ int UserData::ParseRequest(std::vector<unsigned char>& request)
 			break;
 		else if (ParseOneLine(line) == ERROR)
 			return (ERROR);
-		else
-		{
-			pos += 1;
-			it = pos;
-		}
+		pos += 1;
+		it = pos;
 	}
 	if (pos != mReceived.end())
 		mReceived.erase(mReceived.begin(), pos + 1);
 	if (mMethod->GetType() == POST)
 	{
-		if (mHeaders[CONTENT_LENGTH] == "" || mHeaders[CONTENT_TYPE] == "")
+		if (mHeaders.find(CONTENT_LENGTH) == mHeaders.end() || mHeaders[CONTENT_LENGTH] == "0")
 		{
-			mStatusCode = 400;
-			mStatusText = "Bad Request";
+			if (mHeaders.find(TRANSFER_ENCODING) != mHeaders.end())
+			{
+				std::cout << "1024로 설정" << std::endl;
+				mHeaders[CONTENT_LENGTH] = "1024"; // buffer size
+				mContentSize = BUFFER_SIZE;
+				return (0);
+			}
+			mStatusCode = 411;
 			std::cout << "Post's Content is empty" << std::endl;
 			return (ERROR);
 		}
+		strtol(mHeaders[CONTENT_LENGTH].c_str(), NULL, mContentSize);
 	}
-	// 여기서 헤더 뺴고 body만 넣어줘야 함.
 	return (0);
 }

@@ -68,36 +68,6 @@ std::string UserData::uriGenerator(void)
 	return (mUri);
 }
 
-int UserData::GenerateDeleteResponse(void)
-{
-	if (access(mUri.c_str(), F_OK) == ERROR)
-	{
-		Error::Print("404 Not Found");
-		mMethod->GenerateErrorResponse(404);
-		return ERROR;
-	}
-	if (access(mUri.c_str(), W_OK) == ERROR)
-	{
-		Error::Print("403 Forbidden");
-		mMethod->GenerateErrorResponse(403);
-		return ERROR;
-	}
-	if (std::remove(mUri.c_str()) == ERROR)
-	{
-		Error::Print("500 Internal Server Error");
-		mMethod->GenerateErrorResponse(500);
-		return ERROR;
-	}
-	std::cout << "Success remove file" << std::endl;
-	// TODO apply date method
-	write(mFd,
-		  "HTTP/1.1 200 OK\r\nContent-type: text/plain\r\nContent-length: 76\r\nDate: Wed, 21 Oct 2015 07:28:00 "
-		  "GMT<html>  <body>    <h1>File deleted.</h1>  </body></html>",
-		  154);
-
-	return (0);
-}
-
 const std::vector<unsigned char>& UserData::GetReceived(void) const
 {
 	return (mReceived);
@@ -192,6 +162,13 @@ void UserData::ReadRequest(void)
 			mFillBodyFlag = true;
 			return;
 		}
+		if (mContentSize == 0)
+		{
+			mMethod->GenerateErrorResponse(405);
+			WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_DISABLE, this);
+			WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_ONESHOT, this);
+			return;
+		}
 		mMethod->GenerateResponse(mUri, mSetting, mHeaders);
 	}
 	else
@@ -200,6 +177,8 @@ void UserData::ReadRequest(void)
 		if (ParseRequest(mReceived) == ERROR)
 		{
 			mMethod->GenerateErrorResponse(mStatusCode);
+			mContentSize = 0;
+			WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_DISABLE, this);
 			WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_ONESHOT, this);
 			return;
 		}
@@ -226,7 +205,6 @@ void UserData::ReadRequest(void)
 			}
 			else if (mMethod->GetType() == HEAD && mSetting.bHeadMethod == true)
 			{
-				// std::cout << "HEAD response 전송해야 함." << std::endl;
 				mMethod->GenerateErrorResponse(405);
 				// mMethod->GenerateResponse(mUri, mSetting, mHeaders);
 			}
@@ -234,8 +212,29 @@ void UserData::ReadRequest(void)
 			{
 				std::cout << Colors::BoldCyan << "[mContentSize]" << mHeaders[CONTENT_LENGTH] << std::endl;
 				std::cout << Colors::BoldCyan << "[body]" << mContentSize << std::endl;
+				std::cout << "length: " << mContentSize << std::endl;
 				if (mReceived.size() < mContentSize)
 				{
+					if (mHeaders[TRANSFER_ENCODING] == "chunked")
+					{
+						std::string chunkedSize;
+						// atoi..
+						int num = 0;
+
+						for (std::vector<unsigned char>::iterator it = mReceived.begin(); it != mReceived.end(); it++)
+						{
+							if (isdigit(*it) == true)
+							{
+								num += *it - '0';
+								num *= 10;
+							}
+							else
+							{
+								break;
+							}
+						}
+						mContentSize = num;
+					}
 					mFillBodyFlag = true;
 					return;
 				}
@@ -244,10 +243,11 @@ void UserData::ReadRequest(void)
 			else if (mMethod->GetType() == DELETE && mSetting.bDeleteMethod == true)
 				mMethod->GenerateResponse(mUri, mSetting, mHeaders);
 			else
-				mMethod->GenerateErrorResponse(403);
+				mMethod->GenerateErrorResponse(405);
 		}
 	}
 	WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_ONESHOT, this);
+	WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_DISABLE, this);
 }
 
 int UserData::RecvFromClient(void)
@@ -256,9 +256,14 @@ int UserData::RecvFromClient(void)
 
 	len = read(mFd, mBuf, BUFFER_SIZE);
 	mReceived.insert(mReceived.end(), &mBuf[0], &mBuf[len]);
-	for (int i = 0; i < len; i++)
-		std::cout << mBuf[i];
-	std::cout << std::endl;
+	std::string test(mReceived.begin(), mReceived.end());
+	std::cout << "\n" << std::endl;
+	for (std::string::iterator it = test.begin(); it != test.end(); it++)
+	{
+		std::cout << *it;
+	}
+	// for (int i = 0; i < len; i++)
+	// 	std::cout << mBuf[i];
 	return (len);
 }
 
@@ -269,6 +274,7 @@ void UserData::InitUserData(void)
 		delete mMethod;
 		mMethod = NULL;
 	}
+	memset(mBuf, 0, sizeof(mBuf));
 	mStatusCode = -1;
 	mHeaderFlag = -1;
 	mStatusCode = -1;
@@ -285,13 +291,12 @@ int UserData::SendToClient(int fd)
 	size_t len;
 
 	// test code
-	std::cout << Colors::BoldCyan << "[Headers]" << std::endl;
-	std::cout << "Method address: " << mMethod << std::endl;
+	std::cout << Colors::BoldCyan << "[Headers]" << Colors::Reset << std::endl;
 	for (std::map<int, std::string>::iterator it = mHeaders.begin(); it != mHeaders.end(); it++)
 	{
 		std::cout << it->first << ": " << it->second << std::endl;
 	}
-	std::cout << Colors::BoldBlue << "\nstatus " << mStatusCode << ": " << mStatusText << std::endl;
+	std::cout << "\n" << std::endl;
 	len = write(fd, mMethod->GetResponse().c_str(), mMethod->GetResponse().size());
 	len = write(1, mMethod->GetResponse().c_str(), mMethod->GetResponse().size());
 	// TODO 얘도 나눠서 써야 함.
@@ -300,5 +305,6 @@ int UserData::SendToClient(int fd)
 		Error::Print("send()");
 	std::cout << Colors::BoldMagenta << "send to client " << fd << "\n" << Colors::Reset << std::endl;
 	InitUserData();
+	WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_ENABLE, this);
 	return (len);
 }
