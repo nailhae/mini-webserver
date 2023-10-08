@@ -16,6 +16,8 @@ int MethodPost::GenerateResponse(std::string& uri, LocationBlock& setting, std::
 
 	(void)setting;
 	size = strtol(headers[CONTENT_LENGTH].c_str(), NULL, 10);
+	if (size < 1)
+		size = 1024;
 	initCgiEnv(uri, size, headers);
 	execute();
 	sendCgiBody();

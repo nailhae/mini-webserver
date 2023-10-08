@@ -214,6 +214,11 @@ void AMethod::GenerateErrorResponse(int code)
 
 	// errorUri = WebServer::GetErrorPage(code)
 	GenerateResponseStatusLine(code);
+	if (code < 300) // POST with 0 contents
+	{
+		mResponse += "Content-Length: 0\r\n\r\n";
+		return;
+	}
 	SetContentType("html");
 	errorPage.open(errorUri.c_str(), std::ios::binary);
 	if (errorPage.is_open() == false)

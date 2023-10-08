@@ -119,7 +119,7 @@ int MethodGet::GenerateResponse(std::string& mUri, LocationBlock& mSetting, std:
 		else if (S_ISDIR(fileInfo.st_mode) == true)
 		{
 			Error::Print("directory can't open in file mode: " + mUri);
-			GenerateErrorResponse(404);
+			GenerateErrorResponse(403);
 			return (0);
 		}
 		requestedFile.open(mUri, std::ios::binary);
