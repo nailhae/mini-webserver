@@ -273,7 +273,7 @@ int UserData::ParseRequest(std::vector<unsigned char>& request)
 			std::cout << "Post's Content is empty" << std::endl;
 			return (ERROR);
 		}
-		strtol(mHeaders[CONTENT_LENGTH].c_str(), NULL, mContentSize);
+		mContentSize = strtol(mHeaders[CONTENT_LENGTH].c_str(), NULL, 10);
 	}
 	return (0);
 }

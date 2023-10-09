@@ -1,5 +1,6 @@
 {
     "files.associations": {
+        "*.h": "c",
         "__bit_reference": "cpp",
         "__hash_table": "cpp",
         "__mutex_base": "cpp",
@@ -60,7 +61,18 @@
         "ratio": "cpp",
         "stdexcept": "cpp",
         "typeinfo": "cpp",
-        "algorithm": "cpp"
+        "algorithm": "cpp",
+        "__tuple": "cpp",
+        "filesystem": "cpp",
+        "__bits": "cpp",
+        "bit": "cpp",
+        "memory": "cpp",
+        "type_traits": "cpp",
+        "__nullptr": "cpp",
+        "__string": "cpp",
+        "chrono": "cpp",
+        "compare": "cpp",
+        "concepts": "cpp"
     },
     "liveServer.settings.port": 5501,
     "C_Cpp.errorSquiggles": "enabled",

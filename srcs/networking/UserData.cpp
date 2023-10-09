@@ -14,6 +14,7 @@ UserData::UserData(int fd)
 	, mSocketType(-1)
 	, mStatusCode(-1)
 	, mHeaderFlag(0)
+	, mChunkedFlag(0)
 	, mFillBodyFlag(-1)
 	, mContentSize(0)
 	, mMethod(NULL)
@@ -148,14 +149,28 @@ void UserData::ReadRequest(void)
 	{
 		return;
 	}
+	else if (mChunkedFlag == true)
+	{
+		if (mReceived.size() > 7 && mReceived[mReceived.size() - 7] == '\r' &&
+			mReceived[mReceived.size() - 6] == '\n' && mReceived[mReceived.size() - 5] == '0' &&
+			mReceived[mReceived.size() - 4] == '\r' && mReceived[mReceived.size() - 3] == '\n' &&
+			mReceived[mReceived.size() - 2] == '\r' && mReceived[mReceived.size() - 1] == '\n')
+		{
+			mMethod->GenerateResponse(mUri, mSetting, mHeaders);
+			WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_DISABLE, this);
+			WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_ONESHOT, this);
+			return;
+		}
+		else
+		{
+			return;
+		}
+	}
 
 	if (mFillBodyFlag == true)
 	{
 		if (mReceived.size() < mContentSize)
-		{
-			mFillBodyFlag = true;
 			return;
-		}
 		mMethod->GenerateResponse(mUri, mSetting, mHeaders);
 	}
 	else
@@ -206,26 +221,17 @@ void UserData::ReadRequest(void)
 						mMethod->GenerateErrorResponse(405);
 					else if (mHeaders[TRANSFER_ENCODING] == "chunked")
 					{
-						int num = 0;
-
-						for (std::vector<unsigned char>::iterator it = mReceived.begin(); it != mReceived.end(); it++)
+						if (mReceived.size() > 7 && mReceived[mReceived.size() - 7] == '\r' &&
+							mReceived[mReceived.size() - 6] == '\n' && mReceived[mReceived.size() - 5] == '0' &&
+							mReceived[mReceived.size() - 4] == '\r' && mReceived[mReceived.size() - 3] == '\n' &&
+							mReceived[mReceived.size() - 2] == '\r' && mReceived[mReceived.size() - 1] == '\n')
+							mMethod->GenerateResponse(mUri, mSetting, mHeaders);
+						else
 						{
-							if (isdigit(*it) == true)
-							{
-								num += *it - '0';
-								num *= 10;
-							}
-							else
-							{
-								break;
-							}
+							mChunkedFlag = true;
+							return;
 						}
-						mContentSize = num;
-						if (num == 0)
-							mMethod->GenerateErrorResponse(204);
 					}
-					else if (mContentSize == 0)
-						mMethod->GenerateErrorResponse(411);
 					else
 					{
 						mFillBodyFlag = true;
@@ -253,6 +259,12 @@ int UserData::RecvFromClient(void)
 
 	len = read(mFd, mBuf, BUFFER_SIZE);
 	mReceived.insert(mReceived.end(), &mBuf[0], &mBuf[len]);
+	std::string test(&mBuf[0], &mBuf[len]);
+	for (std::string::iterator it = test.begin(); it != test.end(); it++)
+	{
+		std::cout << *it;
+	}
+	std::cout << std::endl;
 	return (len);
 }
 
@@ -266,6 +278,7 @@ void UserData::InitUserData(void)
 	memset(mBuf, 0, sizeof(mBuf));
 	mStatusCode = -1;
 	mHeaderFlag = -1;
+	mChunkedFlag = -1;
 	mStatusCode = -1;
 	mFillBodyFlag = -1;
 	mStatusText.clear();

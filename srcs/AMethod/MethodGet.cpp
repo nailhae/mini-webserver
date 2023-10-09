@@ -115,19 +115,13 @@ int MethodGet::GenerateResponse(std::string& mUri, LocationBlock& mSetting, std:
 		}
 		else if (S_ISDIR(fileInfo.st_mode) == true)
 		{
-			if (mSetting.autoindex == true)
+			mUri += "/" + mSetting.index;
+			if (stat(mUri.c_str(), &fileInfo) == ERROR)
 			{
-				AutoIndexResponse(mUri);
+				Error::Print("Not found: " + mUri);
+				GenerateErrorResponse(404);
 				return (0);
 			}
-			else
-			{
-				GenerateErrorResponse(403);
-				return (0);
-			}
-			Error::Print("directory can't open in file mode: " + mUri);
-			GenerateErrorResponse(404);
-			return (0);
 		}
 		requestedFile.open(mUri, std::ios::binary);
 		if (requestedFile.is_open() == false)

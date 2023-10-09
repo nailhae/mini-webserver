@@ -65,6 +65,7 @@ private:
 	int mSocketType;
 	int mStatusCode;
 	int mHeaderFlag;
+	int mChunkedFlag;
 	int mFillBodyFlag;
 	size_t mContentSize;
 	LocationBlock mSetting;
