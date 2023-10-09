@@ -1,7 +1,9 @@
 #include "ChangeList.hpp"
 #include "Error.hpp"
-#include "MethodGet.hpp"
 #include "MethodDelete.hpp"
+#include "MethodGet.hpp"
+#include "MethodHead.hpp"
+#include "MethodPost.hpp"
 #include "UserData.hpp"
 #include "dataSet.hpp"
 
@@ -44,6 +46,8 @@ static int validHeader(std::string& content)
 		return (IF_MODIFIED_SINCE);
 	else if (content == "host")
 		return (HOST);
+	else if (content == "transfer-encoding")
+		return (TRANSFER_ENCODING);
 	else
 		return (NONE);
 }
@@ -132,14 +136,25 @@ int UserData::ParseHeaderValue(int headerKey, std::string& value)
 {
 	if (headerKey == NONE)
 		return (0);
-	if (mHeaders[headerKey] != "" || checkValidHeaderKey(headerKey, value) == ERROR)
+	if (mHeaders.find(headerKey) != mHeaders.end())
 	{
 		mStatusCode = 400;
 		mStatusText = "Bad Request";
+		std::cout << mHeaders[headerKey] << " header is duplicated (key: value) (" << headerKey << ": " << value << ")"
+				  << std::endl;
+		return (ERROR);
+	}
+	else if (checkValidHeaderKey(headerKey, value) == ERROR)
+	{
+		mStatusCode = 400;
+		mStatusText = "Bad Request";
+		std::cout << "header field  not valid (key: value) (" << headerKey << ": " << value << ")" << std::endl;
 		return (ERROR);
 	}
 	else
+	{
 		mHeaders[headerKey] = value;
+	}
 	return (0);
 }
 
@@ -164,16 +179,16 @@ int UserData::ParseFirstLine(std::string& firstLine)
 	if (line == "GET")
 		mMethod = new MethodGet(mFd);
 	else if (line == "HEAD")
-		mMethod = new MethodGet(mFd);
+		mMethod = new MethodHead(mFd);
 	else if (line == "POST")
-		mMethod = new MethodGet(mFd);
+		mMethod = new MethodPost(mFd);
 	else if (line == "DELETE")
 		mMethod = new MethodDelete(mFd);
 	else
 	{
-		mMethod = new MethodGet(ERROR);
+		mMethod = new MethodGet(mFd);
 		mStatusCode = 405;
-		mStatusText = "Method is not allowed";
+		std::cout << line << " 405로 세팅한다." << std::endl;
 		// 이 경우 헤더에 Allow: GET, POST, DELETE 추가해야 함.
 		return (ERROR);
 	}
@@ -185,7 +200,6 @@ int UserData::ParseFirstLine(std::string& firstLine)
 	if (line != "HTTP/1.1")
 	{
 		mStatusCode = 505;
-		mStatusText = "HTTP Version Not Supported";
 		return (ERROR);
 	}
 	return (0);
@@ -229,6 +243,7 @@ int UserData::ParseRequest(std::vector<unsigned char>& request)
 		if (pos == request.end())
 			return (false);
 		line.assign(it, pos);
+		std::cout << "line: " << line << std::endl;
 		if (it == request.begin() && ParseFirstLine(line) == ERROR)
 			return (ERROR);
 		if (*(line.end() - 1) == '\r')
@@ -237,22 +252,27 @@ int UserData::ParseRequest(std::vector<unsigned char>& request)
 			break;
 		else if (ParseOneLine(line) == ERROR)
 			return (ERROR);
-		else
-		{
-			pos += 1;
-			it = pos;
-		}
+		pos += 1;
+		it = pos;
 	}
-	mReceived.erase(request.begin(), pos + 1);
+	if (pos != mReceived.end())
+		mReceived.erase(mReceived.begin(), pos + 1);
 	if (mMethod->GetType() == POST)
 	{
-		if (mHeaders[CONTENT_LENGTH] == "" || mHeaders[CONTENT_TYPE] == "")
+		if (mHeaders.find(CONTENT_LENGTH) == mHeaders.end() || mHeaders[CONTENT_LENGTH] == "0")
 		{
-			mStatusCode = 400;
-			mStatusText = "Bad Request";
+			if (mHeaders.find(TRANSFER_ENCODING) != mHeaders.end())
+			{
+				std::cout << "1024로 설정" << std::endl;
+				mHeaders[CONTENT_LENGTH] = "1024"; // buffer size
+				mContentSize = BUFFER_SIZE;
+				return (0);
+			}
+			mStatusCode = 411;
+			std::cout << "Post's Content is empty" << std::endl;
 			return (ERROR);
 		}
+		mContentSize = strtol(mHeaders[CONTENT_LENGTH].c_str(), NULL, 10);
 	}
-	// 여기서 헤더 뺴고 body만 넣어줘야 함.
 	return (0);
 }

@@ -27,6 +27,7 @@ SRCS = \
 	$(SRCS_DIR)/AMethod/MethodGet.cpp \
 	$(SRCS_DIR)/AMethod/MethodHead.cpp \
 	$(SRCS_DIR)/AMethod/MethodDelete.cpp \
+	$(SRCS_DIR)/AMethod/MethodPost.cpp \
 	$(SRCS_DIR)/networking/WebServer.cpp \
 	$(SRCS_DIR)/networking/webServerParseFileOrNull.cpp \
 	$(SRCS_DIR)/networking/ChangeList.cpp \

@@ -1,5 +1,7 @@
-#include <unistd.h>
 #include "MethodDelete.hpp"
+
+#include <unistd.h>
+
 #include "Error.hpp"
 
 MethodDelete::MethodDelete(int fd)
@@ -11,7 +13,17 @@ MethodDelete::~MethodDelete(void)
 {
 }
 
-int MethodDelete::GenerateResponse(std::string mUri, LocationBlock& mSetting, std::map<int, std::string>& mHeaders)
+int MethodDelete::GenerateResponse(std::string& uri, LocationBlock& setting, std::map<int, std::string>& headers,
+								   std::string& body)
+{
+	(void)uri;
+	(void)setting;
+	(void)headers;
+	(void)body;
+	return (0);
+}
+
+int MethodDelete::GenerateResponse(std::string& mUri, LocationBlock& mSetting, std::map<int, std::string>& mHeaders)
 {
 	(void)mSetting;
 	(void)mHeaders;

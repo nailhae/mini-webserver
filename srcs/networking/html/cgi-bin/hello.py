@@ -4,9 +4,12 @@ import sys
 import os
 form = cgi.FieldStorage()
 
-name = form.getvalue('name')
-mbti = form.getvalue('mbti')
+name = "123"
+mbti = "123"
+# name = form.getvalue('name')
+# mbti = form.getvalue('mbti')
 print("Content-type: text/html\r\n\r\n")
+print(form)
 print("<html>")
 print("<head>")
 print("<meta charset=UTF-8>")

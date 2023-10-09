@@ -6,14 +6,16 @@
 
 #include "ChangeList.hpp"
 #include "Error.hpp"
+#include "MethodGet.hpp"
+#include "MethodPost.hpp"
 #include "WebServer.hpp"
-#include "cgi.hpp"
 
 UserData::UserData(int fd)
 	: mFd(fd)
 	, mSocketType(-1)
 	, mStatusCode(-1)
 	, mHeaderFlag(0)
+	, mChunkedFlag(0)
 	, mFillBodyFlag(-1)
 	, mContentSize(0)
 	, mMethod(NULL)
@@ -49,53 +51,21 @@ std::string UserData::uriGenerator(void)
 		replaceToContent(mUri, mSetting.uri, mSetting.alias);
 		return (mUri);
 	}
-	if (mUri[0] == '/')
+	if (*(mUri.end() - 1) == '/')
 	{
-		mUri.erase(0, 1);
-		if (mUri.size() == 0)
-			mUri = mSetting.index;
+		mUri += mSetting.index;
 	}
 	if (mSetting.rootPath.size() > 0)
 	{
-		std::cout << "root: " << Colors::BoldCyanString(mSetting.rootPath) << mUri << std::endl;
+		std::cout << "\nroot: " << Colors::BoldCyanString(mSetting.rootPath) << mUri << std::endl;
 		mUri.insert(0, mSetting.rootPath);
 	}
 	else
 	{
-		std::cout << "root: " << Colors::BoldCyanString(mServerPtr->rootPath) << mUri << std::endl;
+		std::cout << "\nroot: " << Colors::BoldCyanString(mServerPtr->rootPath) << mUri << std::endl;
 		mUri.insert(0, mServerPtr->rootPath);
 	}
 	return (mUri);
-}
-
-int UserData::GenerateDeleteResponse(void)
-{
-	if (access(mUri.c_str(), F_OK) == ERROR)
-	{
-		Error::Print("404 Not Found");
-		mMethod->GenerateErrorResponse(404);
-		return ERROR;
-	}
-	if (access(mUri.c_str(), W_OK) == ERROR)
-	{
-		Error::Print("403 Forbidden");
-		mMethod->GenerateErrorResponse(403);
-		return ERROR;
-	}
-	if (std::remove(mUri.c_str()) == ERROR)
-	{
-		Error::Print("500 Internal Server Error");
-		mMethod->GenerateErrorResponse(500);
-		return ERROR;
-	}
-	std::cout << "Success remove file" << std::endl;
-	// TODO apply date method
-	write(mFd,
-		  "HTTP/1.1 200 OK\r\nContent-type: text/plain\r\nContent-length: 76\r\nDate: Wed, 21 Oct 2015 07:28:00 "
-		  "GMT<html>  <body>    <h1>File deleted.</h1>  </body></html>",
-		  154);
-
-	return (0);
 }
 
 const std::vector<unsigned char>& UserData::GetReceived(void) const
@@ -150,58 +120,77 @@ static int checkHeaderLength(std::vector<unsigned char>& received, int flag)
 
 	if (flag == true)
 		return (true);
-	if (received.size() > 1024)
-		return (ERROR);
+	// if (received.size() > 1024)
+	// return (ERROR);
 	for (std::vector<unsigned char>::iterator it = received.begin(); it != received.end();)
 	{
 		pos = std::find(pos, received.end(), '\n');
 		if (pos == received.end())
 			return (false);
-		// it ~~ pos 까지 저장하고 비교
 		line.assign(it, pos);
 		if (line == "\r" || line == "")
-			break;
-		else
-		{
-			pos += 1; // 현재 pos는 \n을 가리키고 있기 때문.
-			it = pos; // 찾기 시작하는 위치 저장.
-			continue;
-		}
+			return (true);
+		pos += 1; // 현재 pos는 \n을 가리키고 있기 때문.
+		it = pos; // 찾기 시작하는 위치 저장.
 	}
-	return (true);
+	return (false);
 }
 
-void UserData::ReadResponse(void)
+void UserData::ReadRequest(void)
 {
 	std::string temp;
 
 	mHeaderFlag = checkHeaderLength(mReceived, mHeaderFlag);
 	if (mHeaderFlag == ERROR)
 	{
-		mStatusCode = 416;
-		mStatusText = "Requested Range Not Satisfiable";
-		return;
+		mMethod = new MethodGet(mFd);
+		mMethod->GenerateErrorResponse(mStatusCode);
 	}
 	else if (mHeaderFlag == false)
 	{
 		return;
 	}
-	else if (mFillBodyFlag == true)
+	else if (mChunkedFlag == true)
 	{
-		if (mReceived.size() < mContentSize)
+		if (mReceived.size() > 7 && mReceived[mReceived.size() - 7] == '\r' &&
+			mReceived[mReceived.size() - 6] == '\n' && mReceived[mReceived.size() - 5] == '0' &&
+			mReceived[mReceived.size() - 4] == '\r' && mReceived[mReceived.size() - 3] == '\n' &&
+			mReceived[mReceived.size() - 2] == '\r' && mReceived[mReceived.size() - 1] == '\n')
 		{
-			mFillBodyFlag = true;
+			std::string body;
+			body.assign(mReceived.begin(), mReceived.end());
+			mMethod->GenerateResponse(mUri, mSetting, mHeaders, body);
+			WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_DISABLE, this);
+			WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_ONESHOT, this);
 			return;
 		}
-		GeneratePostResponse();
+		else
+		{
+			std::cout << "chunked on and on: " << mReceived.size() << std::endl;
+			return;
+		}
+	}
+
+	if (mFillBodyFlag == true)
+	{
+		std::cout << "error: " << mContentSize << std::endl;
+
+		if (mReceived.size() < mContentSize)
+			return;
+		std::string body;
+		body.assign(mReceived.begin(), mReceived.end());
+		std::cout << Colors::BoldRed << "[fill]" << body << Colors::Reset << '\n';
+		mMethod->GenerateResponse(mUri, mSetting, mHeaders, body);
 	}
 	else
 	{
 		// 1. 요청 파싱 // 400~
 		if (ParseRequest(mReceived) == ERROR)
 		{
-			// GenerateErrorResponse();
-			std::cout << "Error page 전송해야 함" << std::endl;
+			mMethod->GenerateErrorResponse(mStatusCode);
+			mContentSize = 0;
+			WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_DISABLE, this);
+			WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_ONESHOT, this);
 			return;
 		}
 		// 2. 요청에서 문제가 없을 경우 최하위 노드 찾아서 설정 값 받아오기
@@ -212,41 +201,68 @@ void UserData::ReadResponse(void)
 		// 2-1. 이미 상태코드가 정의가 된 경우 종료
 		if (300 <= mStatusCode && mStatusCode < 600)
 		{
-			mMethod->GenerateRedirectionResponse(mStatusCode,
-												 mSetting); // TODO 에러와 함께 처리가 되고 있는지 보아야 함.
+			// TODO 에러와 함께 처리가 되고 있는지 보아야 함.
+			mMethod->GenerateRedirectionResponse(mStatusCode, mSetting);
 		}
-		// 3. 설정을 실제 open 해야 할 uri를 구성
-		mUri = uriGenerator();
-		// 4. 각 method에 따라 응답 메시지 생성
-		std::cout << Colors::BoldCyan << "[Method] " << mMethod->GetType() << std::endl;
-		std::cout << "??? " << mMethod->GetType() << " Get == 0 " << mSetting.bGetMethod << std::endl;
-		if (mMethod->GetType() == GET && mSetting.bGetMethod == true)
-		{
-			mMethod->GenerateResponse(mUri, mSetting, mHeaders);
-		}
-		else if (mMethod->GetType() == HEAD && mSetting.bHeadMethod == true)
-		{
-			// std::cout << "HEAD response 전송해야 함." << std::endl;
-			mMethod->GenerateResponse(mUri, mSetting, mHeaders);
-		}
-		else if (mMethod->GetType() == POST && mSetting.bPostMethod == true)
-		{
-			std::cout << Colors::BoldCyan << "[mContentSize]" << mHeaders[CONTENT_LENGTH] << std::endl;
-			mContentSize = strtol(mHeaders[CONTENT_LENGTH].c_str(), NULL, 10);
-			std::cout << Colors::BoldCyan << "[body]" << mContentSize << std::endl;
-			if (mReceived.size() < mContentSize)
-			{
-				mFillBodyFlag = true;
-				return;
-			}
-			GeneratePostResponse();
-		}
-		else if (mMethod->GetType() == DELETE && mSetting.bDeleteMethod == true)
-			mMethod->GenerateResponse(mUri, mSetting, mHeaders);
 		else
-			mMethod->GenerateErrorResponse(403);
+		{
+			// 3. 설정을 실제 open 해야 할 uri를 구성
+			mUri = uriGenerator();
+			// 4. 각 method에 따라 응답 메시지 생성
+			std::cout << Colors::BoldCyan << "[Method] " << mMethod->GetType() << std::endl;
+			if (mMethod->GetType() == GET && mSetting.bGetMethod == true)
+			{
+				mMethod->GenerateResponse(mUri, mSetting, mHeaders);
+			}
+			else if (mMethod->GetType() == HEAD && mSetting.bHeadMethod == true)
+			{
+				mMethod->GenerateErrorResponse(405);
+				// mMethod->GenerateResponse(mUri, mSetting, mHeaders);
+			}
+			else if (mMethod->GetType() == POST)
+			{
+				std::cout << Colors::BoldCyan << "[mContentSize]" << mHeaders[CONTENT_LENGTH] << std::endl;
+				std::cout << Colors::BoldCyan << "[body]" << mContentSize << std::endl;
+				std::cout << "length: " << mContentSize << std::endl;
+				if (mReceived.size() < mContentSize)
+				{
+					if (mSetting.bPostMethod == false)
+						mMethod->GenerateErrorResponse(405);
+					else if (mHeaders[TRANSFER_ENCODING] == "chunked")
+					{
+						if (mReceived.size() > 7 && mReceived[mReceived.size() - 7] == '\r' &&
+							mReceived[mReceived.size() - 6] == '\n' && mReceived[mReceived.size() - 5] == '0' &&
+							mReceived[mReceived.size() - 4] == '\r' && mReceived[mReceived.size() - 3] == '\n' &&
+							mReceived[mReceived.size() - 2] == '\r' && mReceived[mReceived.size() - 1] == '\n')
+							mMethod->GenerateResponse(mUri, mSetting, mHeaders);
+						else
+						{
+							std::cout << "chunked on: " << mReceived.size() << std::endl;
+							mChunkedFlag = true;
+							return;
+						}
+					}
+					else
+					{
+						mFillBodyFlag = true;
+						return;
+					}
+				}
+				std::string body;
+				body.assign(mReceived.begin(), mReceived.end());
+				std::cout << Colors::BoldRed << "[non]" << body << Colors::Reset << '\n';
+				mMethod->GenerateResponse(mUri, mSetting, mHeaders, body);
+			}
+			else if (mMethod->GetType() == DELETE && mSetting.bDeleteMethod == true)
+				mMethod->GenerateResponse(mUri, mSetting, mHeaders);
+			else
+			{
+				mMethod->GenerateErrorResponse(405);
+			}
+		}
 	}
 	WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_ONESHOT, this);
+	WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_DISABLE, this);
 }
 
 int UserData::RecvFromClient(void)
@@ -255,7 +271,12 @@ int UserData::RecvFromClient(void)
 
 	len = read(mFd, mBuf, BUFFER_SIZE);
 	mReceived.insert(mReceived.end(), &mBuf[0], &mBuf[len]);
-	std::cout << std::endl;
+	// std::string test(&mBuf[0], &mBuf[len]);
+	// for (std::string::iterator it = test.begin(); it != test.end(); it++)
+	// {
+	// 	std::cout << *it;
+	// }
+	// std::cout << std::endl;
 	return (len);
 }
 
@@ -266,8 +287,10 @@ void UserData::InitUserData(void)
 		delete mMethod;
 		mMethod = NULL;
 	}
+	memset(mBuf, 0, sizeof(mBuf));
 	mStatusCode = -1;
 	mHeaderFlag = -1;
+	mChunkedFlag = -1;
 	mStatusCode = -1;
 	mFillBodyFlag = -1;
 	mStatusText.clear();
@@ -282,34 +305,20 @@ int UserData::SendToClient(int fd)
 	size_t len;
 
 	// test code
-	std::cout << Colors::BoldCyan << "[Headers]" << std::endl;
+	std::cout << Colors::BoldCyan << "[Headers]" << Colors::Reset << std::endl;
 	for (std::map<int, std::string>::iterator it = mHeaders.begin(); it != mHeaders.end(); it++)
 	{
 		std::cout << it->first << ": " << it->second << std::endl;
 	}
-	std::cout << Colors::BoldBlue << "\nstatus " << mStatusCode << ": " << mStatusText << std::endl;
-	std::cout << Colors::BoldMagenta << "send to client " << fd << "\n" << Colors::Reset << std::endl;
+	std::cout << "\n" << std::endl;
 	len = write(fd, mMethod->GetResponse().c_str(), mMethod->GetResponse().size());
+	len = write(1, mMethod->GetResponse().c_str(), mMethod->GetResponse().size());
 	// TODO 얘도 나눠서 써야 함.
 	// WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_ONESHOT, this);
 	if (len < 0)
 		Error::Print("send()");
-	InitUserData();
 	std::cout << Colors::BoldMagenta << "send to client " << fd << "\n" << Colors::Reset << std::endl;
+	InitUserData();
+	WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_ENABLE, this);
 	return (len);
-}
-
-int UserData::GeneratePostResponse(void)
-{
-	Cgi cgi(mUri);
-	cgi.initCgiEnv(mUri, mContentSize, mHeaders, mReceived);
-	size_t errorCode = 0;
-	std::cout << Colors::Magenta << "[send]"
-			  << " send" << std::endl;
-	cgi.execute(errorCode);
-	cgi.sendCgiBody(mBody);
-	// mResponse = cgi.readCgiResponse();
-
-	WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_ONESHOT, this);
-	return (0);
 }

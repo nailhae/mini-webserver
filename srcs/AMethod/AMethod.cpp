@@ -1,5 +1,6 @@
 #include "AMethod.hpp"
 
+#include "MethodPost.hpp"
 #include "MultiTree.hpp"
 #include "UserData.hpp"
 
@@ -26,7 +27,6 @@ void AMethod::GenerateRedirectionResponse(int code, LocationBlock& mSetting)
 		mResponse += "Location: " + mSetting.returnPair.second + "\r\n"; // 리디렉션할 URI
 	mResponse += "\r\n";
 }
-
 
 void AMethod::SetCurrentTime(const char* headerType)
 {
@@ -112,7 +112,7 @@ int AMethod::SetETag(const std::string& mUri, const std::string& etagHeader)
 }
 
 int AMethod::GenerateResponseHeaders(std::ifstream& requestedFile, LocationBlock& mSetting, std::string mUri,
-										std::map<int, std::string>& mHeaders)
+									 std::map<int, std::string>& mHeaders)
 {
 	std::string headers;
 	std::string extTemp = mUri.substr(mUri.find_last_of('.') + 1);
@@ -166,7 +166,7 @@ void AMethod::SetContentType(const std::string& extTemp)
 	else if (extTemp == "txt" || extTemp == "html" || extTemp == "css")
 		mResponse += "text/" + extTemp + "\r\n";
 	else
-		mResponse += "application/octet-stream";
+		mResponse += "application/octet-stream\r\n";
 }
 
 static std::string intToString(int num)
@@ -215,6 +215,11 @@ void AMethod::GenerateErrorResponse(int code)
 
 	// errorUri = WebServer::GetErrorPage(code)
 	GenerateResponseStatusLine(code);
+	if (code < 300) // POST with 0 contents
+	{
+		mResponse += "Content-Length: 0\r\n\r\n";
+		return;
+	}
 	SetContentType("html");
 	errorPage.open(errorUri.c_str(), std::ios::binary);
 	if (errorPage.is_open() == false)
@@ -283,7 +288,6 @@ void AMethod::ResponseConfigSetup(const ServerBlock& server, std::string& uri, L
 	for (std::vector<MultiTree*>::const_iterator it = server.root.begin(); it != server.root.end(); it++)
 	{
 		subString = uri.substr(0, (*it)->GetRoot()->GetURI().size());
-		(*it)->PrintEveryNodes();
 		if ((*it)->GetRoot()->GetURI() == subString)
 		{
 			if (targetTree == NULL || targetTree->GetRoot()->GetURI().size() < subString.size())
@@ -312,3 +316,20 @@ void AMethod::SetResponse(const std::string& content)
 {
 	mResponse.append(content);
 }
+
+// int AMethod::GeneratePostResponse(std::string& uri, LocationBlock& setting, std::map<int, std::string>& headers,
+// 								  std::string body)
+// {
+// 	size_t size;
+// 	Mpost = new MethodPost(POST);
+
+// 	(void)setting;
+// 	size = strtol(headers[CONTENT_LENGTH].c_str(), NULL, 10);
+// 	if (size < 1)
+// 		size = 1024;
+// 	initCgiEnv(uri, size, headers);
+// 	execute();
+// 	sendCgiBody(body);
+// 	readCgiResponse();
+// 	return (0);
+// }

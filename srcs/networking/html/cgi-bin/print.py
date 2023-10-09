@@ -9,7 +9,7 @@ form = cgi.FieldStorage()
 
 value = 5
 user_input = "Hello"
-
+print(form)
 if "number" in form:
     try:
         value = int(form.getvalue("number"))
