@@ -189,6 +189,7 @@ int UserData::ParseFirstLine(std::string& firstLine)
 	{
 		mMethod = new MethodGet(mFd);
 		mStatusCode = 405;
+		std::cout << line << " 405로 세팅한다." << std::endl;
 		// 이 경우 헤더에 Allow: GET, POST, DELETE 추가해야 함.
 		return (ERROR);
 	}
@@ -243,6 +244,7 @@ int UserData::ParseRequest(std::vector<unsigned char>& request)
 		if (pos == request.end())
 			return (false);
 		line.assign(it, pos);
+		std::cout << "line: " << line << std::endl;
 		if (it == request.begin() && ParseFirstLine(line) == ERROR)
 			return (ERROR);
 		if (*(line.end() - 1) == '\r')

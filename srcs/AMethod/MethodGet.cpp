@@ -72,23 +72,20 @@ int MethodGet::AutoIndexResponse(std::string& mUri)
 	std::string body;
 	int result = 0;
 
-	if (*(mUri.end() - 1) == '/') // 폴더에 대한 요청은 무조건 autoindex로
+	result = loadFolderContent(body, mUri);
+	if (result == ERROR)
 	{
-		result = loadFolderContent(body, mUri);
-		if (result == ERROR)
-		{
-			GenerateErrorResponse(404);
-			return (0);
-		}
-		else
-		{
-			mResponse = "HTTP/1.1 200 OK\r\nContent-type: ";
-			mResponse += "text/html\r\n";
-			mResponse += "Content-length: ";
-			mResponse += intToString(body.size());
-			mResponse += "\r\n\r\n";
-			mResponse += body;
-		}
+		GenerateErrorResponse(404);
+		return (0);
+	}
+	else
+	{
+		mResponse = "HTTP/1.1 200 OK\r\nContent-type: ";
+		mResponse += "text/html\r\n";
+		mResponse += "Content-length: ";
+		mResponse += intToString(body.size());
+		mResponse += "\r\n\r\n";
+		mResponse += body;
 	}
 	return (0);
 }
@@ -118,8 +115,18 @@ int MethodGet::GenerateResponse(std::string& mUri, LocationBlock& mSetting, std:
 		}
 		else if (S_ISDIR(fileInfo.st_mode) == true)
 		{
+			if (mSetting.autoindex == true)
+			{
+				AutoIndexResponse(mUri);
+				return (0);
+			}
+			else
+			{
+				GenerateErrorResponse(403);
+				return (0);
+			}
 			Error::Print("directory can't open in file mode: " + mUri);
-			GenerateErrorResponse(403);
+			GenerateErrorResponse(404);
 			return (0);
 		}
 		requestedFile.open(mUri, std::ios::binary);
