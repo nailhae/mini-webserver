@@ -1,5 +1,6 @@
 #include "AMethod.hpp"
 
+#include "MethodPost.hpp"
 #include "MultiTree.hpp"
 #include "UserData.hpp"
 
@@ -315,3 +316,20 @@ void AMethod::SetResponse(const std::string& content)
 {
 	mResponse.append(content);
 }
+
+// int AMethod::GeneratePostResponse(std::string& uri, LocationBlock& setting, std::map<int, std::string>& headers,
+// 								  std::string body)
+// {
+// 	size_t size;
+// 	Mpost = new MethodPost(POST);
+
+// 	(void)setting;
+// 	size = strtol(headers[CONTENT_LENGTH].c_str(), NULL, 10);
+// 	if (size < 1)
+// 		size = 1024;
+// 	initCgiEnv(uri, size, headers);
+// 	execute();
+// 	sendCgiBody(body);
+// 	readCgiResponse();
+// 	return (0);
+// }

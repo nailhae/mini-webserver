@@ -17,4 +17,6 @@ private:
 	const MethodHead& operator=(const MethodHead& rhs);
 	MethodHead(const MethodHead& rhs);
 	MethodHead(void);
+	int GenerateResponse(std::string& mUri, LocationBlock& mSetting, std::map<int, std::string>& mHeaders,
+						 std::string& body);
 };

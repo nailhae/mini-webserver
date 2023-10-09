@@ -1,5 +1,6 @@
 #include "MethodPost.hpp"
 
+#include "Colors.hpp"
 #include "cgi.hpp"
 
 MethodPost::MethodPost(int type)
@@ -12,15 +13,30 @@ MethodPost::MethodPost(int type)
 
 int MethodPost::GenerateResponse(std::string& uri, LocationBlock& setting, std::map<int, std::string>& headers)
 {
+	(void)uri;
+	(void)setting;
+	(void)headers;
+
+	return (0);
+}
+
+int MethodPost::GenerateResponse(std::string& uri, LocationBlock& setting, std::map<int, std::string>& headers,
+								 std::string& body)
+{
 	size_t size;
 
 	(void)setting;
 	size = strtol(headers[CONTENT_LENGTH].c_str(), NULL, 10);
 	if (size < 1)
 		size = 1024;
-	initCgiEnv(uri, size, headers);
+	initCgiEnv(uri, size, headers, body);
+	std::cout << Colors::Red << "[123]" << mResponse << Colors::Reset << '\n';
 	execute();
-	sendCgiBody();
+	std::cout << Colors::Red << "[1234]" << mResponse << Colors::Reset << '\n';
+
+	sendCgiBody(body);
+	std::cout << Colors::Red << "[12345]" << mResponse << Colors::Reset << '\n';
+
 	readCgiResponse();
 	return (0);
 }
@@ -77,7 +93,8 @@ int findHostNamePos(const std::string path, const std::string ch)
 	return (-1);
 }
 
-void MethodPost::initCgiEnv(std::string httpCgiPath, size_t ContentSize, std::map<int, std::string> Header)
+void MethodPost::initCgiEnv(std::string httpCgiPath, size_t ContentSize, std::map<int, std::string> Header,
+							std::string body)
 {
 	if (httpCgiPath.at(0) == '/')
 	{
@@ -93,7 +110,9 @@ void MethodPost::initCgiEnv(std::string httpCgiPath, size_t ContentSize, std::ma
 	this->env["AUTH_TYPE"] = "BASIC";
 	this->env["CONTENT_LENGTH"] = ContentSize;
 	// this->env["CONTENT_TYPE"] = Header[CONTENT_TYPE];
-	this->env["CONTENT_TYPE"] = Header[CONTENT_TYPE];
+	// this->env["CONTENT_TYPE"] = Header[CONTENT_TYPE];
+	this->env["CONTENT_TYPE"] = "application/x-www-form-urlencoded";
+	std::cout << Colors::Blue << "[123]" << Header[CONTENT_TYPE] << Colors::Reset << '\n';
 	this->env["GATEWAY_INTERFACE"] = "CGI/1.1";
 	this->env["PATH_INFO"] = httpCgiPath;
 	this->env["PATH_TRANSLATED"] = this->env["PATH_INFO"];
@@ -105,14 +124,13 @@ void MethodPost::initCgiEnv(std::string httpCgiPath, size_t ContentSize, std::ma
 	// 	std::cout << "123123" << std::endl;
 	// 	this->env["QUERY_STRING"] = urlDecode(body);
 	// }
-	// this->env["QUERY_STRING"] = bodyStr;
+	// this->env["QUERY_STRING"] = body;
+	std::cout << Colors::Red << body << Colors::Reset << '\n';
 	this->env["REMOTE_ADDR"] = Header[HOST];
 	// this->env["REMOTE_HOST"]
 	// this->env["REMOTE_USER"]
 	this->env["REQUEST_METHOD"] = "POST";
 	this->env["SCRIPT_NAME"] = httpCgiPath;
-	// this->env["SCRIPT_FILENAME"] =
-	// "3OfD_0ON3b5Mw9GmxClakX77pOo2tHJnNugH0kaRM3-yJ6NBID2Xbb-pG9sd0z-RAgBEwBFP1tijbVV5Qe8aFA.webp";
 	size_t pos = findHostNamePos(Header[HOST], ":");
 	this->env["SERVER_NAME"] = (pos > 0 ? Header[HOST].substr(0, pos) : "");
 	this->env["SERVER_PORT"] = (pos > 0 ? Header[HOST].substr(pos + 1, Header[HOST].size()) : "");
@@ -170,18 +188,19 @@ void MethodPost::execute()
 		// perror("execve failed");
 		exit(exitStatus);
 	}
-	else
-	{
-		GenerateErrorResponse(500);
-	}
+	// else
+	// {
+	// 	GenerateErrorResponse(500);
+	// }
 	return;
 }
 
-void MethodPost::sendCgiBody()
+void MethodPost::sendCgiBody(std::string body)
 {
 	size_t bodySize;
 
-	std::string reqBody = mResponse;
+	std::string reqBody = body;
+	std::cout << Colors::Red << "[send]" << body << Colors::Reset << '\n';
 	while (reqBody.size() >= 0)
 	{
 		if (reqBody.size() >= BUFFER_SIZE)
@@ -192,7 +211,6 @@ void MethodPost::sendCgiBody()
 		{
 			bodySize = write(pipeIn[1], reqBody.c_str(), reqBody.size());
 		}
-
 		if (bodySize < 0)
 		{
 			GenerateErrorResponse(500);
@@ -211,7 +229,7 @@ void MethodPost::sendCgiBody()
 	}
 }
 
-void MethodPost::readCgiResponse(void)
+void MethodPost::readCgiResponse()
 {
 	char buffer[BUFFER_SIZE];
 	int readBytes = 0;

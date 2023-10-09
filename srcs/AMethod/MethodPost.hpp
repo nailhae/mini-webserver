@@ -9,17 +9,18 @@ public:
 	MethodPost(int type);
 	~MethodPost(void);
 
-	int GenerateResponse(std::string& uri, LocationBlock& setting, std::map<int, std::string>& headers);
-
-	void initCgiEnv(std::string httpCgiPath, size_t ContentSize, std::map<int, std::string> Header);
+	// int GenerateResponse(std::string& uri, LocationBlock& setting, std::map<int, std::string>& headers);
+	int GenerateResponse(std::string& uri, LocationBlock& setting, std::map<int, std::string>& headers,
+						 std::string& body);
+	void initCgiEnv(std::string httpCgiPath, size_t ContentSize, std::map<int, std::string> Header, std::string body);
 	void execute();
 	// void clear();
 
 	const std::map<std::string, std::string>& getEnv() const;
 	const pid_t& getCgiPid() const;
 	const std::string& getCgiPath() const;
-	void sendCgiBody();
-	void readCgiResponse(void);
+	void sendCgiBody(std::string body);
+	void readCgiResponse();
 
 private:
 	std::map<std::string, std::string> env;
@@ -33,4 +34,5 @@ private:
 	const MethodPost& operator=(const MethodPost& rhs);
 	MethodPost(const MethodPost& rhs);
 	MethodPost(void);
+	int GenerateResponse(std::string& uri, LocationBlock& setting, std::map<int, std::string>& headers);
 };

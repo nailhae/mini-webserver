@@ -7,6 +7,7 @@
 #include "ChangeList.hpp"
 #include "Error.hpp"
 #include "MethodGet.hpp"
+#include "MethodPost.hpp"
 #include "WebServer.hpp"
 
 UserData::UserData(int fd)
@@ -57,12 +58,12 @@ std::string UserData::uriGenerator(void)
 	}
 	if (mSetting.rootPath.size() > 0)
 	{
-		std::cout << "root: " << Colors::BoldCyanString(mSetting.rootPath) << mUri << std::endl;
+		std::cout << "\nroot: " << Colors::BoldCyanString(mSetting.rootPath) << mUri << std::endl;
 		mUri.insert(0, mSetting.rootPath);
 	}
 	else
 	{
-		std::cout << "root: " << Colors::BoldCyanString(mServerPtr->rootPath) << mUri << std::endl;
+		std::cout << "\nroot: " << Colors::BoldCyanString(mServerPtr->rootPath) << mUri << std::endl;
 		mUri.insert(0, mServerPtr->rootPath);
 	}
 	return (mUri);
@@ -157,11 +158,11 @@ void UserData::ReadRequest(void)
 	}
 	else if (mFillBodyFlag == true)
 	{
-		if (mReceived.size() < mContentSize)
-		{
-			mFillBodyFlag = true;
-			return;
-		}
+		// if (mReceived.size() < mContentSize)
+		// {
+		// 	mFillBodyFlag = true;
+		// 	return;
+		// }
 		if (mContentSize == 0)
 		{
 			mMethod->GenerateErrorResponse(405);
@@ -169,7 +170,11 @@ void UserData::ReadRequest(void)
 			WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_ONESHOT, this);
 			return;
 		}
-		mMethod->GenerateResponse(mUri, mSetting, mHeaders);
+		std::string body;
+		body.assign(mReceived.begin(), mReceived.end());
+		std::cout << Colors::BoldRed << "[fill]" << body << Colors::Reset << '\n';
+		mMethod->GenerateResponse(mUri, mSetting, mHeaders, body);
+		// mMethod->GenerateResponse(mUri, mSetting, mHeaders);
 	}
 	else
 	{
@@ -238,7 +243,10 @@ void UserData::ReadRequest(void)
 					mFillBodyFlag = true;
 					return;
 				}
-				mMethod->GenerateResponse(mUri, mSetting, mHeaders);
+				std::string body;
+				body.assign(mReceived.begin(), mReceived.end());
+				std::cout << Colors::BoldRed << "[non]" << body << Colors::Reset << '\n';
+				mMethod->GenerateResponse(mUri, mSetting, mHeaders, body);
 			}
 			else if (mMethod->GetType() == DELETE && mSetting.bDeleteMethod == true)
 				mMethod->GenerateResponse(mUri, mSetting, mHeaders);

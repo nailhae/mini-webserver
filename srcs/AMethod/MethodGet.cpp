@@ -93,6 +93,16 @@ int MethodGet::AutoIndexResponse(std::string& mUri)
 	return (0);
 }
 
+int MethodGet::GenerateResponse(std::string& uri, LocationBlock& setting, std::map<int, std::string>& headers,
+								std::string& body)
+{
+	(void)uri;
+	(void)setting;
+	(void)headers;
+	(void)body;
+	return (0);
+}
+
 int MethodGet::GenerateResponse(std::string& mUri, LocationBlock& mSetting, std::map<int, std::string>& mHeaders)
 {
 	std::ifstream requestedFile;

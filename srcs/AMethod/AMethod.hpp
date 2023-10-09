@@ -13,6 +13,10 @@ public:
 	virtual ~AMethod();
 
 	virtual int GenerateResponse(std::string& mUri, LocationBlock& mSetting, std::map<int, std::string>& mHeaders) = 0;
+	virtual int GenerateResponse(std::string& mUri, LocationBlock& mSetting, std::map<int, std::string>& mHeaders,
+								 std::string& body) = 0;
+	// int GeneratePostResponse(std::string& uri, LocationBlock& setting, std::map<int, std::string>& headers,
+	// 						 std::string body);
 	const std::string& GetResponse(void) const;
 	void GenerateErrorResponse(int code);
 	void GenerateResponseStatusLine(int code);
