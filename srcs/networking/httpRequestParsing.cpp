@@ -90,7 +90,6 @@ static int checkValidHeaderKey(int headerKey, std::string& value)
 		/* MIME type 체크
 			HTTP block의 TYPE map을 순회하고, 발견하지 못한 경우 application/octet-stream 으로 설정
 		*/
-		value = "application/octet-stream";
 	}
 	else if (headerKey == CONTENT_LENGTH)
 	{

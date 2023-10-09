@@ -157,19 +157,24 @@ void UserData::ReadRequest(void)
 			mReceived[mReceived.size() - 4] == '\r' && mReceived[mReceived.size() - 3] == '\n' &&
 			mReceived[mReceived.size() - 2] == '\r' && mReceived[mReceived.size() - 1] == '\n')
 		{
-			mMethod->GenerateResponse(mUri, mSetting, mHeaders);
+			std::string body;
+			body.assign(mReceived.begin(), mReceived.end());
+			mMethod->GenerateResponse(mUri, mSetting, mHeaders, body);
 			WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_DISABLE, this);
 			WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_ONESHOT, this);
 			return;
 		}
 		else
 		{
+			std::cout << "chunked on and on: " << mReceived.size() << std::endl;
 			return;
 		}
 	}
 
 	if (mFillBodyFlag == true)
 	{
+		std::cout << "error: " << mContentSize << std::endl;
+
 		if (mReceived.size() < mContentSize)
 			return;
 		std::string body;
@@ -232,6 +237,7 @@ void UserData::ReadRequest(void)
 							mMethod->GenerateResponse(mUri, mSetting, mHeaders);
 						else
 						{
+							std::cout << "chunked on: " << mReceived.size() << std::endl;
 							mChunkedFlag = true;
 							return;
 						}
@@ -265,12 +271,12 @@ int UserData::RecvFromClient(void)
 
 	len = read(mFd, mBuf, BUFFER_SIZE);
 	mReceived.insert(mReceived.end(), &mBuf[0], &mBuf[len]);
-	std::string test(&mBuf[0], &mBuf[len]);
-	for (std::string::iterator it = test.begin(); it != test.end(); it++)
-	{
-		std::cout << *it;
-	}
-	std::cout << std::endl;
+	// std::string test(&mBuf[0], &mBuf[len]);
+	// for (std::string::iterator it = test.begin(); it != test.end(); it++)
+	// {
+	// 	std::cout << *it;
+	// }
+	// std::cout << std::endl;
 	return (len);
 }
 

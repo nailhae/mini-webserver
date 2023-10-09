@@ -26,19 +26,23 @@ int MethodPost::GenerateResponse(std::string& uri, LocationBlock& setting, std::
 	size_t size;
 
 	(void)setting;
+	headers[CONTENT_LENGTH] = std::to_string(body.size());
 	size = strtol(headers[CONTENT_LENGTH].c_str(), NULL, 10);
 	if (size < 1)
 		size = 1024;
+	std::cout << Colors::BoldBlue << "size: " << body.size() << Colors::Reset << std::endl;
+
 	initCgiEnv(uri, size, headers, body);
 	std::cout << Colors::Red << "[123]" << mResponse << Colors::Reset << '\n';
-	execute();
+	if (execute() == ERROR)
+		return (0);
 	std::cout << Colors::Red << "[1234]" << mResponse << Colors::Reset << '\n';
-
 	if (sendCgiBody(body) == ERROR)
 		return (0);
 	std::cout << Colors::Red << "[12345]" << mResponse << Colors::Reset << '\n';
-
 	readCgiResponse();
+	std::cout << Colors::Red << "[12345]" << mResponse << Colors::Reset << '\n';
+
 	return (0);
 }
 
@@ -109,24 +113,28 @@ void MethodPost::initCgiEnv(std::string httpCgiPath, size_t ContentSize, std::ma
 	// std::cout << " " << urlEncode(bodyStr) << std::endl;
 	// std::cout << " " << bodyStr << std::endl;
 	this->env["AUTH_TYPE"] = "BASIC";
-	this->env["CONTENT_LENGTH"] = ContentSize;
+	// TODO chunked인 경우 body.size로 받아야 함.
+	// this->env["CONTENT_LENGTH"] = std::to_string(body.size());
+	this->env["CONTENT_LENGTH"] = std::to_string(ContentSize);
 	// this->env["CONTENT_TYPE"] = Header[CONTENT_TYPE];
-	// this->env["CONTENT_TYPE"] = Header[CONTENT_TYPE];
-	this->env["CONTENT_TYPE"] = "application/x-www-form-urlencoded";
+	this->env["CONTENT_TYPE"] = Header[CONTENT_TYPE];
+	// this->env["CONTENT_TYPE"] = "application/x-www-form-urlencoded";
+	// this->env["CONTENT_TYPE"] = "application/x-www-form-urlencoded";
 	std::cout << Colors::Blue << "[123]" << Header[CONTENT_TYPE] << Colors::Reset << '\n';
 	this->env["GATEWAY_INTERFACE"] = "CGI/1.1";
 	this->env["PATH_INFO"] = httpCgiPath;
+	// this->env["PATH_INFO"] = "/";
 	this->env["PATH_TRANSLATED"] = this->env["PATH_INFO"];
+	// this->env["PATH_TRANSLATED"] = "/";
 	// std::string body;
 	// body.assign(Body.begin(), Body.end());
-	// size_t p = Header[CONTENT_TYPE].find("multipart");
-	// if (p != std::string::npos)
-	// {
-	// 	std::cout << "123123" << std::endl;
-	// 	this->env["QUERY_STRING"] = urlDecode(body);
-	// }
+	size_t p = Header[CONTENT_TYPE].find("multipart");
+	if (p != std::string::npos)
+	{
+		this->env["QUERY_STRING"] = body;
+	}
 	// this->env["QUERY_STRING"] = body;
-	std::cout << Colors::BoldRed << body << Colors::Reset << '\n';
+	// std::cout << Colors::BoldRed << body << Colors::Reset << '\n';
 	this->env["REMOTE_ADDR"] = Header[HOST];
 	// this->env["REMOTE_HOST"]
 	// this->env["REMOTE_USER"]
@@ -147,35 +155,40 @@ void MethodPost::initCgiEnv(std::string httpCgiPath, size_t ContentSize, std::ma
 	{
 		std::string tmp = it->first + "=" + it->second;
 		this->chEnv[i] = strdup(tmp.c_str());
+		std::cout << tmp << std::endl;
 	}
 	this->argv = (char**)malloc(sizeof(char*) * 3);
 	// this->argv[0] = strdup(httpCgiPath.c_str());
 	this->argv[0] = strdup("/usr/bin/python3");
-	// this->argv[1] = strdup(this->cgiPath.c_str());
+	// this->argv[0] = strdup("/bin/bash");
+	// this->argv[0] = strdup("./cgi_tester");
 	this->argv[1] = strdup(httpCgiPath.c_str());
+	// this->argv[1] = NULL;
+	// this->argv[1] = strdup("./");
 	this->argv[2] = NULL;
 	return;
 }
 
-void MethodPost::execute()
+int MethodPost::execute()
 {
-	if (this->argv[0] == NULL || this->argv[1] == NULL)
+	if (this->argv[0] == NULL)
 	{
 		GenerateErrorResponse(500);
-		return;
+		return (ERROR);
 	}
 	if (pipe(pipeIn) < 0)
 	{
 		GenerateErrorResponse(500);
-		return;
+		return (ERROR);
 	}
 	if (pipe(pipeOut) < 0)
 	{
 		close(pipeIn[0]);
 		close(pipeIn[1]);
 		GenerateErrorResponse(500);
-		return;
+		return (ERROR);
 	}
+	std::cout << Colors::BoldBlue << "size: " << mResponse.size() << Colors::Reset << std::endl;
 	this->cgiPid = fork();
 	if (this->cgiPid == 0)
 	{
@@ -193,41 +206,45 @@ void MethodPost::execute()
 	// {
 	// 	GenerateErrorResponse(500);
 	// }
-	return;
+	return (0);
 }
 
-int MethodPost::sendCgiBody(std::string body)
+int MethodPost::sendCgiBody(std::string& reqBody)
 {
-	size_t bodySize;
+	int len = 0;
+	int remainLen = reqBody.size();
+	std::string::iterator pos = reqBody.begin();
+	std::string temp;
 
-	std::string reqBody = body;
-	std::cout << Colors::Red << "[send]" << body << Colors::Reset << '\n';
-	while (reqBody.size() >= 0)
+	while (pos != reqBody.end())
 	{
+		std::cout << "body: " << reqBody.size() << " remain size: " << remainLen << std::endl;
+
 		if (reqBody.size() >= BUFFER_SIZE)
 		{
-			bodySize = write(pipeIn[1], reqBody.c_str(), BUFFER_SIZE);
+			len = write(pipeIn[1], reqBody.c_str(), BUFFER_SIZE);
 		}
 		else
 		{
-			bodySize = write(pipeIn[1], reqBody.c_str(), reqBody.size());
+			len = write(pipeIn[1], reqBody.c_str(), reqBody.size());
 		}
-		if (bodySize < 0)
+		if (len < 0)
 		{
+			std::cout << "출력 실패" << std::endl;
 			GenerateErrorResponse(500);
-			return (ERROR);
-		}
-		else if (bodySize == 0 || bodySize == reqBody.size())
-		{
 			close(pipeIn[1]);
 			close(pipeOut[1]);
-			break;
+			return (ERROR);
 		}
 		else
 		{
-			reqBody = reqBody.substr(bodySize);
+			temp.assign(pos, pos + (len));
+			pos += len;
+			remainLen -= len;
 		}
 	}
+	close(pipeIn[1]);
+	close(pipeOut[1]);
 	return (0);
 }
 
@@ -237,28 +254,37 @@ void MethodPost::readCgiResponse()
 	int readBytes = 0;
 	int status;
 
-	readBytes = read(pipeOut[0], buffer, BUFFER_SIZE);
-	if (readBytes == 0)
+	while (1)
 	{
-		close(pipeIn[0]);
-		close(pipeOut[0]);
-		waitpid(getCgiPid(), &status, 0);
-		if (WEXITSTATUS(status) != 0)
+		readBytes = read(pipeOut[0], buffer, BUFFER_SIZE);
+		if (readBytes == 0)
 		{
-			GenerateErrorResponse(500);
+			close(pipeIn[0]);
+			close(pipeOut[0]);
+			waitpid(getCgiPid(), &status, 0);
+			if (WEXITSTATUS(status) != 0)
+			{
+				GenerateErrorResponse(500);
+				return;
+			}
+			else
+			{
+				break;
+			}
 		}
-	}
-	else if (readBytes < 0)
-	{
-		close(pipeIn[0]);
-		close(pipeIn[1]);
-		close(pipeOut[0]);
-		GenerateErrorResponse(500);
-	}
-	else
-	{
-		mResponse.append(buffer, readBytes);
-		memset(buffer, 0, sizeof(buffer));
+		if (readBytes < 0)
+		{
+			close(pipeIn[0]);
+			close(pipeIn[1]);
+			close(pipeOut[0]);
+			GenerateErrorResponse(500);
+			return;
+		}
+		else
+		{
+			mResponse.append(buffer, readBytes);
+			memset(buffer, 0, sizeof(buffer));
+		}
 	}
 	mResponse.insert(0, "HTTP/1.1 200 OK\r\n");
 }
