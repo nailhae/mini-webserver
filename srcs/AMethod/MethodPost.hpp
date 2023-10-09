@@ -19,7 +19,7 @@ public:
 	const std::map<std::string, std::string>& getEnv() const;
 	const pid_t& getCgiPid() const;
 	const std::string& getCgiPath() const;
-	void sendCgiBody(std::string body);
+	int sendCgiBody(std::string body);
 	void readCgiResponse();
 
 private:

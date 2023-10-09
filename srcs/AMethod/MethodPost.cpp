@@ -34,7 +34,8 @@ int MethodPost::GenerateResponse(std::string& uri, LocationBlock& setting, std::
 	execute();
 	std::cout << Colors::Red << "[1234]" << mResponse << Colors::Reset << '\n';
 
-	sendCgiBody(body);
+	if (sendCgiBody(body) == ERROR)
+		return (0);
 	std::cout << Colors::Red << "[12345]" << mResponse << Colors::Reset << '\n';
 
 	readCgiResponse();
@@ -125,7 +126,7 @@ void MethodPost::initCgiEnv(std::string httpCgiPath, size_t ContentSize, std::ma
 	// 	this->env["QUERY_STRING"] = urlDecode(body);
 	// }
 	// this->env["QUERY_STRING"] = body;
-	std::cout << Colors::Red << body << Colors::Reset << '\n';
+	std::cout << Colors::BoldRed << body << Colors::Reset << '\n';
 	this->env["REMOTE_ADDR"] = Header[HOST];
 	// this->env["REMOTE_HOST"]
 	// this->env["REMOTE_USER"]
@@ -195,7 +196,7 @@ void MethodPost::execute()
 	return;
 }
 
-void MethodPost::sendCgiBody(std::string body)
+int MethodPost::sendCgiBody(std::string body)
 {
 	size_t bodySize;
 
@@ -214,7 +215,7 @@ void MethodPost::sendCgiBody(std::string body)
 		if (bodySize < 0)
 		{
 			GenerateErrorResponse(500);
-			break;
+			return (ERROR);
 		}
 		else if (bodySize == 0 || bodySize == reqBody.size())
 		{
@@ -227,6 +228,7 @@ void MethodPost::sendCgiBody(std::string body)
 			reqBody = reqBody.substr(bodySize);
 		}
 	}
+	return (0);
 }
 
 void MethodPost::readCgiResponse()

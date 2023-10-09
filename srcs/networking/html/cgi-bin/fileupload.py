@@ -5,28 +5,28 @@ import cgi, os, sys
 print("Content-type: text/html\r\n\r\n")
 
 form = cgi.FieldStorage()
-# print(form)
+print(form)
 # A nested FieldStorage instance holds the file
-fileitem = form['filename']
+# fileitem = form['filename']
 
-# Test if the file was uploaded
-if fileitem.filename:
-    # strip leading path from file name
-    # to avoid directory traversal attacks
-    fn = os.path.basename(fileitem.filename)
-    open(os.getcwd() + '/cgi-bin/tmp/' + fn, 'wb').write(fileitem.file.read())
-    message = 'The file "' + fn + '" was uploaded successfully'
+# # Test if the file was uploaded
+# if fileitem.filename:
+#     # strip leading path from file name
+#     # to avoid directory traversal attacks
+#     fn = os.path.basename(fileitem.filename)
+#     open(os.getcwd() + '/html/cgi-bin/tmp/' + fn, 'wb').write(fileitem.file.read())
+#     message = 'The file "' + fn + '" was uploaded successfully'
 
-else:
-    message = 'No file was uploaded'
+# else:
+#     message = 'No file was uploaded'
 
-print ("""\
-<html>
-    <a href='/index.html'>Home</a>
-<body>
-<p>%s</p>
-</body></html>
-""" % (message,))
+# print ("""\
+# <html>
+#     <a href='/index.html'>Home</a>
+# <body>
+# <p>%s</p>
+# </body></html>
+# """ % (message,))
 
 
 # # form = cgi.FieldStorage()
