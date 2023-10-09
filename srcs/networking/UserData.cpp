@@ -15,6 +15,7 @@ UserData::UserData(int fd)
 	, mSocketType(-1)
 	, mStatusCode(-1)
 	, mHeaderFlag(0)
+	, mChunkedFlag(0)
 	, mFillBodyFlag(-1)
 	, mContentSize(0)
 	, mMethod(NULL)
@@ -50,11 +51,9 @@ std::string UserData::uriGenerator(void)
 		replaceToContent(mUri, mSetting.uri, mSetting.alias);
 		return (mUri);
 	}
-	if (mUri[0] == '/')
+	if (*(mUri.end() - 1) == '/')
 	{
-		mUri.erase(0, 1);
-		if (mUri.size() == 0)
-			mUri = mSetting.index;
+		mUri += mSetting.index;
 	}
 	if (mSetting.rootPath.size() > 0)
 	{
@@ -121,25 +120,20 @@ static int checkHeaderLength(std::vector<unsigned char>& received, int flag)
 
 	if (flag == true)
 		return (true);
-	if (received.size() > 1024)
-		return (ERROR);
+	// if (received.size() > 1024)
+	// return (ERROR);
 	for (std::vector<unsigned char>::iterator it = received.begin(); it != received.end();)
 	{
 		pos = std::find(pos, received.end(), '\n');
 		if (pos == received.end())
 			return (false);
-		// it ~~ pos 까지 저장하고 비교
 		line.assign(it, pos);
 		if (line == "\r" || line == "")
-			break;
-		else
-		{
-			pos += 1; // 현재 pos는 \n을 가리키고 있기 때문.
-			it = pos; // 찾기 시작하는 위치 저장.
-			continue;
-		}
+			return (true);
+		pos += 1; // 현재 pos는 \n을 가리키고 있기 때문.
+		it = pos; // 찾기 시작하는 위치 저장.
 	}
-	return (true);
+	return (false);
 }
 
 void UserData::ReadRequest(void)
@@ -156,25 +150,32 @@ void UserData::ReadRequest(void)
 	{
 		return;
 	}
-	else if (mFillBodyFlag == true)
+	else if (mChunkedFlag == true)
 	{
-		// if (mReceived.size() < mContentSize)
-		// {
-		// 	mFillBodyFlag = true;
-		// 	return;
-		// }
-		if (mContentSize == 0)
+		if (mReceived.size() > 7 && mReceived[mReceived.size() - 7] == '\r' &&
+			mReceived[mReceived.size() - 6] == '\n' && mReceived[mReceived.size() - 5] == '0' &&
+			mReceived[mReceived.size() - 4] == '\r' && mReceived[mReceived.size() - 3] == '\n' &&
+			mReceived[mReceived.size() - 2] == '\r' && mReceived[mReceived.size() - 1] == '\n')
 		{
-			mMethod->GenerateErrorResponse(405);
+			mMethod->GenerateResponse(mUri, mSetting, mHeaders);
 			WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_DISABLE, this);
 			WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_ONESHOT, this);
 			return;
 		}
+		else
+		{
+			return;
+		}
+	}
+
+	if (mFillBodyFlag == true)
+	{
+		if (mReceived.size() < mContentSize)
+			return;
 		std::string body;
 		body.assign(mReceived.begin(), mReceived.end());
 		std::cout << Colors::BoldRed << "[fill]" << body << Colors::Reset << '\n';
 		mMethod->GenerateResponse(mUri, mSetting, mHeaders, body);
-		// mMethod->GenerateResponse(mUri, mSetting, mHeaders);
 	}
 	else
 	{
@@ -213,35 +214,33 @@ void UserData::ReadRequest(void)
 				mMethod->GenerateErrorResponse(405);
 				// mMethod->GenerateResponse(mUri, mSetting, mHeaders);
 			}
-			else if (mMethod->GetType() == POST && mSetting.bPostMethod == true)
+			else if (mMethod->GetType() == POST)
 			{
 				std::cout << Colors::BoldCyan << "[mContentSize]" << mHeaders[CONTENT_LENGTH] << std::endl;
 				std::cout << Colors::BoldCyan << "[body]" << mContentSize << std::endl;
 				std::cout << "length: " << mContentSize << std::endl;
 				if (mReceived.size() < mContentSize)
 				{
-					if (mHeaders[TRANSFER_ENCODING] == "chunked")
+					if (mSetting.bPostMethod == false)
+						mMethod->GenerateErrorResponse(405);
+					else if (mHeaders[TRANSFER_ENCODING] == "chunked")
 					{
-						std::string chunkedSize;
-						// atoi..
-						int num = 0;
-
-						for (std::vector<unsigned char>::iterator it = mReceived.begin(); it != mReceived.end(); it++)
+						if (mReceived.size() > 7 && mReceived[mReceived.size() - 7] == '\r' &&
+							mReceived[mReceived.size() - 6] == '\n' && mReceived[mReceived.size() - 5] == '0' &&
+							mReceived[mReceived.size() - 4] == '\r' && mReceived[mReceived.size() - 3] == '\n' &&
+							mReceived[mReceived.size() - 2] == '\r' && mReceived[mReceived.size() - 1] == '\n')
+							mMethod->GenerateResponse(mUri, mSetting, mHeaders);
+						else
 						{
-							if (isdigit(*it) == true)
-							{
-								num += *it - '0';
-								num *= 10;
-							}
-							else
-							{
-								break;
-							}
+							mChunkedFlag = true;
+							return;
 						}
-						mContentSize = num;
 					}
-					mFillBodyFlag = true;
-					return;
+					else
+					{
+						mFillBodyFlag = true;
+						return;
+					}
 				}
 				std::string body;
 				body.assign(mReceived.begin(), mReceived.end());
@@ -251,7 +250,9 @@ void UserData::ReadRequest(void)
 			else if (mMethod->GetType() == DELETE && mSetting.bDeleteMethod == true)
 				mMethod->GenerateResponse(mUri, mSetting, mHeaders);
 			else
+			{
 				mMethod->GenerateErrorResponse(405);
+			}
 		}
 	}
 	WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_ONESHOT, this);
@@ -264,14 +265,12 @@ int UserData::RecvFromClient(void)
 
 	len = read(mFd, mBuf, BUFFER_SIZE);
 	mReceived.insert(mReceived.end(), &mBuf[0], &mBuf[len]);
-	std::string test(mReceived.begin(), mReceived.end());
-	std::cout << "\n" << std::endl;
+	std::string test(&mBuf[0], &mBuf[len]);
 	for (std::string::iterator it = test.begin(); it != test.end(); it++)
 	{
 		std::cout << *it;
 	}
-	// for (int i = 0; i < len; i++)
-	// 	std::cout << mBuf[i];
+	std::cout << std::endl;
 	return (len);
 }
 
@@ -285,6 +284,7 @@ void UserData::InitUserData(void)
 	memset(mBuf, 0, sizeof(mBuf));
 	mStatusCode = -1;
 	mHeaderFlag = -1;
+	mChunkedFlag = -1;
 	mStatusCode = -1;
 	mFillBodyFlag = -1;
 	mStatusText.clear();

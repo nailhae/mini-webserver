@@ -166,7 +166,7 @@ void AMethod::SetContentType(const std::string& extTemp)
 	else if (extTemp == "txt" || extTemp == "html" || extTemp == "css")
 		mResponse += "text/" + extTemp + "\r\n";
 	else
-		mResponse += "application/octet-stream";
+		mResponse += "application/octet-stream\r\n";
 }
 
 static std::string intToString(int num)
