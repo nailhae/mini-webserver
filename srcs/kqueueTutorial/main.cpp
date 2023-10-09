@@ -4,6 +4,7 @@
 #include <ctime>
 #include <fcntl.h>
 #include <iostream>
+#include <signal.h>
 #include <sys/event.h>
 #include <sys/socket.h>
 #include <sys/time.h>
@@ -14,8 +15,10 @@
 #define CGI 0
 #define WEBSERV 1
 
-#define MIN_TIME 5
+#define MIN_TIME 50
 #define ADD_TIME 0
+
+#define TIME_LIMIT_MS 3000
 
 // 파일 디스크립터를 Non-Blocking 모드로 설정하는 함수
 int setNonBlocking(int fd)
@@ -43,10 +46,6 @@ void changeEvents(std::vector<struct kevent>& changeList, uintptr_t ident, int16
 	changeList.push_back(temp_event);
 }
 
-// TODO 모든 fd에 대해 fctl로 non-block으로 설정.후 테스트
-// TODO if read == -1인 경우 errorno어떤 것이 있는지 확인
-// TODO bytes >= 0으로 설정해야한다.
-// TODOstd::cout<<errno<<std:;cout; -> exit(1);
 int main()
 {
 	std::cout << "NUM_REQUEST: " << NUM_REQUEST << std::endl;
@@ -69,7 +68,7 @@ int main()
 	// kqueue 이벤트 설정
 	struct kevent event;
 	std::vector<struct kevent> changeList;
-	struct kevent eventList[1];
+	struct kevent eventList[NUM_REQUEST];
 
 	/* Create two processs */
 	for (int i = 0; i < NUM_REQUEST; i++)
@@ -91,7 +90,6 @@ int main()
 		/* child */
 		if (pid == 0)
 		{
-
 			close(sockets[i][WEBSERV]);
 
 			int readLen;
@@ -110,19 +108,21 @@ int main()
 			std::string buf = buffer;
 			std::string msg = buf + "-response-";
 			int writeLen = write(sockets[i][CGI], msg.c_str(), msg.length());
-			std::cout << msg << std::endl;
+			// std::cout << msg << std::endl;
 			/* Closes child */
 			exit(0);
 		}
 		else
 		{
+			// Timer 적용
+			changeEvents(changeList, pid, EVFILT_TIMER, EV_ADD | EV_ENABLE, 0, TIME_LIMIT_MS, sockets + i);
 			close(sockets[i][CGI]);
 
 			// send
-			changeEvents(changeList, sockets[i][WEBSERV], EVFILT_READ, EV_ADD, 0, 0, NULL);
+			changeEvents(changeList, sockets[i][WEBSERV], EVFILT_READ, EV_ADD, 0, NULL, NULL);
 			std::string msg = std::to_string(i) + "-send-";
 			write(sockets[i][WEBSERV], msg.c_str(), msg.length());
-			std::cout << msg << std::endl;
+			// std::cout << msg << std::endl;
 		}
 	}
 
@@ -131,12 +131,11 @@ int main()
 	int finishedCnt = 0;
 
 	// while (1)
+	// while (changeList.size())
 	while (finishedCnt < NUM_REQUEST)
 	{
-		sleep(1);
-		std::cout << "\t\t\t\t자식 프로세스 응답 대기중..." << std::endl;
 		// 이벤트 감시 시작
-		newEvents = kevent(kq, &changeList[0], changeList.size(), eventList, 5, NULL);
+		newEvents = kevent(kq, &changeList[0], changeList.size(), eventList, NUM_REQUEST, NULL);
 		if (newEvents == -1)
 		{
 			perror("kevent");
@@ -147,25 +146,31 @@ int main()
 		{
 			currEvent = &(eventList[i]);
 
-			ssize_t bytes = read(currEvent->ident, &buffer, bufferSize);
+			if (currEvent->filter == EVFILT_TIMER)
+			{
+				close(static_cast<int*>(currEvent->udata)[WEBSERV]);
+				close(static_cast<int*>(currEvent->udata)[CGI]);
 
-			/* If the ev.data.fd has bytes added print, else wait */
-			if (bytes == -1)
-			{
-				continue;
+				kill(currEvent->ident, SIGKILL);
+				finishedCnt++;
+				std::cout << "\t\t\t\tTimeout " << currEvent->ident << " "
+						  << "/" << NUM_REQUEST << std::endl;
 			}
-			else if (bytes > 0)
+			else
 			{
+				ssize_t bytes = read(currEvent->ident, &buffer, bufferSize);
+
+				if (bytes <= 0)
+					continue;
 
 				std::string buf(buffer, buffer + bytes);
 				std::string msg = buf + "-receive!\n";
 				write(STDOUT_FILENO, msg.c_str(), msg.length());
 
-				if (bytes > 0)
-				{
-					finishedCnt++;
-					std::cout << "\t\t\t\tFinished " << finishedCnt << "/" << NUM_REQUEST << std::endl;
-				}
+				finishedCnt++;
+				std::cout << "\t\t\t\tFinished " << finishedCnt << "/" << NUM_REQUEST << std::endl;
+				// std::cout << "\t\t\t\tFinished "
+				//   << "/" << NUM_REQUEST << std::endl;
 			}
 		}
 	}
