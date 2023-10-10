@@ -107,6 +107,12 @@ int MethodHead::GenerateResponse(std::string& mUri, LocationBlock& mSetting, std
 	(void)mHeaders;
 	std::ifstream requestedFile;
 
+	if (mSetting.bHeadMethod == false)
+	{
+		Error::Print("405 Method Not Allowed");
+		GenerateErrorResponse(405);
+		return (ERROR);
+	}
 	if (*(mUri.end() - 1) == '/')
 	{
 		if (mSetting.autoindex == true)

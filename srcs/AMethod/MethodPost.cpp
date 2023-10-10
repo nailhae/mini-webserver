@@ -35,15 +35,15 @@ int MethodPost::GenerateResponse(std::string& uri, LocationBlock& setting, std::
 	std::cout << Colors::BoldBlue << "size: " << body.size() << Colors::Reset << std::endl;
 
 	initCgiEnv(uri, size, headers, body);
-	std::cout << Colors::Red << "[123]" << mResponse << Colors::Reset << '\n';
+	// std::cout << Colors::Red << "[123]" << mResponse << Colors::Reset << '\n';
 	if (execute() == ERROR)
 		return (0);
-	std::cout << Colors::Red << "[1234]" << mResponse << Colors::Reset << '\n';
+	// std::cout << Colors::Red << "[1234]" << mResponse << Colors::Reset << '\n';
 	if (sendCgiBody(body) == ERROR)
 		return (0);
-	std::cout << Colors::Red << "[12345]" << mResponse << Colors::Reset << '\n';
+	// std::cout << Colors::Red << "[12345]" << mResponse << Colors::Reset << '\n';
 	readCgiResponse();
-	std::cout << Colors::Red << "[12345]" << mResponse << Colors::Reset << '\n';
+	// std::cout << Colors::Red << "[12345]" << mResponse << Colors::Reset << '\n';
 
 	return (0);
 }
@@ -103,6 +103,8 @@ int findHostNamePos(const std::string path, const std::string ch)
 void MethodPost::initCgiEnv(std::string httpCgiPath, size_t ContentSize, std::map<int, std::string> Header,
 							std::string body)
 {
+	(void)body;
+	// std::cout << "[body]\n" << body << std::endl;
 	if (httpCgiPath.at(0) == '/')
 	{
 		httpCgiPath.erase(0, 1);
@@ -131,11 +133,11 @@ void MethodPost::initCgiEnv(std::string httpCgiPath, size_t ContentSize, std::ma
 	// std::string body;
 	// body.assign(Body.begin(), Body.end());
 	size_t p = Header[CONTENT_TYPE].find("multipart");
-	if (p != std::string::npos)
+	if (p == std::string::npos)
 	{
 		this->env["QUERY_STRING"] = body;
 	}
-	this->env["QUERY_STRING"] = body;
+	// this->env["QUERY_STRING"] = body;
 	// std::cout << Colors::BoldRed << body << Colors::Reset << '\n';
 	this->env["REMOTE_ADDR"] = Header[HOST];
 	// this->env["REMOTE_HOST"]
@@ -230,22 +232,25 @@ int MethodPost::sendCgiBody(std::string& reqBody)
 {
 	int len = 0;
 	int remainLen = reqBody.size();
-	std::string::iterator pos = reqBody.begin();
+	std::string::iterator posBeg = reqBody.begin();
+	std::string::iterator posEnd = reqBody.begin();
 	std::string temp;
 
-	while (pos != reqBody.end())
+	while (posEnd != reqBody.end())
 	{
-		std::cout << "body: " << reqBody.size() << " remain size: " << remainLen << std::endl;
-
-		if (reqBody.size() >= BUFFER_SIZE)
+		if (remainLen >= BUFFER_SIZE)
 		{
-			len = write(mSockets[SOCK_PARENT], reqBody.c_str(), BUFFER_SIZE);
-			std::cout << "11111111111=" << len << std::endl;
+			posEnd += BUFFER_SIZE;
+			temp.assign(posBeg, posEnd);
+			std::cout << "[body]" << std::endl;
+			len = write(mSockets[SOCK_PARENT], temp.c_str(), BUFFER_SIZE);
 		}
 		else
 		{
-			len = write(mSockets[SOCK_PARENT], reqBody.c_str(), reqBody.size());
-			std::cout << "22222222222=" << len << std::endl;
+			posEnd += remainLen;
+			temp.assign(posBeg, posEnd);
+			std::cout << "[body]" << std::endl;
+			len = write(mSockets[SOCK_PARENT], temp.c_str(), remainLen);
 		}
 		if (len < 0)
 		{
@@ -257,8 +262,9 @@ int MethodPost::sendCgiBody(std::string& reqBody)
 		}
 		else
 		{
-			temp.assign(pos, pos + (len));
-			pos += len;
+			std::cout << "\nread len: " << len << std::endl;
+			temp.clear();
+			posBeg += len;
 			remainLen -= len;
 		}
 	}

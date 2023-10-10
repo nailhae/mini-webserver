@@ -38,7 +38,6 @@ static int loadFolderContent(std::string& bodySet, std::string& uri)
 	ss << ".file:hover {background-color: #F0FFF0;text-decoration: underline;}";
 	ss << ".dir {color: #B22222; text-decoration: none;}";
 	ss << ".dir:hover {background-color: #F0FFF0;text-decoration: underline;}";
-
 	ss << "</style>"
 	   << "\t</head>\n\t<body>\n\t\t<header><h1>Index of " << uri
 	   << "</h1></header>\n\t\t<div class=\"container\"><u1>";
@@ -104,6 +103,12 @@ int MethodGet::GenerateResponse(std::string& mUri, LocationBlock& mSetting, std:
 {
 	std::ifstream requestedFile;
 
+	if (mSetting.bGetMethod == false)
+	{
+		Error::Print("405 Method Not Allowed");
+		GenerateErrorResponse(405);
+		return (ERROR);
+	}
 	if (*(mUri.end() - 1) == '/')
 	{
 		if (mSetting.autoindex == true)

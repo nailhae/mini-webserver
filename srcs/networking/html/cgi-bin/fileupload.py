@@ -8,7 +8,7 @@ form = cgi.FieldStorage()
 # print(form)
 # A nested FieldStorage instance holds the file
 fileitem = form['filename']
-
+# print(fileitem)
 # Test if the file was uploaded
 if fileitem.filename:
     # strip leading path from file name
