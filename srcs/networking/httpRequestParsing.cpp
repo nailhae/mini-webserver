@@ -254,8 +254,7 @@ int UserData::ParseRequest(std::vector<unsigned char>& request)
 		pos += 1;
 		it = pos;
 	}
-	if (pos != mReceived.end())
-		mReceived.erase(mReceived.begin(), pos + 1);
+	mReceived.erase(mReceived.begin(), pos + 1);
 	if (mMethod->GetType() == POST)
 	{
 		if (mHeaders.find(CONTENT_LENGTH) == mHeaders.end() || mHeaders[CONTENT_LENGTH] == "0")

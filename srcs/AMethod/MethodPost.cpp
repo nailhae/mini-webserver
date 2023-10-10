@@ -33,15 +33,15 @@ int MethodPost::GenerateResponse(std::string& uri, LocationBlock& setting, std::
 	std::cout << Colors::BoldBlue << "size: " << body.size() << Colors::Reset << std::endl;
 
 	initCgiEnv(uri, size, headers, body);
-	std::cout << Colors::Red << "[123]" << mResponse << Colors::Reset << '\n';
+	// std::cout << Colors::Red << "[123]" << mResponse << Colors::Reset << '\n';
 	if (execute() == ERROR)
 		return (0);
-	std::cout << Colors::Red << "[1234]" << mResponse << Colors::Reset << '\n';
+	// std::cout << Colors::Red << "[1234]" << mResponse << Colors::Reset << '\n';
 	if (sendCgiBody(body) == ERROR)
 		return (0);
-	std::cout << Colors::Red << "[12345]" << mResponse << Colors::Reset << '\n';
+	// std::cout << Colors::Red << "[12345]" << mResponse << Colors::Reset << '\n';
 	readCgiResponse();
-	std::cout << Colors::Red << "[12345]" << mResponse << Colors::Reset << '\n';
+	// std::cout << Colors::Red << "[12345]" << mResponse << Colors::Reset << '\n';
 
 	return (0);
 }
@@ -101,6 +101,7 @@ int findHostNamePos(const std::string path, const std::string ch)
 void MethodPost::initCgiEnv(std::string httpCgiPath, size_t ContentSize, std::map<int, std::string> Header,
 							std::string body)
 {
+	// std::cout << "[body]\n" << body << std::endl;
 	if (httpCgiPath.at(0) == '/')
 	{
 		httpCgiPath.erase(0, 1);
@@ -159,13 +160,13 @@ void MethodPost::initCgiEnv(std::string httpCgiPath, size_t ContentSize, std::ma
 	}
 	this->argv = (char**)malloc(sizeof(char*) * 3);
 	// this->argv[0] = strdup(httpCgiPath.c_str());
-	this->argv[0] = strdup("/usr/bin/python3");
+	// this->argv[0] = strdup("/usr/bin/python3");
 	// this->argv[0] = strdup("/bin/bash");
 	// this->argv[0] = strdup("./cgi_tester");
-	this->argv[1] = strdup(httpCgiPath.c_str());
+	this->argv[0] = strdup(httpCgiPath.c_str());
 	// this->argv[1] = NULL;
 	// this->argv[1] = strdup("./");
-	this->argv[2] = NULL;
+	this->argv[1] = NULL;
 	return;
 }
 
@@ -219,14 +220,13 @@ int MethodPost::sendCgiBody(std::string& reqBody)
 	while (pos != reqBody.end())
 	{
 		std::cout << "body: " << reqBody.size() << " remain size: " << remainLen << std::endl;
-
-		if (reqBody.size() >= BUFFER_SIZE)
+		if (remainLen >= BUFFER_SIZE)
 		{
 			len = write(pipeIn[1], reqBody.c_str(), BUFFER_SIZE);
 		}
 		else
 		{
-			len = write(pipeIn[1], reqBody.c_str(), reqBody.size());
+			len = write(pipeIn[1], reqBody.c_str(), remainLen);
 		}
 		if (len < 0)
 		{
@@ -238,6 +238,7 @@ int MethodPost::sendCgiBody(std::string& reqBody)
 		}
 		else
 		{
+			std::cout << "read len: " << len << std::endl;
 			temp.assign(pos, pos + (len));
 			pos += len;
 			remainLen -= len;
