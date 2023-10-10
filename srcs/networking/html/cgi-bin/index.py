@@ -5,21 +5,17 @@ import cgi, os
 form = cgi.FieldStorage()
 print(form)
 
-# if 'name' in form:
-#     # pageId = form['name'].value
-#     # description = open('/cgi-bin/' + pageId).read()
-#     pageId = 'test.html'
-#     description = 'Hello CGI'
-#     print(pageId)
-#     try:
-#       description = open(os.getcwd() + '/cgi-bin/' + pageId).read()
-#     except IOError as e:
-#       description = 'Hello CGI'
-# else:
-#     pageId = 'Welcome'
-#     description = 'Hello CGI'
-pageId = 'Welcome'
-description = 'Hello CGI'
+if 'name' in form:
+    pageId = form['name'].value
+    # description = open('/html/cgi-bin/' + pageId).read()
+    try:
+      description = open(os.getcwd() + '/html/cgi-bin/' + pageId).read()
+    except IOError as e:
+      print("error")
+      description = 'Hello CGI'
+else:
+    pageId = 'Welcome'
+    description = 'Hello CGI'
 
 print('''<!doctype html>
 <html>
