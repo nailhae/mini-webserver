@@ -42,6 +42,8 @@ public:
 	std::string uriGenerator(void);
 	void ReadRequest(void);
 	int GenerateDeleteResponse(void);
+	int preprocessGenResponse(void);
+	void passBodyToPost(void);
 	int ParseRequest(std::vector<unsigned char>& request);
 	int ParseFirstLine(std::string& request);
 	int ParseHeaderKey(std::string& headerKey);
