@@ -104,6 +104,12 @@ int MethodGet::GenerateResponse(std::string& mUri, LocationBlock& mSetting, std:
 {
 	std::ifstream requestedFile;
 
+	if (mSetting.bGetMethod == false)
+	{
+		Error::Print("405 Method Not Allowed");
+		GenerateErrorResponse(405);
+		return (ERROR);
+	}
 	if (*(mUri.end() - 1) == '/')
 	{
 		if (mSetting.autoindex == true)

@@ -139,8 +139,8 @@ static int checkHeaderLength(std::vector<unsigned char>& received, int& flag)
 
 	if (flag == true)
 		return (true);
-	if (received.size() > 1024)
-		return (ERROR);
+	// if (received.size() > 1024)
+	// 	return (ERROR);
 	for (std::vector<unsigned char>::iterator it = received.begin(); it != received.end();)
 	{
 		pos = std::find(pos, received.end(), '\n');
@@ -169,12 +169,12 @@ static int checkChunkedMessageEnd(std::vector<unsigned char>& received)
 		received[received.size() - 3] == '\n' && received[received.size() - 2] == '\r' &&
 		received[received.size() - 1] == '\n')
 	{
-		return (0);
+		return (true);
 	}
 	else
 	{
 		// std::cout << "chunked on and on: " << mReceived.size() << std::endl;
-		return (1);
+		return (false);
 	}
 }
 
@@ -196,8 +196,10 @@ int UserData::preprocessGenResponse()
 
 void UserData::passBodyToPost(void)
 {
+
 	std::string body(mReceived.begin(), mReceived.end());
 	mMethod->GenerateResponse(mUri, mSetting, mHeaders, body);
+	std::cout << body.size() << "|body  contentSize|" << mContentSize << std::endl;
 	WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_DISABLE, this);
 	WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_ONESHOT, this);
 	return;
@@ -215,65 +217,71 @@ void UserData::ReadRequest(void)
 		WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_ONESHOT, this);
 		return;
 	}
-	else
+	else if (checkHeaderLength(mReceived, mHeaderFlag) == false)
 	{
-		if (checkHeaderLength(mReceived, mHeaderFlag) == false)
-			return;
+		return;
 	}
 
 	if (mChunkedFlag == true || mFillBodyFlag == true)
 	{
 		if (mFillBodyFlag == true && mReceived.size() < mContentSize)
 		{
-			passBodyToPost();
+			return;
 		}
-		if (mChunkedFlag == true && checkChunkedMessageEnd(mReceived) == true)
+		if (mChunkedFlag == true && checkChunkedMessageEnd(mReceived) == false)
 		{
-			passBodyToPost();
+			return;
 		}
+		passBodyToPost();
 		return;
 	}
 
-	if (preprocessGenResponse() == 0)
+	if (preprocessGenResponse() == 1)
+	{
+		mMethod->GenerateErrorResponse(mStatusCode);
+		WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_DISABLE, this);
+		WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_ONESHOT, this);
+	}
+	else
 	{
 		mUri = uriGenerator();
 		if (mMethod->GetType() == POST)
 		{
-			std::cout << Colors::BoldCyan << "[mContentSize]" << mHeaders[CONTENT_LENGTH] << std::endl;
-			std::cout << Colors::BoldCyan << "[body]" << mContentSize << std::endl;
 			if (mReceived.size() < mContentSize)
 			{
 				if (mSetting.bPostMethod == false)
 				{
 					mMethod->GenerateErrorResponse(405);
+					WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_DISABLE, this);
+					WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_ONESHOT, this);
 				}
 				else if (mHeaders[TRANSFER_ENCODING] == "chunked")
 				{
 					if (checkChunkedMessageEnd(mReceived) == true)
 					{
 						passBodyToPost();
-						return;
 					}
 					else
 					{
 						mChunkedFlag = true;
-						return;
 					}
 				}
 				else
 				{
 					mFillBodyFlag = true;
-					return;
 				}
 			}
 			else
 			{
 				passBodyToPost();
 			}
+			return;
 		}
 		else
 		{
 			mMethod->GenerateResponse(mUri, mSetting, mHeaders);
+			WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_DISABLE, this);
+			WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_ONESHOT, this);
 		}
 	}
 }
@@ -285,11 +293,12 @@ int UserData::RecvFromClient(void)
 	len = read(mFd, mBuf, BUFFER_SIZE);
 	mReceived.insert(mReceived.end(), &mBuf[0], &mBuf[len]);
 	// std::string test(&mBuf[0], &mBuf[len]);
+	// std::cout << Colors::BoldGreen;
 	// for (std::string::iterator it = test.begin(); it != test.end(); it++)
 	// {
 	// 	std::cout << *it;
 	// }
-	// std::cout << std::endl;
+	// std::cout << Colors::Reset << std::endl;
 	return (len);
 }
 

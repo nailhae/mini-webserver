@@ -1,7 +1,6 @@
 #include "MethodPost.hpp"
 
 #include "Colors.hpp"
-#include "cgi.hpp"
 
 MethodPost::MethodPost(int type)
 	: AMethod(type, POST)
@@ -23,13 +22,14 @@ int MethodPost::GenerateResponse(std::string& uri, LocationBlock& setting, std::
 int MethodPost::GenerateResponse(std::string& uri, LocationBlock& setting, std::map<int, std::string>& headers,
 								 std::string& body)
 {
-	size_t size;
+	size_t size = 0;
 
 	(void)setting;
-	headers[CONTENT_LENGTH] = std::to_string(body.size());
-	size = strtol(headers[CONTENT_LENGTH].c_str(), NULL, 10);
-	if (size < 1)
-		size = 1024;
+	if (headers[TRANSFER_ENCODING] == "chunked")
+	{
+		headers[CONTENT_LENGTH] = std::to_string(body.size());
+		size = strtol(headers[CONTENT_LENGTH].c_str(), NULL, 10);
+	}
 	std::cout << Colors::BoldBlue << "size: " << body.size() << Colors::Reset << std::endl;
 
 	initCgiEnv(uri, size, headers, body);

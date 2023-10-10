@@ -189,7 +189,6 @@ int UserData::ParseFirstLine(std::string& firstLine)
 		mMethod = new MethodGet(mFd);
 		mStatusCode = 405;
 		std::cout << line << " 405로 세팅한다." << std::endl;
-		// 이 경우 헤더에 Allow: GET, POST, DELETE 추가해야 함.
 		return (ERROR);
 	}
 	ss >> mUri;
