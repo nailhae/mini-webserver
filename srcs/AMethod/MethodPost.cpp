@@ -160,13 +160,13 @@ void MethodPost::initCgiEnv(std::string httpCgiPath, size_t ContentSize, std::ma
 	}
 	this->argv = (char**)malloc(sizeof(char*) * 3);
 	// this->argv[0] = strdup(httpCgiPath.c_str());
-	// this->argv[0] = strdup("/usr/bin/python3");
+	this->argv[0] = strdup("/usr/bin/python3");
 	// this->argv[0] = strdup("/bin/bash");
 	// this->argv[0] = strdup("./cgi_tester");
-	this->argv[0] = strdup(httpCgiPath.c_str());
+	this->argv[1] = strdup(httpCgiPath.c_str());
 	// this->argv[1] = NULL;
 	// this->argv[1] = strdup("./");
-	this->argv[1] = NULL;
+	this->argv[2] = NULL;
 	return;
 }
 
@@ -219,14 +219,22 @@ int MethodPost::sendCgiBody(std::string& reqBody)
 
 	while (pos != reqBody.end())
 	{
-		std::cout << "body: " << reqBody.size() << " remain size: " << remainLen << std::endl;
 		if (remainLen >= BUFFER_SIZE)
 		{
-			len = write(pipeIn[1], reqBody.c_str(), BUFFER_SIZE);
+			if (temp.size() == 0)
+				temp.assign(pos, pos + BUFFER_SIZE);
+			std::cout << "body: " << temp << " remain size: " << remainLen << std::endl;
+			len = write(pipeIn[1], temp.c_str(), BUFFER_SIZE);
 		}
 		else
 		{
-			len = write(pipeIn[1], reqBody.c_str(), remainLen);
+			std::cout << "body: " << temp.size() << " remain size: " << remainLen << std::endl;
+
+			if (temp.size() == 0)
+				temp.assign(pos, pos + remainLen);
+			std::cout << "body: " << temp << " remain size: " << remainLen << std::endl;
+			len = write(pipeIn[1], temp.c_str(), remainLen);
+			std::cout << "body: " << len << " remain size: " << remainLen << std::endl;
 		}
 		if (len < 0)
 		{

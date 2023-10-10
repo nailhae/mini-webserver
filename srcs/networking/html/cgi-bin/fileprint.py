@@ -8,7 +8,7 @@ print()
 form = cgi.FieldStorage()
 user_input = form.getvalue("input")
 
-filename = "cgi-bin/test.html"
+filename = "html/cgi-bin/test.html"
 
 try:
     with open(filename, 'r') as f:
