@@ -3,6 +3,9 @@
 #include "AMethod.hpp"
 #include "UserData.hpp"
 
+#define SOCK_PARENT 1
+#define SOCK_CHILD 0
+
 class MethodPost : public AMethod
 {
 public:
@@ -28,8 +31,7 @@ private:
 	char** argv;
 	std::string cgiPath;
 	pid_t cgiPid;
-	int pipeIn[2];
-	int pipeOut[2];
+	int mSockets[2];
 
 	const MethodPost& operator=(const MethodPost& rhs);
 	MethodPost(const MethodPost& rhs);

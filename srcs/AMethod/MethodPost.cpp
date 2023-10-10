@@ -1,7 +1,8 @@
 #include "MethodPost.hpp"
 
+#include <fcntl.h>
+
 #include "Colors.hpp"
-#include "cgi.hpp"
 
 MethodPost::MethodPost(int type)
 	: AMethod(type, POST)
@@ -23,13 +24,14 @@ int MethodPost::GenerateResponse(std::string& uri, LocationBlock& setting, std::
 int MethodPost::GenerateResponse(std::string& uri, LocationBlock& setting, std::map<int, std::string>& headers,
 								 std::string& body)
 {
-	size_t size;
+	size_t size = 0;
 
 	(void)setting;
-	headers[CONTENT_LENGTH] = std::to_string(body.size());
-	size = strtol(headers[CONTENT_LENGTH].c_str(), NULL, 10);
-	if (size < 1)
-		size = 1024;
+	if (headers[TRANSFER_ENCODING] == "chunked")
+	{
+		headers[CONTENT_LENGTH] = std::to_string(body.size());
+		size = strtol(headers[CONTENT_LENGTH].c_str(), NULL, 10);
+	}
 	std::cout << Colors::BoldBlue << "size: " << body.size() << Colors::Reset << std::endl;
 
 	initCgiEnv(uri, size, headers, body);
@@ -133,7 +135,7 @@ void MethodPost::initCgiEnv(std::string httpCgiPath, size_t ContentSize, std::ma
 	{
 		this->env["QUERY_STRING"] = body;
 	}
-	// this->env["QUERY_STRING"] = body;
+	this->env["QUERY_STRING"] = body;
 	// std::cout << Colors::BoldRed << body << Colors::Reset << '\n';
 	this->env["REMOTE_ADDR"] = Header[HOST];
 	// this->env["REMOTE_HOST"]
@@ -169,6 +171,22 @@ void MethodPost::initCgiEnv(std::string httpCgiPath, size_t ContentSize, std::ma
 	return;
 }
 
+static int setNonBlocking(int fd)
+{
+	int flags = fcntl(fd, F_GETFL, 0);
+	if (flags == -1)
+	{
+		perror("fcntl");
+		return -1;
+	}
+	if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1)
+	{
+		perror("fcntl");
+		return -1;
+	}
+	return 0;
+}
+
 int MethodPost::execute()
 {
 	if (this->argv[0] == NULL)
@@ -176,15 +194,13 @@ int MethodPost::execute()
 		GenerateErrorResponse(500);
 		return (ERROR);
 	}
-	if (pipe(pipeIn) < 0)
+	if (socketpair(AF_UNIX, SOCK_STREAM, 0, mSockets) == -1)
 	{
 		GenerateErrorResponse(500);
 		return (ERROR);
 	}
-	if (pipe(pipeOut) < 0)
+	if (setNonBlocking(mSockets[SOCK_CHILD]) == -1)
 	{
-		close(pipeIn[0]);
-		close(pipeIn[1]);
 		GenerateErrorResponse(500);
 		return (ERROR);
 	}
@@ -192,20 +208,21 @@ int MethodPost::execute()
 	this->cgiPid = fork();
 	if (this->cgiPid == 0)
 	{
-		dup2(pipeIn[0], STDIN_FILENO);
-		dup2(pipeOut[1], STDOUT_FILENO);
-		close(pipeIn[0]);
-		close(pipeIn[1]);
-		close(pipeOut[0]);
-		close(pipeOut[1]);
+		close(mSockets[SOCK_PARENT]);
+		dup2(mSockets[SOCK_CHILD], STDIN_FILENO);
+		dup2(mSockets[SOCK_CHILD], STDOUT_FILENO);
+
 		size_t exitStatus = execve(this->argv[0], this->argv, this->chEnv);
 		// perror("execve failed");
 		exit(exitStatus);
 	}
-	// else
-	// {
-	// 	GenerateErrorResponse(500);
-	// }
+	else
+	{
+		close(mSockets[SOCK_CHILD]);
+		// TODO kqueue 등록
+
+		// GenerateErrorResponse(500);
+	}
 	return (0);
 }
 
@@ -222,18 +239,20 @@ int MethodPost::sendCgiBody(std::string& reqBody)
 
 		if (reqBody.size() >= BUFFER_SIZE)
 		{
-			len = write(pipeIn[1], reqBody.c_str(), BUFFER_SIZE);
+			len = write(mSockets[SOCK_PARENT], reqBody.c_str(), BUFFER_SIZE);
+			std::cout << "11111111111=" << len << std::endl;
 		}
 		else
 		{
-			len = write(pipeIn[1], reqBody.c_str(), reqBody.size());
+			len = write(mSockets[SOCK_PARENT], reqBody.c_str(), reqBody.size());
+			std::cout << "22222222222=" << len << std::endl;
 		}
 		if (len < 0)
 		{
 			std::cout << "출력 실패" << std::endl;
 			GenerateErrorResponse(500);
-			close(pipeIn[1]);
-			close(pipeOut[1]);
+			close(mSockets[SOCK_CHILD]);
+			close(mSockets[SOCK_PARENT]);
 			return (ERROR);
 		}
 		else
@@ -243,8 +262,6 @@ int MethodPost::sendCgiBody(std::string& reqBody)
 			remainLen -= len;
 		}
 	}
-	close(pipeIn[1]);
-	close(pipeOut[1]);
 	return (0);
 }
 
@@ -256,11 +273,12 @@ void MethodPost::readCgiResponse()
 
 	while (1)
 	{
-		readBytes = read(pipeOut[0], buffer, BUFFER_SIZE);
+		// readBytes = read(pipeOut[0], buffer, BUFFER_SIZE);
+		readBytes = read(mSockets[SOCK_PARENT], buffer, BUFFER_SIZE);
 		if (readBytes == 0)
 		{
-			close(pipeIn[0]);
-			close(pipeOut[0]);
+			close(mSockets[SOCK_CHILD]);
+			close(mSockets[SOCK_PARENT]);
 			waitpid(getCgiPid(), &status, 0);
 			if (WEXITSTATUS(status) != 0)
 			{
@@ -274,9 +292,8 @@ void MethodPost::readCgiResponse()
 		}
 		if (readBytes < 0)
 		{
-			close(pipeIn[0]);
-			close(pipeIn[1]);
-			close(pipeOut[0]);
+			close(mSockets[SOCK_CHILD]);
+			close(mSockets[SOCK_PARENT]);
 			GenerateErrorResponse(500);
 			return;
 		}
