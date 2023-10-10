@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 import cgi
 
-# print("Location: /test.html")
 print("Content-Type: text/html; charset=UTF-8")
 print()
 
 form = cgi.FieldStorage()
 user_input = form.getvalue("input")
 
-filename = "cgi-bin/test.html"
+filename = "html/cgi-bin/test.html"
+# filename = "cgi-bin/test.html"
 
 try:
     with open(filename, 'r') as f:
