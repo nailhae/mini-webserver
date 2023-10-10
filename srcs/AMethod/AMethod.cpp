@@ -28,6 +28,11 @@ void AMethod::GenerateRedirectionResponse(int code, LocationBlock& mSetting)
 	mResponse += "\r\n";
 }
 
+void AMethod::EraseResponse(unsigned int amount)
+{
+	mResponse.erase(0, amount);
+}
+
 void AMethod::SetCurrentTime(const char* headerType)
 {
 	time_t rawTime;

@@ -36,8 +36,8 @@ public:
 	int GetFd(void) const;
 	int GetSocketType(void) const;
 	void SetSocketType(int socketType);
-	const ServerBlock* GetServerPtr(void) const;
-	void SetServerPtr(const ServerBlock* serverPtr);
+	ServerBlock* GetServerPtr(void) const;
+	void SetServerPtr(ServerBlock* serverPtr);
 	LocationBlock& Setting(void);
 	std::string uriGenerator(void);
 	void ReadRequest(void);
@@ -53,9 +53,6 @@ public:
 	int SendToClient(int fd);
 	int GeneratePostResponse(void);
 	int loadFolderContent(void);
-
-	std::vector<unsigned char> mReceived;
-	std::vector<unsigned char> mBody;
 
 private:
 	UserData(void);
@@ -74,6 +71,8 @@ private:
 	std::string mStatusText;
 	std::string mUri;
 	std::map<int, std::string> mHeaders;
-	const ServerBlock* mServerPtr;
+	std::vector<unsigned char> mReceived;
+	std::vector<unsigned char> mBody;
+	ServerBlock* mServerPtr;
 	AMethod* mMethod;
 };

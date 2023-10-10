@@ -8,7 +8,6 @@
 
 void printTreeStructure(MultiTreeNode* node, int depth = 0);
 
-// TODO For test
 int main(void)
 {
 	// atexit(leak);

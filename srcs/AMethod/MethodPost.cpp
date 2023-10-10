@@ -243,6 +243,7 @@ int MethodPost::sendCgiBody(std::string& reqBody)
 			posEnd += BUFFER_SIZE;
 			temp.assign(posBeg, posEnd);
 			std::cout << "[body]" << std::endl;
+			// TODO Kevent로 등록
 			len = write(mSockets[SOCK_PARENT], temp.c_str(), BUFFER_SIZE);
 		}
 		else
@@ -250,6 +251,7 @@ int MethodPost::sendCgiBody(std::string& reqBody)
 			posEnd += remainLen;
 			temp.assign(posBeg, posEnd);
 			std::cout << "[body]" << std::endl;
+			// TODO Kevent로 등록
 			len = write(mSockets[SOCK_PARENT], temp.c_str(), remainLen);
 		}
 		if (len < 0)
@@ -280,7 +282,9 @@ void MethodPost::readCgiResponse()
 	while (1)
 	{
 		// readBytes = read(pipeOut[0], buffer, BUFFER_SIZE);
+		// TODO Kevent로 등록
 		readBytes = read(mSockets[SOCK_PARENT], buffer, BUFFER_SIZE);
+		// write 이벤트를 단발성으로 등록
 		if (readBytes == 0)
 		{
 			close(mSockets[SOCK_CHILD]);

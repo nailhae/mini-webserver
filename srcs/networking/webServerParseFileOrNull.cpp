@@ -188,7 +188,6 @@ static int parseLine(const std::string& line, std::ifstream& file, HttpBlock& ht
 	else if (key == "location")
 	{
 		std::string value;
-		// TODO uri checker가 만들어지면 uri 확인하는 코드도 추가 필요
 		if (!(iss >> value) || value[0] != '/')
 		{
 			return error;

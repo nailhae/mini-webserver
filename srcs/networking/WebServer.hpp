@@ -12,7 +12,7 @@ public:
 	static void DeleteInstance();
 	static const std::string& GetStatusText(int code);
 	const HttpBlock* GetHttp() const;
-	void ChangeEvent(int ident, int nFilter, int nFlags, UserData *udata);
+	void ChangeEvent(int ident, int nFilter, int nFlags, UserData* udata);
 	void WaitForClientConnection(void);
 	int InitServer(void);
 
@@ -25,7 +25,7 @@ private:
 
 	HttpBlock* parseFileOrNull(const std::string& fileName);
 	void deleteHttpBlock(HttpBlock& http);
-	void acceptClientSocket(int fd, const ServerBlock* serverPtr);
+	void acceptClientSocket(int fd, ServerBlock* serverPtr);
 	void closeClientSocket(UserData* udata, int fd);
 
 	static WebServer* mWebServer;

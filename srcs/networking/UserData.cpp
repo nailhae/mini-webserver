@@ -122,12 +122,12 @@ void UserData::SetSocketType(int socketType)
 	mSocketType = socketType;
 }
 
-const ServerBlock* UserData::GetServerPtr(void) const
+ServerBlock* UserData::GetServerPtr(void) const
 {
 	return (mServerPtr);
 }
 
-void UserData::SetServerPtr(const ServerBlock* serverPtr)
+void UserData::SetServerPtr(ServerBlock* serverPtr)
 {
 	mServerPtr = serverPtr;
 }
@@ -304,23 +304,43 @@ int UserData::RecvFromClient(void)
 
 int UserData::SendToClient(int fd)
 {
-	size_t len;
+	int len;
+	int maxWrite;
 
-	// test code
-	std::cout << Colors::BoldCyan << "[Headers]" << Colors::Reset << std::endl;
-	for (std::map<int, std::string>::iterator it = mHeaders.begin(); it != mHeaders.end(); it++)
-	{
-		std::cout << it->first << ": " << it->second << std::endl;
-	}
-	std::cout << "\n" << std::endl;
-	len = write(fd, mMethod->GetResponse().c_str(), mMethod->GetResponse().size());
-	len = write(1, mMethod->GetResponse().c_str(), mMethod->GetResponse().size());
-	// TODO 얘도 나눠서 써야 함.
-	// WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_ONESHOT, this);
+	// std::cout << Colors::BoldCyan << "[Headers]" << Colors::Reset << std::endl;
+	// for (std::map<int, std::string>::iterator it = mHeaders.begin(); it != mHeaders.end(); it++)
+	// {
+	// 	std::cout << it->first << ": " << it->second << std::endl;
+	// }
+
+	// 1. 현재 보내주려는 본문의 길이 - 버퍼 사이즈
+	// 2. 전송을 더 해야하는 경우 write 이벤트 발생시킨다.
+	// 3. 전송을 다 한 경우 read 이벤트를 켜준다.
+
+	if (mMethod->GetResponse().size() >= BUFFER_SIZE)
+		maxWrite = BUFFER_SIZE;
+	else
+		maxWrite = mMethod->GetResponse().size();
+
+	std::cout << mMethod->GetResponse().size() << std::endl;
+
+	len = write(fd, mMethod->GetResponse().c_str(), maxWrite);
+	len = write(1, mMethod->GetResponse().c_str(), maxWrite);
 	if (len < 0)
+	{
 		Error::Print("send()");
-	std::cout << Colors::BoldMagenta << "send to client " << fd << "\n" << Colors::Reset << std::endl;
-	InitUserData();
-	WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_ENABLE, this);
+		return (ERROR);
+	}
+	mMethod->EraseResponse(maxWrite);
+	if (mMethod->GetResponse().size() <= 0)
+	{
+		std::cout << Colors::BoldMagenta << "send to client " << fd << "\n" << Colors::Reset << std::endl;
+		InitUserData();
+		WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_ENABLE, this);
+	}
+	else
+	{
+		WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_ONESHOT, this);
+	}
 	return (len);
 }

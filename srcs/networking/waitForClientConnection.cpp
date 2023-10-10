@@ -41,7 +41,7 @@ static void setSocketLinger(int fd)
 	setsockopt(fd, SOL_SOCKET, SO_LINGER, &optVal, sizeof(optVal));
 }
 
-void WebServer::acceptClientSocket(int fd, const ServerBlock* serverPtr)
+void WebServer::acceptClientSocket(int fd, ServerBlock* serverPtr)
 {
 	int sock;
 	struct sockaddr_in adr;
@@ -113,9 +113,26 @@ void WebServer::WaitForClientConnection(void)
 				}
 				else if (eventList[i].filter == EVFILT_WRITE)
 				{
-					currentUdata->SendToClient(eventList[i].ident);
+					if (currentUdata->SendToClient(eventList[i].ident) == ERROR)
+					{
+						closeClientSocket(currentUdata, eventList[i].ident);
+						std::cout << "force close client: " << eventList[i].ident << std::endl;
+					}
 				}
 			}
+			// else if (currentUdata->GetSocketType() == CGI_SOCKET)
+			// {
+			// 	// CGI 처리.
+			// 	if (eventList[i].filter == EVFILT_TIMER)
+			// 	{
+			// 		// kill child process
+			// 		// 서버 에러.
+			// 	}
+			// 	if (eventList[i].filter == EVFILT_READ)
+			// 	{
+			// 		// read
+			// 	}
+			// }
 		}
 	}
 }
