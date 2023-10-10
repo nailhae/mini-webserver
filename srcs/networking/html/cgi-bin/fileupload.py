@@ -5,10 +5,10 @@ import cgi, os, sys
 print("Content-type: text/html\r\n\r\n")
 
 form = cgi.FieldStorage()
-print(form)
+# print(form)
 # A nested FieldStorage instance holds the file
 fileitem = form['filename']
-print(fileitem)
+# print(fileitem)
 # Test if the file was uploaded
 if fileitem.filename:
     # strip leading path from file name

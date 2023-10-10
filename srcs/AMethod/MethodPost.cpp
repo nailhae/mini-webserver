@@ -101,6 +101,7 @@ int findHostNamePos(const std::string path, const std::string ch)
 void MethodPost::initCgiEnv(std::string httpCgiPath, size_t ContentSize, std::map<int, std::string> Header,
 							std::string body)
 {
+	(void)body;
 	// std::cout << "[body]\n" << body << std::endl;
 	if (httpCgiPath.at(0) == '/')
 	{
@@ -129,12 +130,12 @@ void MethodPost::initCgiEnv(std::string httpCgiPath, size_t ContentSize, std::ma
 	// this->env["PATH_TRANSLATED"] = "/";
 	// std::string body;
 	// body.assign(Body.begin(), Body.end());
-	size_t p = Header[CONTENT_TYPE].find("multipart");
-	if (p != std::string::npos)
-	{
-		this->env["QUERY_STRING"] = body;
-	}
-	// this->env["QUERY_STRING"] = body;
+	// size_t p = Header[CONTENT_TYPE].find("multipart");
+	// if (p != std::string::npos)
+	// {
+	// 	this->env["QUERY_STRING"] = body;
+	// }
+	this->env["QUERY_STRING"] = body;
 	// std::cout << Colors::BoldRed << body << Colors::Reset << '\n';
 	this->env["REMOTE_ADDR"] = Header[HOST];
 	// this->env["REMOTE_HOST"]
@@ -214,27 +215,25 @@ int MethodPost::sendCgiBody(std::string& reqBody)
 {
 	int len = 0;
 	int remainLen = reqBody.size();
-	std::string::iterator pos = reqBody.begin();
+	std::string::iterator posBeg = reqBody.begin();
+	std::string::iterator posEnd = reqBody.begin();
 	std::string temp;
 
-	while (pos != reqBody.end())
+	while (posEnd != reqBody.end())
 	{
 		if (remainLen >= BUFFER_SIZE)
 		{
-			if (temp.size() == 0)
-				temp.assign(pos, pos + BUFFER_SIZE);
-			std::cout << "body: " << temp << " remain size: " << remainLen << std::endl;
+			posEnd += BUFFER_SIZE;
+			temp.assign(posBeg, posEnd);
+			std::cout << "[body]" << std::endl;
 			len = write(pipeIn[1], temp.c_str(), BUFFER_SIZE);
 		}
 		else
 		{
-			std::cout << "body: " << temp.size() << " remain size: " << remainLen << std::endl;
-
-			if (temp.size() == 0)
-				temp.assign(pos, pos + remainLen);
-			std::cout << "body: " << temp << " remain size: " << remainLen << std::endl;
+			posEnd += remainLen;
+			temp.assign(posBeg, posEnd);
+			std::cout << "[body]" << std::endl;
 			len = write(pipeIn[1], temp.c_str(), remainLen);
-			std::cout << "body: " << len << " remain size: " << remainLen << std::endl;
 		}
 		if (len < 0)
 		{
@@ -246,9 +245,9 @@ int MethodPost::sendCgiBody(std::string& reqBody)
 		}
 		else
 		{
-			std::cout << "read len: " << len << std::endl;
-			temp.assign(pos, pos + (len));
-			pos += len;
+			std::cout << "\nread len: " << len << std::endl;
+			temp.clear();
+			posBeg += len;
 			remainLen -= len;
 		}
 	}

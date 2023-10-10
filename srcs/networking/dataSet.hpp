@@ -62,7 +62,7 @@ enum eSocketType
 {
 	SERVER_SOCKET,
 	CLIENT_SOCKET,
-	CGI_PIPE,
+	CGI_SOCKET,
 };
 
 struct ServerBlock
