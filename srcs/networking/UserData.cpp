@@ -19,6 +19,7 @@ UserData::UserData(int fd)
 	, mFillBodyFlag(0)
 	, mPid(0)
 	, mContentSize(0)
+	, mBody(NULL)
 	, mMethod(NULL)
 	, mServerPtr(NULL)
 	, mClientUdata(NULL)
@@ -436,11 +437,8 @@ int UserData::SendToClient(int fd)
 		maxWrite = BUFFER_SIZE;
 	else
 		maxWrite = mMethod->GetResponse().size();
-
-	std::cout << mMethod->GetResponse().size() << std::endl;
-
 	len = write(fd, mMethod->GetResponse().c_str(), maxWrite);
-	len = write(1, mMethod->GetResponse().c_str(), maxWrite);
+	// len = write(1, mMethod->GetResponse().c_str(), maxWrite);
 	if (len < 0)
 	{
 		Error::Print("send()");

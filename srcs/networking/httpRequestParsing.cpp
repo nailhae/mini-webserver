@@ -188,7 +188,6 @@ int UserData::ParseFirstLine(std::string& firstLine)
 	{
 		mMethod = new MethodGet(mFd);
 		mStatusCode = 405;
-		std::cout << line << " 405로 세팅한다." << std::endl;
 		return (ERROR);
 	}
 	ss >> mUri;
@@ -261,7 +260,6 @@ int UserData::ParseRequest(std::vector<unsigned char>& request)
 		{
 			if (mHeaders.find(TRANSFER_ENCODING) != mHeaders.end())
 			{
-				std::cout << "1024로 설정" << std::endl;
 				mHeaders[CONTENT_LENGTH] = "1024"; // buffer size
 				mContentSize = BUFFER_SIZE;
 				return (0);
