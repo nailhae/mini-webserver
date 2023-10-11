@@ -11,6 +11,7 @@ public:
 	static WebServer* GetInstance();
 	static void DeleteInstance();
 	static const std::string& GetStatusText(int code);
+	const std::string& GetErrorPage(int code);
 	const HttpBlock* GetHttp() const;
 	void ChangeEvent(int ident, int nFilter, int nFlags, UserData* udata);
 	void WaitForClientConnection(void);
@@ -27,6 +28,8 @@ private:
 	void deleteHttpBlock(HttpBlock& http);
 	void acceptClientSocket(int fd, ServerBlock* serverPtr);
 	void closeClientSocket(UserData* udata, int fd);
+	void ShutdownCgiPid(UserData* udata);
+	void closeCgiSocket(UserData* udata, int fd);
 
 	static WebServer* mWebServer;
 	ChangeList mChangeList;

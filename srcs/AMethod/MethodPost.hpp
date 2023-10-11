@@ -22,8 +22,6 @@ public:
 	const std::map<std::string, std::string>& getEnv() const;
 	const pid_t& getCgiPid() const;
 	const std::string& getCgiPath() const;
-	int sendCgiBody(std::string& body);
-	void readCgiResponse();
 
 private:
 	std::map<std::string, std::string> env;
@@ -31,7 +29,6 @@ private:
 	char** argv;
 	std::string cgiPath;
 	pid_t cgiPid;
-	int mSockets[2];
 
 	const MethodPost& operator=(const MethodPost& rhs);
 	MethodPost(const MethodPost& rhs);

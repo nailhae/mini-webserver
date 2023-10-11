@@ -58,11 +58,12 @@ enum eBlockType
 	LOCATION
 };
 
-enum eSocketType
+enum eIdentifierType
 {
 	SERVER_SOCKET,
 	CLIENT_SOCKET,
 	CGI_SOCKET,
+	CGI_PID,
 };
 
 struct ServerBlock

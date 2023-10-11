@@ -111,6 +111,11 @@ const std::string& WebServer::GetStatusText(int code)
 	return (mStatusMap[code]);
 }
 
+const std::string& WebServer::GetErrorPage(int code)
+{
+	return (mHttp->errorPages[code]);
+}
+
 void printTreeStructure(MultiTreeNode* node, int depth = 0)
 {
 	if (node == nullptr)

@@ -28,6 +28,7 @@ public:
 	void GenerateResponseBody(std::ifstream& File);
 	void ResponseConfigSetup(const ServerBlock& server, std::string& uri, LocationBlock& setting);
 	int GetType(void) const;
+	int GetFd(void) const;
 	void SetResponse(const std::string& content);
 	void EraseResponse(unsigned int amount);
 	void SetSetupFlag(eSetupFlags flag);

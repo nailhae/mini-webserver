@@ -3,6 +3,8 @@
 #include <fcntl.h>
 
 #include "Colors.hpp"
+#include "UserData.hpp"
+#include "WebServer.hpp"
 
 MethodPost::MethodPost(int type)
 	: AMethod(type, POST)
@@ -32,19 +34,10 @@ int MethodPost::GenerateResponse(std::string& uri, LocationBlock& setting, std::
 		headers[CONTENT_LENGTH] = std::to_string(body.size());
 		size = strtol(headers[CONTENT_LENGTH].c_str(), NULL, 10);
 	}
-	std::cout << Colors::BoldBlue << "size: " << body.size() << Colors::Reset << std::endl;
 
 	initCgiEnv(uri, size, headers, body);
-	// std::cout << Colors::Red << "[123]" << mResponse << Colors::Reset << '\n';
 	if (execute() == ERROR)
 		return (0);
-	// std::cout << Colors::Red << "[1234]" << mResponse << Colors::Reset << '\n';
-	if (sendCgiBody(body) == ERROR)
-		return (0);
-	// std::cout << Colors::Red << "[12345]" << mResponse << Colors::Reset << '\n';
-	readCgiResponse();
-	// std::cout << Colors::Red << "[12345]" << mResponse << Colors::Reset << '\n';
-
 	return (0);
 }
 
@@ -127,7 +120,6 @@ void MethodPost::initCgiEnv(std::string httpCgiPath, size_t ContentSize, std::ma
 	std::cout << Colors::Blue << "[123]" << Header[CONTENT_TYPE] << Colors::Reset << '\n';
 	this->env["GATEWAY_INTERFACE"] = "CGI/1.1";
 	this->env["PATH_INFO"] = httpCgiPath;
-	// this->env["PATH_INFO"] = "/";
 	this->env["PATH_TRANSLATED"] = this->env["PATH_INFO"];
 	// this->env["PATH_TRANSLATED"] = "/";
 	// std::string body;
@@ -162,13 +154,8 @@ void MethodPost::initCgiEnv(std::string httpCgiPath, size_t ContentSize, std::ma
 		std::cout << tmp << std::endl;
 	}
 	this->argv = (char**)malloc(sizeof(char*) * 3);
-	// this->argv[0] = strdup(httpCgiPath.c_str());
 	this->argv[0] = strdup("/usr/bin/python3");
-	// this->argv[0] = strdup("/bin/bash");
-	// this->argv[0] = strdup("./cgi_tester");
 	this->argv[1] = strdup(httpCgiPath.c_str());
-	// this->argv[1] = NULL;
-	// this->argv[1] = strdup("./");
 	this->argv[2] = NULL;
 	return;
 }
@@ -189,19 +176,28 @@ static int setNonBlocking(int fd)
 	return 0;
 }
 
-int MethodPost::execute()
+static void setCgiPidTimer(int pid)
 {
+	UserData* udataTimer = new UserData(pid);
+	udataTimer->SetSocketType(CGI_PID);
+	WebServer::GetInstance()->ChangeEvent(pid, EVFILT_TIMER, EV_ADD, udataTimer);
+}
+
+int MethodPost::execute(void) // cgi 호출 + 이벤트 등록
+{
+	int sockets[2];
+
 	if (this->argv[0] == NULL)
 	{
 		GenerateErrorResponse(500);
 		return (ERROR);
 	}
-	if (socketpair(AF_UNIX, SOCK_STREAM, 0, mSockets) == -1)
+	if (socketpair(AF_UNIX, SOCK_STREAM, 0, sockets) == -1)
 	{
 		GenerateErrorResponse(500);
 		return (ERROR);
 	}
-	if (setNonBlocking(mSockets[SOCK_CHILD]) == -1)
+	if (setNonBlocking(sockets[SOCK_CHILD]) == -1)
 	{
 		GenerateErrorResponse(500);
 		return (ERROR);
@@ -210,9 +206,9 @@ int MethodPost::execute()
 	this->cgiPid = fork();
 	if (this->cgiPid == 0)
 	{
-		close(mSockets[SOCK_PARENT]);
-		dup2(mSockets[SOCK_CHILD], STDIN_FILENO);
-		dup2(mSockets[SOCK_CHILD], STDOUT_FILENO);
+		close(sockets[SOCK_PARENT]);
+		dup2(sockets[SOCK_CHILD], STDIN_FILENO);
+		dup2(sockets[SOCK_CHILD], STDOUT_FILENO);
 
 		size_t exitStatus = execve(this->argv[0], this->argv, this->chEnv);
 		// perror("execve failed");
@@ -220,98 +216,13 @@ int MethodPost::execute()
 	}
 	else
 	{
-		close(mSockets[SOCK_CHILD]);
+		close(sockets[SOCK_CHILD]);
 		// TODO kqueue 등록
+		// 해당 PID Timer에 등록
+		mFd = sockets[SOCK_PARENT];
+		setCgiPidTimer(cgiPid);
 
-		// GenerateErrorResponse(500);
+		// parent socket FD kevent Read 등록
 	}
 	return (0);
-}
-
-int MethodPost::sendCgiBody(std::string& reqBody)
-{
-	int len = 0;
-	int remainLen = reqBody.size();
-	std::string::iterator posBeg = reqBody.begin();
-	std::string::iterator posEnd = reqBody.begin();
-	std::string temp;
-
-	while (posEnd != reqBody.end())
-	{
-		if (remainLen >= BUFFER_SIZE)
-		{
-			posEnd += BUFFER_SIZE;
-			temp.assign(posBeg, posEnd);
-			std::cout << "[body]" << std::endl;
-			// TODO Kevent로 등록
-			len = write(mSockets[SOCK_PARENT], temp.c_str(), BUFFER_SIZE);
-		}
-		else
-		{
-			posEnd += remainLen;
-			temp.assign(posBeg, posEnd);
-			std::cout << "[body]" << std::endl;
-			// TODO Kevent로 등록
-			len = write(mSockets[SOCK_PARENT], temp.c_str(), remainLen);
-		}
-		if (len < 0)
-		{
-			std::cout << "출력 실패" << std::endl;
-			GenerateErrorResponse(500);
-			close(mSockets[SOCK_CHILD]);
-			close(mSockets[SOCK_PARENT]);
-			return (ERROR);
-		}
-		else
-		{
-			std::cout << "\nread len: " << len << std::endl;
-			temp.clear();
-			posBeg += len;
-			remainLen -= len;
-		}
-	}
-	return (0);
-}
-
-void MethodPost::readCgiResponse()
-{
-	char buffer[BUFFER_SIZE];
-	int readBytes = 0;
-	int status;
-
-	while (1)
-	{
-		// readBytes = read(pipeOut[0], buffer, BUFFER_SIZE);
-		// TODO Kevent로 등록
-		readBytes = read(mSockets[SOCK_PARENT], buffer, BUFFER_SIZE);
-		// write 이벤트를 단발성으로 등록
-		if (readBytes == 0)
-		{
-			close(mSockets[SOCK_CHILD]);
-			close(mSockets[SOCK_PARENT]);
-			waitpid(getCgiPid(), &status, 0);
-			if (WEXITSTATUS(status) != 0)
-			{
-				GenerateErrorResponse(500);
-				return;
-			}
-			else
-			{
-				break;
-			}
-		}
-		if (readBytes < 0)
-		{
-			close(mSockets[SOCK_CHILD]);
-			close(mSockets[SOCK_PARENT]);
-			GenerateErrorResponse(500);
-			return;
-		}
-		else
-		{
-			mResponse.append(buffer, readBytes);
-			memset(buffer, 0, sizeof(buffer));
-		}
-	}
-	mResponse.insert(0, "HTTP/1.1 200 OK\r\n");
 }

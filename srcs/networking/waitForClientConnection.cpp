@@ -19,7 +19,24 @@ void WebServer::closeClientSocket(UserData* udata, int fd)
 	std::cout << Colors::BoldBlue << "close client:" << fd << Colors::Reset << std::endl;
 	close(fd);
 	delete udata;
-	mChangeList.ChangeEvent(fd, EVFILT_READ, EV_DELETE, NULL);
+	mChangeList.ChangeEvent(fd, EVFILT_READ | EVFILT_WRITE, EV_DELETE, NULL);
+}
+
+void WebServer::ShutdownCgiPid(UserData* udata)
+{
+	int pid = udata->GetFd();
+	std::cout << Colors::BoldBlue << "close cgi pid:" << pid << Colors::Reset << std::endl;
+	kill(pid, SIGUSR1);
+	delete udata;
+	mChangeList.ChangeEvent(pid, EVFILT_TIMER, EV_DELETE, NULL);
+}
+
+void WebServer::closeCgiSocket(UserData* udata, int fd)
+{
+	std::cout << Colors::BoldBlue << "close cgi:" << fd << Colors::Reset << std::endl;
+	close(fd);
+	delete udata;
+	mChangeList.ChangeEvent(fd, EVFILT_READ | EVFILT_WRITE, EV_DELETE, NULL);
 }
 
 static void setSocketKeepAlive(int fd, int cnt, int idle, int interval)
@@ -120,19 +137,70 @@ void WebServer::WaitForClientConnection(void)
 					}
 				}
 			}
-			// else if (currentUdata->GetSocketType() == CGI_SOCKET)
-			// {
-			// 	// CGI 처리.
-			// 	if (eventList[i].filter == EVFILT_TIMER)
-			// 	{
-			// 		// kill child process
-			// 		// 서버 에러.
-			// 	}
-			// 	if (eventList[i].filter == EVFILT_READ)
-			// 	{
-			// 		// read
-			// 	}
-			// }
+			else if (currentUdata->GetSocketType() == CGI_SOCKET)
+			{
+				// CGI 처리.
+				if (eventList[i].filter == EVFILT_WRITE)
+				{
+					if (currentUdata->SendToCgi() == ERROR)
+					{
+						closeCgiSocket(currentUdata, eventList[i].ident);
+						std::cout << "force close cgi: " << eventList[i].ident << std::endl;
+					}
+				}
+				if (eventList[i].filter == EVFILT_READ)
+				{
+					// read
+					readLen = currentUdata->RecvFromCgi();
+					if (readLen == 0)
+					{
+						closeCgiSocket(currentUdata, eventList[i].ident);
+						// waitpid -> 0인지 확인
+						int status;
+						waitpid(currentUdata->GetPid(), &status, WNOHANG);
+						if (WIFEXITED(status) == true)
+						{
+							if (WEXITSTATUS(status) != 0)
+							{
+								// 502 페이지 작성
+								currentUdata->GeneratePostResponse(502);
+							}
+							else
+							{
+								// 200 페이지 작성
+								currentUdata->GeneratePostResponse(200);
+							}
+						}
+						else if (WIFSIGNALED(status) == true)
+						{
+							// 504 에러 페이지 작성
+							currentUdata->GeneratePostResponse(504);
+						}
+						else
+						{
+							// 500 에러 페이지 작성
+							currentUdata->GeneratePostResponse(500);
+						}
+
+						// client write event 켜주기.
+						ChangeEvent(currentUdata->GetClientUdata()->GetFd(), EVFILT_WRITE, EV_ADD | EV_ENABLE,
+									currentUdata->GetClientUdata());
+					}
+					else if (readLen < 0)
+					{
+						closeCgiSocket(currentUdata, eventList[i].ident);
+						std::cout << "force close client: " << eventList[i].ident << std::endl;
+					}
+					else
+						currentUdata->ReadRequest();
+				}
+			}
+			else if (eventList[i].filter == EVFILT_TIMER)
+			{
+				// kill child process
+				// 서버 에러.
+				ShutdownCgiPid(currentUdata);
+			}
 		}
 	}
 }

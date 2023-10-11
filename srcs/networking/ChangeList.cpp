@@ -22,19 +22,23 @@ void ChangeList::ChangeEvent(uintptr_t ident, int filter, int flags, UserData* u
 	target.filter = filter;
 	target.flags = flags;
 	target.fflags = 0;
-	target.data = 0;
 	target.udata = NULL;
 	if (flags == EV_DELETE)
 	{
 		kevent(ident, &target, 1, NULL, 0, 0);
+		return;
+	}
+	else if (filter == EVFILT_TIMER)
+	{
+		int timerTimeMs = 180000;
+		target.data = timerTimeMs;
 	}
 	else
 	{
-		if ((filter & EVFILT_WRITE) == true)
-			std::cout << Colors::BoldRed << "write 킨다" << Colors::Reset << std::endl;
-		target.udata = udata;
-		_keventVector.push_back(target);
+		target.data = 0;
 	}
+	target.udata = udata;
+	_keventVector.push_back(target);
 }
 
 void ChangeList::ClearEvent(void)

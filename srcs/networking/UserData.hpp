@@ -7,6 +7,7 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <signal.h>
 #include <sstream>
 #include <string>
 #include <sys/event.h>
@@ -36,6 +37,7 @@ public:
 	int GetFd(void) const;
 	int GetSocketType(void) const;
 	void SetSocketType(int socketType);
+	void SetBody(std::vector<unsigned char>* body);
 	ServerBlock* GetServerPtr(void) const;
 	void SetServerPtr(ServerBlock* serverPtr);
 	LocationBlock& Setting(void);
@@ -50,9 +52,14 @@ public:
 	int ParseOneLine(std::string& oneLine);
 	int ParseHeaderValue(int headerKey, std::string& field);
 	int RecvFromClient(void);
+	int RecvFromCgi(void);
 	int SendToClient(int fd);
-	int GeneratePostResponse(void);
+	int SendToCgi(void);
+	void GeneratePostResponse(int status);
 	int loadFolderContent(void);
+	int GetPid(void) const;
+	UserData* GetClientUdata(void) const;
+	void SetCgiEvent(void);
 
 private:
 	UserData(void);
@@ -66,13 +73,15 @@ private:
 	int mHeaderFlag;
 	int mChunkedFlag;
 	int mFillBodyFlag;
+	int mPid;
 	size_t mContentSize;
 	LocationBlock mSetting;
 	std::string mStatusText;
 	std::string mUri;
 	std::map<int, std::string> mHeaders;
 	std::vector<unsigned char> mReceived;
-	std::vector<unsigned char> mBody;
-	ServerBlock* mServerPtr;
+	std::vector<unsigned char>* mBody;
 	AMethod* mMethod;
+	ServerBlock* mServerPtr;
+	UserData* mClientUdata;
 };

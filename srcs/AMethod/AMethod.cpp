@@ -20,6 +20,11 @@ const std::string& AMethod::GetResponse(void) const
 	return (mResponse);
 }
 
+int AMethod::GetFd(void) const
+{
+	return (mFd);
+}
+
 void AMethod::GenerateRedirectionResponse(int code, LocationBlock& mSetting)
 {
 	GenerateResponseStatusLine(code);
@@ -242,6 +247,11 @@ void AMethod::GenerateErrorResponse(int code)
 
 void AMethod::applySettingLocationBlock(LocationBlock& valueSet, const LocationBlock* valueToSet)
 {
+	if (valueToSet == NULL)
+	{
+		std::cout << "null" << std::endl;
+		return;
+	}
 	valueSet.uri.insert(0, valueToSet->uri);
 	if (!(ALIAS & mSetupFlags))
 	{
