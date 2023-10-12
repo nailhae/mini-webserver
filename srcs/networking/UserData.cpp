@@ -422,7 +422,6 @@ int UserData::RecvFromCgi(void)
 	int len;
 
 	len = read(mFd, mBuf, BUFFER_SIZE);
-	std::cout << mBuf << std::endl;
 	if (len <= 0)
 	{
 		return (len);
@@ -436,15 +435,6 @@ int UserData::SendToClient(int fd)
 	int len;
 	int maxWrite;
 
-	// std::cout << Colors::BoldCyan << "[Headers]" << Colors::Reset << std::endl;
-	// for (std::map<int, std::string>::iterator it = mHeaders.begin(); it != mHeaders.end(); it++)
-	// {
-	// 	std::cout << it->first << ": " << it->second << std::endl;
-	// }
-
-	// 1. 현재 보내주려는 본문의 길이 - 버퍼 사이즈
-	// 2. 전송을 더 해야하는 경우 write 이벤트 발생시킨다.
-	// 3. 전송을 다 한 경우 read 이벤트를 켜준다.
 	if (mPostFlag == true)
 	{
 		std::cout << "mBody: " << mBody->size() << std::endl;
@@ -491,7 +481,7 @@ int UserData::SendToClient(int fd)
 	return (len);
 }
 
-#define MAX_CGI_WRITE_SIZE 500
+#define MAX_CGI_WRITE_SIZE 1024
 
 int UserData::SendToCgi(void)
 {
@@ -514,7 +504,7 @@ int UserData::SendToCgi(void)
 		maxLen = mReceived->size();
 	}
 	temp.assign(mReceived->begin(), mReceived->begin() + maxLen);
-	len = write(1, temp.c_str(), maxLen);
+	// len = write(1, temp.c_str(), maxLen);
 	len = write(mFd, temp.c_str(), maxLen);
 	std::cout << Colors::BoldGreenString("CGI 파이프 소켓에 썼음: ") << len << std::endl;
 	if (len < 0)

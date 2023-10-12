@@ -125,7 +125,7 @@ void MethodPost::initCgiEnv(std::string httpCgiPath, size_t ContentSize, std::ma
 	// std::string body;
 	// body.assign(Body.begin(), Body.end());
 	size_t p = Header[CONTENT_TYPE].find("multipart");
-	if (p == std::string::npos)
+	if (p != std::string::npos)
 	{
 		this->env["QUERY_STRING"] = body;
 	}
@@ -197,6 +197,7 @@ int MethodPost::execute(void) // cgi 호출 + 이벤트 등록
 		GenerateErrorResponse(500);
 		return (ERROR);
 	}
+	std::cout << "child_CGI|" << sockets[SOCK_CHILD] << "  " << sockets[SOCK_PARENT] << "|parent_WEB" << std::endl;
 	if (setNonBlocking(sockets[SOCK_CHILD]) == -1)
 	{
 		GenerateErrorResponse(500);
@@ -212,7 +213,6 @@ int MethodPost::execute(void) // cgi 호출 + 이벤트 등록
 	else if (mPid == 0)
 	{
 		close(sockets[SOCK_PARENT]);
-		// TODO dup2 error 규명;
 		if (dup2(sockets[SOCK_CHILD], STDIN_FILENO) == ERROR || dup2(sockets[SOCK_CHILD], STDOUT_FILENO) == ERROR)
 		{
 			Error::Print("dup2 failed");

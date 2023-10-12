@@ -19,6 +19,7 @@ if "number" in form:
 if "input" in form:
     try:
         user_input = form.getvalue("input")
+        
     except ValueError:
         pass
 

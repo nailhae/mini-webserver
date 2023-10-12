@@ -145,7 +145,6 @@ void WebServer::WaitForClientConnection(void)
 				// CGI 처리.
 				if (eventList[i].filter == EVFILT_WRITE)
 				{
-					std::cout << Colors::BoldRedString("적당히 해라") << std::endl;
 					if (currentUdata->SendToCgi() == ERROR)
 					{
 						closeCgiSocket(currentUdata, eventList[i].ident);
