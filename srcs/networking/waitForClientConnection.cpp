@@ -25,7 +25,8 @@ void WebServer::closeClientSocket(UserData* udata, int fd)
 void WebServer::ShutdownCgiPid(UserData* udata)
 {
 	int pid = udata->GetFd();
-	std::cout << Colors::BoldBlue << "close cgi pid:" << pid << Colors::Reset << std::endl;
+	std::cout << Colors::BoldBlue << "close cgi pid: " << pid << Colors::Reset << std::endl;
+	// TODO child 살아있으면 kill
 	kill(pid, SIGUSR1);
 	delete udata;
 	mChangeList.ChangeEvent(pid, EVFILT_TIMER, EV_DELETE, NULL);
@@ -33,7 +34,7 @@ void WebServer::ShutdownCgiPid(UserData* udata)
 
 void WebServer::closeCgiSocket(UserData* udata, int fd)
 {
-	std::cout << Colors::BoldBlue << "close cgi:" << fd << Colors::Reset << std::endl;
+	std::cout << Colors::BoldBlue << "close cgi: " << fd << Colors::Reset << std::endl;
 	close(fd);
 	delete udata;
 	mChangeList.ChangeEvent(fd, EVFILT_READ | EVFILT_WRITE, EV_DELETE, NULL);
@@ -72,7 +73,7 @@ void WebServer::acceptClientSocket(int fd, ServerBlock* serverPtr)
 	udata->SetSocketType(CLIENT_SOCKET);
 	setSocketKeepAlive(sock, 60, 5, 5);
 	setSocketLinger(sock);
-	mChangeList.ChangeEvent(sock, EVFILT_READ, EV_ADD, udata);
+	mChangeList.ChangeEvent(sock, EVFILT_READ, EV_ADD | EV_ENABLE, udata);
 	mChangeList.ChangeEvent(sock, EVFILT_WRITE, EV_ADD | EV_DISABLE, udata);
 
 	fcntl(sock, F_SETFL, O_NONBLOCK);
@@ -144,11 +145,13 @@ void WebServer::WaitForClientConnection(void)
 				// CGI 처리.
 				if (eventList[i].filter == EVFILT_WRITE)
 				{
+					std::cout << Colors::BoldRedString("적당히 해라") << std::endl;
 					if (currentUdata->SendToCgi() == ERROR)
 					{
 						closeCgiSocket(currentUdata, eventList[i].ident);
 						std::cout << "force close cgi: " << eventList[i].ident << std::endl;
 					}
+					// 소켓통신에서 write
 				}
 				if (eventList[i].filter == EVFILT_READ)
 				{
