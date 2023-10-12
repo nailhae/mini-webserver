@@ -30,14 +30,12 @@ public:
 	~UserData(void);
 	void InitUserData(void);
 	const std::vector<unsigned char>& GetReceived(void) const;
-	const std::string& GetResponse(void) const;
 	const std::string& GetUri(void) const;
 
 	const AMethod& GetMethod(void) const;
 	int GetFd(void) const;
 	int GetSocketType(void) const;
 	void SetSocketType(int socketType);
-	void SetBody(std::vector<unsigned char>* body);
 	ServerBlock* GetServerPtr(void) const;
 	void SetServerPtr(ServerBlock* serverPtr);
 	LocationBlock& Setting(void);
@@ -73,13 +71,14 @@ private:
 	int mHeaderFlag;
 	int mChunkedFlag;
 	int mFillBodyFlag;
+	int mPostFlag;
 	int mPid;
 	size_t mContentSize;
 	LocationBlock mSetting;
 	std::string mStatusText;
 	std::string mUri;
 	std::map<int, std::string> mHeaders;
-	std::vector<unsigned char> mReceived;
+	std::vector<unsigned char>* mReceived;
 	std::vector<unsigned char>* mBody;
 	AMethod* mMethod;
 	ServerBlock* mServerPtr;

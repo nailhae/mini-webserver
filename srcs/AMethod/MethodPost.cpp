@@ -3,6 +3,7 @@
 #include <fcntl.h>
 
 #include "Colors.hpp"
+#include "Error.hpp"
 #include "UserData.hpp"
 #include "WebServer.hpp"
 
@@ -31,10 +32,9 @@ int MethodPost::GenerateResponse(std::string& uri, LocationBlock& setting, std::
 	(void)setting;
 	if (headers[TRANSFER_ENCODING] == "chunked")
 	{
-		headers[CONTENT_LENGTH] = std::to_string(body.size());
-		size = strtol(headers[CONTENT_LENGTH].c_str(), NULL, 10);
+		headers[CONTENT_LENGTH] = std::to_string(body.size()); // TODO intToString으로 변환
 	}
-
+	size = strtol(headers[CONTENT_LENGTH].c_str(), NULL, 10);
 	initCgiEnv(uri, size, headers, body);
 	if (execute() == ERROR)
 		return (0);
@@ -202,26 +202,32 @@ int MethodPost::execute(void) // cgi 호출 + 이벤트 등록
 		GenerateErrorResponse(500);
 		return (ERROR);
 	}
-	std::cout << Colors::BoldBlue << "size: " << mResponse.size() << Colors::Reset << std::endl;
-	this->cgiPid = fork();
-	if (this->cgiPid == 0)
+	mPid = fork();
+	if (mPid == -1)
+	{
+		Error::Print("dup2 failed");
+		GenerateErrorResponse(500);
+		return (ERROR);
+	}
+	else if (mPid == 0)
 	{
 		close(sockets[SOCK_PARENT]);
-		dup2(sockets[SOCK_CHILD], STDIN_FILENO);
-		dup2(sockets[SOCK_CHILD], STDOUT_FILENO);
-
-		size_t exitStatus = execve(this->argv[0], this->argv, this->chEnv);
-		// perror("execve failed");
-		exit(exitStatus);
+		// TODO dup2 error 규명;
+		if (dup2(sockets[SOCK_CHILD], STDIN_FILENO) == ERROR || dup2(sockets[SOCK_CHILD], STDOUT_FILENO) == ERROR)
+		{
+			Error::Print("dup2 failed");
+			exit(EXIT_FAILURE);
+		}
+		close(sockets[SOCK_CHILD]);
+		execve(this->argv[0], this->argv, this->chEnv);
+		Error::Print("execve failed");
+		exit(EXIT_FAILURE);
 	}
 	else
 	{
 		close(sockets[SOCK_CHILD]);
-		// TODO kqueue 등록
-		// 해당 PID Timer에 등록
 		mFd = sockets[SOCK_PARENT];
-		setCgiPidTimer(cgiPid);
-
+		setCgiPidTimer(mPid);
 		// parent socket FD kevent Read 등록
 	}
 	return (0);

@@ -73,6 +73,8 @@ void WebServer::acceptClientSocket(int fd, ServerBlock* serverPtr)
 	setSocketKeepAlive(sock, 60, 5, 5);
 	setSocketLinger(sock);
 	mChangeList.ChangeEvent(sock, EVFILT_READ, EV_ADD, udata);
+	mChangeList.ChangeEvent(sock, EVFILT_WRITE, EV_ADD | EV_DISABLE, udata);
+
 	fcntl(sock, F_SETFL, O_NONBLOCK);
 	std::cout << Colors::Blue << "Connected Client: " << sock << Colors::Reset << std::endl;
 }
@@ -154,37 +156,39 @@ void WebServer::WaitForClientConnection(void)
 					readLen = currentUdata->RecvFromCgi();
 					if (readLen == 0)
 					{
-						closeCgiSocket(currentUdata, eventList[i].ident);
 						// waitpid -> 0인지 확인
 						int status;
 						waitpid(currentUdata->GetPid(), &status, WNOHANG);
 						if (WIFEXITED(status) == true)
 						{
-							if (WEXITSTATUS(status) != 0)
-							{
-								// 502 페이지 작성
-								currentUdata->GeneratePostResponse(502);
-							}
-							else
+							std::cout << "exit code: " << WEXITSTATUS(status) << std::endl;
+							if (WEXITSTATUS(status) == 0)
 							{
 								// 200 페이지 작성
 								currentUdata->GeneratePostResponse(200);
+							}
+							else
+							{
+								// 502 페이지 작성
+								currentUdata->GeneratePostResponse(502);
 							}
 						}
 						else if (WIFSIGNALED(status) == true)
 						{
 							// 504 에러 페이지 작성
+							std::cout << "exit signal: " << status << std::endl;
 							currentUdata->GeneratePostResponse(504);
 						}
 						else
 						{
+							std::cout << "exit signal: " << status << std::endl;
 							// 500 에러 페이지 작성
 							currentUdata->GeneratePostResponse(500);
 						}
 
-						// client write event 켜주기.
-						ChangeEvent(currentUdata->GetClientUdata()->GetFd(), EVFILT_WRITE, EV_ADD | EV_ENABLE,
+						ChangeEvent(currentUdata->GetClientUdata()->GetFd(), EVFILT_WRITE, EV_ENABLE,
 									currentUdata->GetClientUdata());
+						closeCgiSocket(currentUdata, eventList[i].ident);
 					}
 					else if (readLen < 0)
 					{
@@ -192,7 +196,7 @@ void WebServer::WaitForClientConnection(void)
 						std::cout << "force close client: " << eventList[i].ident << std::endl;
 					}
 					else
-						currentUdata->ReadRequest();
+						currentUdata->RecvFromCgi(); // 이부분이 client로 가있었음.
 				}
 			}
 			else if (eventList[i].filter == EVFILT_TIMER)

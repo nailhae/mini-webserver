@@ -29,6 +29,7 @@ public:
 	void ResponseConfigSetup(const ServerBlock& server, std::string& uri, LocationBlock& setting);
 	int GetType(void) const;
 	int GetFd(void) const;
+	int GetPid(void) const;
 	void SetResponse(const std::string& content);
 	void EraseResponse(unsigned int amount);
 	void SetSetupFlag(eSetupFlags flag);
@@ -41,6 +42,7 @@ protected:
 	std::string mResponse;
 	int mFd;
 	int mType;
+	int mPid;
 	int mSetupFlags;
 
 private:
