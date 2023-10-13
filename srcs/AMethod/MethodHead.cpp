@@ -148,7 +148,6 @@ int MethodHead::GenerateResponse(std::string& mUri, LocationBlock& mSetting, std
 		else
 		{
 			std::cout << Colors::BlueString("open success: ") << mUri << std::endl;
-			// 200 으로 세팅
 			GenerateResponseStatusLine(200);
 			GenerateResponseHeaders(requestedFile, mSetting, mUri, mHeaders);
 			requestedFile.close();

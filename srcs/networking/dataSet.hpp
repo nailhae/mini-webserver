@@ -71,14 +71,13 @@ struct ServerBlock
 	std::string serverName;
 	std::string rootPath;
 	std::vector<MultiTree*> root;
-	size_t clientMaxBodySize; // default unit kB
+	size_t clientMaxBodySize;
 	int listenPort;
 };
 
 struct LocationBlock
 {
 	std::string uri;
-	// TODO 이름 통일
 	bool bGetMethod;	// default false;
 	bool bPostMethod;	// default false;
 	bool bDeleteMethod; // default false;

@@ -53,6 +53,8 @@ public:
 	int RecvFromCgi(void);
 	int SendToClient(int fd);
 	int SendToCgi(void);
+	void ClearBody(void);
+	void ClearReceived(void);
 	void GeneratePostResponse(int status);
 	int loadFolderContent(void);
 	int GetPid(void) const;

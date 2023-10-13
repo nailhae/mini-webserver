@@ -186,8 +186,8 @@ static int checkHeaderLength(std::vector<unsigned char>& received, int& flag)
 			flag = true;
 			return (true);
 		}
-		pos += 1; // 현재 pos는 \n을 가리키고 있기 때문.
-		it = pos; // 찾기 시작하는 위치 저장.
+		pos += 1;
+		it = pos;
 	}
 	flag = false;
 	return (false);
@@ -204,7 +204,6 @@ static int checkChunkedMessageEnd(std::vector<unsigned char>& received)
 	}
 	else
 	{
-		// std::cout << "chunked on and on: " << mReceived.size() << std::endl;
 		return (false);
 	}
 }
@@ -218,7 +217,6 @@ int UserData::preprocessGenResponse()
 		return (1);
 	}
 	mMethod->ResponseConfigSetup(*mServerPtr, mUri, mSetting);
-	// TODO GET /page/www.naver.com HTTP/1.1 으로 요청이 감
 	if (mSetting.returnPair.first != 0)
 	{
 		mStatusCode = mSetting.returnPair.first;
@@ -231,48 +229,63 @@ int UserData::preprocessGenResponse()
 	return (0);
 }
 
+void UserData::ClearBody(void)
+{
+	mBody->clear();
+}
+
+void UserData::ClearReceived(void)
+{
+	mReceived->clear();
+}
+
 void UserData::SetCgiEvent(void)
 {
 	int fd = mMethod->GetFd();
-	UserData* udata = new UserData(fd);
+	int pid = mMethod->GetPid();
+	UserData* udataCgi = new UserData(fd);
+	UserData* udataTimer = new UserData(pid);
 
 	std::cout << "parent fd: " << fd << std::endl;
 	if (mBody == NULL)
 	{
 		mBody = new std::vector<unsigned char>;
 	}
-	udata->mBody = mBody;
-	if (udata->mReceived != NULL)
+	udataCgi->mBody = mBody;
+	udataTimer->mBody = mBody;
+	if (udataCgi->mReceived != NULL)
 	{
-		delete udata->mReceived;
-		udata->mReceived = NULL;
+		delete udataCgi->mReceived;
+		udataCgi->mReceived = NULL;
 	}
-	udata->mReceived = mReceived;
-	udata->mSocketType = CGI_SOCKET;
-	udata->mPid = mMethod->GetPid();
-	udata->mClientUdata = this;
-	WebServer::GetInstance()->ChangeEvent(fd, EVFILT_READ, EV_ADD | EV_DISABLE, udata);
-	WebServer::GetInstance()->ChangeEvent(fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, udata);
+	udataCgi->mReceived = mReceived;
+	udataTimer->mReceived = mReceived;
+	udataCgi->mSocketType = CGI_SOCKET;
+	udataTimer->mSocketType = CGI_PID;
+	udataCgi->mPid = pid;
+	udataTimer->mPid = pid;
+	udataCgi->mClientUdata = this;
+	udataTimer->mClientUdata = this;
+	WebServer::GetInstance()->ChangeEvent(pid, EVFILT_TIMER, EV_ENABLE | EV_ONESHOT, udataTimer);
+	WebServer::GetInstance()->ChangeEvent(fd, EVFILT_READ, EV_ADD | EV_DISABLE, udataCgi);
+	WebServer::GetInstance()->ChangeEvent(fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, udataCgi);
 }
 
 void UserData::passBodyToPost(void)
 {
 	std::string body(mReceived->begin(), mReceived->end());
-	std::cout << mMethod->GetType() << Colors::MagentaString("[body]") << body << std::endl;
 	std::cout << body.size() << "|body  contentSize|" << mContentSize << std::endl;
 	if (mServerPtr->clientMaxBodySize < body.size())
 	{
 		std::cout << Colors::BoldRedString("413에러 발생 ") << std::endl;
 		mMethod->GenerateErrorResponse(413);
 		mPostFlag = false;
-		WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_DISABLE, this);
 		WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ENABLE, this);
 	}
 	else
 	{
 		mMethod->GenerateResponse(mUri, mSetting, mHeaders, body);
 		SetCgiEvent();
-		WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_DISABLE, this);
 	}
 }
 
@@ -301,22 +314,18 @@ static std::string intToString(int num)
 
 void UserData::GeneratePostResponse(int status)
 {
-	// http 블럭에있는 error_page 인자로 받아올것.
+	std::string errorPageUri = WebServer::GetInstance()->GetErrorPage(status);
 	std::string firstLine;
 	std::ifstream errorPage;
 
 	if (status == 200)
 	{
 		firstLine = "HTTP/1.1 200 OK\r\n";
-		// insert 버전 200 ok
 		mBody->insert(mBody->begin(), firstLine.begin(), firstLine.end());
 		return;
 	}
 	mBody->clear();
 	std::string body = "HTTP/1.1 " + WebServer::GetInstance()->GetStatusText(status) + "\r\n";
-
-	std::string errorPageUri = WebServer::GetInstance()->GetErrorPage(status);
-
 	errorPage.open(errorPageUri.c_str(), std::ios::binary);
 	if (errorPage.is_open() == false)
 	{
@@ -335,7 +344,7 @@ void UserData::GeneratePostResponse(int status)
 		body += fileContent.str();
 		errorPage.close();
 	}
-	mBody->insert(mBody->begin(), body.begin(), body.end()); // BABO body에 넣어놓고 안 보내줌...
+	mBody->insert(mBody->begin(), body.begin(), body.end());
 	std::cout << Colors::BoldCyanString("[Body]\n") << body << std::endl;
 }
 
@@ -377,6 +386,7 @@ void UserData::ReadRequest(void)
 			{
 				if (mSetting.bPostMethod == false)
 				{
+					mPostFlag = false;
 					mMethod->GenerateErrorResponse(405);
 					WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_DISABLE, this);
 					WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ENABLE, this);
@@ -396,6 +406,7 @@ void UserData::ReadRequest(void)
 				{
 					mFillBodyFlag = true;
 				}
+				return;
 			}
 			else
 			{
@@ -422,13 +433,6 @@ int UserData::RecvFromClient(void)
 		return (len);
 	}
 	mReceived->insert(mReceived->end(), &mBuf[0], &mBuf[len]);
-	// std::string test(&mBuf[0], &mBuf[len]);
-	// std::cout << Colors::BoldGreen;
-	// for (std::string::iterator it = test.begin(); it != test.end(); it++)
-	// {
-	// 	std::cout << *it;
-	// }
-	// std::cout << Colors::Reset << std::endl;
 	return (len);
 }
 
@@ -458,7 +462,7 @@ int UserData::SendToClient(int fd)
 		else
 			maxWrite = mBody->size();
 		std::string temp(mBody->begin(), mBody->begin() + maxWrite);
-		len = write(fd, mBody->data(), maxWrite); // BABO mBody를 그대로 write하고 있었음.
+		len = write(fd, mBody->data(), maxWrite);
 		if (len < 0)
 		{
 			Error::Print("send()");
@@ -479,8 +483,6 @@ int UserData::SendToClient(int fd)
 	else
 		maxWrite = mMethod->GetResponse().size();
 	len = write(fd, mMethod->GetResponse().c_str(), maxWrite);
-	len = write(1, mMethod->GetResponse().c_str(), maxWrite);
-	// len = write(1, mMethod->GetResponse().c_str(), maxWrite);
 	if (len < 0)
 	{
 		Error::Print("send()");
@@ -506,7 +508,6 @@ int UserData::SendToCgi(void)
 	std::string temp;
 
 	std::cout << Colors::BoldBlueString("mReceived: ") << mReceived->size() << std::endl;
-	// TODO 임시방편
 	if (mReceived->size() >= MAX_CGI_WRITE_SIZE)
 	{
 		maxLen = MAX_CGI_WRITE_SIZE;
@@ -520,9 +521,8 @@ int UserData::SendToCgi(void)
 		maxLen = mReceived->size();
 	}
 	temp.assign(mReceived->begin(), mReceived->begin() + maxLen);
-	// len = write(1, temp.c_str(), maxLen);
 	len = write(mFd, temp.c_str(), maxLen);
-	std::cout << Colors::BoldGreenString("CGI 파이프 소켓에 썼음: ") << len << std::endl;
+	std::cout << mFd << Colors::BoldGreenString(" CGI 파이프 소켓에 썼음: ") << len << std::endl;
 	if (len < 0)
 	{
 		return (ERROR);

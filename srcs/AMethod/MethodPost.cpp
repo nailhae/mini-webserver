@@ -24,6 +24,13 @@ int MethodPost::GenerateResponse(std::string& uri, LocationBlock& setting, std::
 	return (0);
 }
 
+static std::string intToString(int num)
+{
+	std::ostringstream oss;
+	oss << num;
+	return oss.str();
+}
+
 int MethodPost::GenerateResponse(std::string& uri, LocationBlock& setting, std::map<int, std::string>& headers,
 								 std::string& body)
 {
@@ -32,7 +39,7 @@ int MethodPost::GenerateResponse(std::string& uri, LocationBlock& setting, std::
 	(void)setting;
 	if (headers[TRANSFER_ENCODING] == "chunked")
 	{
-		headers[CONTENT_LENGTH] = std::to_string(body.size()); // TODO intToString으로 변환
+		headers[CONTENT_LENGTH] = intToString(body.size());
 	}
 	size = strtol(headers[CONTENT_LENGTH].c_str(), NULL, 10);
 	initCgiEnv(uri, size, headers, body);
@@ -96,44 +103,22 @@ int findHostNamePos(const std::string path, const std::string ch)
 void MethodPost::initCgiEnv(std::string httpCgiPath, size_t ContentSize, std::map<int, std::string> Header,
 							std::string body)
 {
-	(void)body;
-	// std::cout << "[body]\n" << body << std::endl;
 	if (httpCgiPath.at(0) == '/')
 	{
 		httpCgiPath.erase(0, 1);
 	}
-	// for (size_t i = 0; i < Body.size(); ++i)
-	// {
-	// 	std::cout << Body[i];
-	// }
-	// std::cout << '\n';
-	// std::cout << " " << urlEncode(bodyStr) << std::endl;
-	// std::cout << " " << bodyStr << std::endl;
 	this->env["AUTH_TYPE"] = "BASIC";
-	// TODO chunked인 경우 body.size로 받아야 함.
-	// this->env["CONTENT_LENGTH"] = std::to_string(body.size());
 	this->env["CONTENT_LENGTH"] = std::to_string(ContentSize);
-	// this->env["CONTENT_TYPE"] = Header[CONTENT_TYPE];
 	this->env["CONTENT_TYPE"] = Header[CONTENT_TYPE];
-	// this->env["CONTENT_TYPE"] = "application/x-www-form-urlencoded";
-	// this->env["CONTENT_TYPE"] = "application/x-www-form-urlencoded";
-	std::cout << Colors::Blue << "[123]" << Header[CONTENT_TYPE] << Colors::Reset << '\n';
 	this->env["GATEWAY_INTERFACE"] = "CGI/1.1";
 	this->env["PATH_INFO"] = httpCgiPath;
 	this->env["PATH_TRANSLATED"] = this->env["PATH_INFO"];
-	// this->env["PATH_TRANSLATED"] = "/";
-	// std::string body;
-	// body.assign(Body.begin(), Body.end());
 	size_t p = Header[CONTENT_TYPE].find("multipart");
 	if (p != std::string::npos)
 	{
 		this->env["QUERY_STRING"] = body;
 	}
-	// this->env["QUERY_STRING"] = body;
-	// std::cout << Colors::BoldRed << body << Colors::Reset << '\n';
 	this->env["REMOTE_ADDR"] = Header[HOST];
-	// this->env["REMOTE_HOST"]
-	// this->env["REMOTE_USER"]
 	this->env["REQUEST_METHOD"] = "POST";
 	this->env["SCRIPT_NAME"] = httpCgiPath;
 	size_t pos = findHostNamePos(Header[HOST], ":");
@@ -142,8 +127,6 @@ void MethodPost::initCgiEnv(std::string httpCgiPath, size_t ContentSize, std::ma
 	this->env["SERVER_PROTOCOL"] = "HTTP/1.1";
 	this->env["SERVER_SOFTWARE"] = "42webserv";
 	this->env["HTTP_COOKIE"] = Header[CACHE_CONTROL];
-	// this->env["WEBTOP_USER"] 로그인한 사용자 이름
-	// this->env["NCHOME"]
 
 	this->chEnv = (char**)calloc(sizeof(char*), this->env.size() + 1);
 	std::map<std::string, std::string>::const_iterator it = this->env.begin();
@@ -176,14 +159,7 @@ static int setNonBlocking(int fd)
 	return 0;
 }
 
-static void setCgiPidTimer(int pid)
-{
-	UserData* udataTimer = new UserData(pid);
-	udataTimer->SetSocketType(CGI_PID);
-	WebServer::GetInstance()->ChangeEvent(pid, EVFILT_TIMER, EV_ADD | EV_ONESHOT, udataTimer);
-}
-
-int MethodPost::execute(void) // cgi 호출 + 이벤트 등록
+int MethodPost::execute(void)
 {
 	int sockets[2];
 
@@ -197,7 +173,6 @@ int MethodPost::execute(void) // cgi 호출 + 이벤트 등록
 		GenerateErrorResponse(500);
 		return (ERROR);
 	}
-	std::cout << "child_CGI|" << sockets[SOCK_CHILD] << "  " << sockets[SOCK_PARENT] << "|parent_WEB" << std::endl;
 	if (setNonBlocking(sockets[SOCK_PARENT]) == -1)
 	{
 		GenerateErrorResponse(500);
@@ -227,9 +202,6 @@ int MethodPost::execute(void) // cgi 호출 + 이벤트 등록
 	{
 		close(sockets[SOCK_CHILD]);
 		mFd = sockets[SOCK_PARENT];
-		std::cout << "[MethodPost execute]parent socket: " << mFd << std::endl;
-		setCgiPidTimer(mPid);
-		// parent socket FD kevent Read 등록
 	}
 	return (0);
 }

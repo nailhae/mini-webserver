@@ -15,7 +15,6 @@ ChangeList::~ChangeList(void)
 
 void ChangeList::ChangeEvent(uintptr_t ident, int filter, int flags, UserData* udata)
 {
-	// fflags로 CGI 처리와 signal 등 처리 해야함.
 	struct kevent target;
 
 	target.ident = ident;
@@ -30,7 +29,8 @@ void ChangeList::ChangeEvent(uintptr_t ident, int filter, int flags, UserData* u
 	}
 	else if (filter == EVFILT_TIMER)
 	{
-		int timerTimeMs = 180000;
+		int timerTimeMs = 100;
+		// int timerTimeMs = 180000;
 		target.data = timerTimeMs;
 	}
 	else

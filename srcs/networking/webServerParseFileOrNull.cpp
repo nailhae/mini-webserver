@@ -52,9 +52,6 @@ static int parserErrorCheck(HttpBlock& http)
 {
 	const int success = 0;
 	const int error = 1;
-	// 서버블록이 0개일경우
-	// 서버블록안에 listen이 없을경우, 숫자여야한다, 다른 서버랑 중복이 아니여야한다. 범위는  0~65535
-	// 로케이션 uri중복인지 아닌지
 	for (std::vector<ServerBlock*>::iterator it = http.serverList.begin(); it != http.serverList.end(); it++)
 	{
 		for (std::vector<MultiTree*>::iterator treeIt = (*it)->root.begin(); treeIt != (*it)->root.end(); treeIt++)

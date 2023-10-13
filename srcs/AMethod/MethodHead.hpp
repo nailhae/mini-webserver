@@ -6,7 +6,6 @@
 class MethodHead : public AMethod
 {
 public:
-	// temp
 	MethodHead(int fd);
 	~MethodHead(void);
 

@@ -12,12 +12,10 @@ public:
 	MethodPost(int type);
 	~MethodPost(void);
 
-	// int GenerateResponse(std::string& uri, LocationBlock& setting, std::map<int, std::string>& headers);
 	int GenerateResponse(std::string& uri, LocationBlock& setting, std::map<int, std::string>& headers,
 						 std::string& body);
 	void initCgiEnv(std::string httpCgiPath, size_t ContentSize, std::map<int, std::string> Header, std::string body);
 	int execute();
-	// void clear();
 
 	const std::map<std::string, std::string>& getEnv() const;
 	const pid_t& getCgiPid() const;

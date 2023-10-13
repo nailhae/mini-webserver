@@ -98,11 +98,6 @@ static int checkValidHeaderKey(int headerKey, std::string& value)
 			if (isdigit(*it) == false)
 				return (ERROR);
 		}
-		// config에서 지정한 파일 크기보다 큰 파일의 경우
-		// if (atoi(value.c_str) > max_contents)
-		// {
-		// 	return (ERROR);
-		// }
 	}
 	else if (headerKey == CACHE_CONTROL)
 	{
@@ -258,13 +253,19 @@ int UserData::ParseRequest(std::vector<unsigned char>& request)
 		line.assign(it, pos);
 		std::cout << "line: " << line << std::endl;
 		if (it == request.begin() && ParseFirstLine(line) == ERROR)
+		{
+			mStatusCode = 400;
 			return (ERROR);
+		}
 		if (*(line.end() - 1) == '\r')
 			line.erase(line.size() - 1);
 		if (line.size() == 0)
 			break;
 		else if (ParseOneLine(line) == ERROR)
+		{
+			mStatusCode = 400;
 			return (ERROR);
+		}
 		pos += 1;
 		it = pos;
 	}

@@ -21,7 +21,7 @@
 #include "MultiTree.hpp"
 #include "MultiTreeNode.hpp"
 
-#define STATUS_NUM 18
+#define STATUS_NUM 21
 
 std::pair<int, std::string> WebServer::mStatusPair[] = {std::make_pair(200, "200 OK"),
 														std::make_pair(201, "201 Created"),
@@ -115,21 +115,4 @@ const std::string& WebServer::GetStatusText(int code)
 const std::string& WebServer::GetErrorPage(int code)
 {
 	return (mHttp->errorPages[code]);
-}
-
-void printTreeStructure(MultiTreeNode* node, int depth = 0)
-{
-	if (node == nullptr)
-	{
-		return;
-	}
-	// 현재 노드 정보 출력
-	const LocationBlock* data = node->GetLocationBlock();
-	std::cout << std::string(depth, ' ') << "URI: " << data->uri << std::endl;
-	// 자식 노드 순회 및 출력
-	for (std::vector<MultiTreeNode*>::const_iterator it = node->GetChildren().begin(); it != node->GetChildren().end();
-		 it++)
-	{
-		printTreeStructure((*it), depth + 2); // 들여쓰기 레벨 조절
-	}
 }

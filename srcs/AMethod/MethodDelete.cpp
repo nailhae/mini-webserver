@@ -51,7 +51,6 @@ int MethodDelete::GenerateResponse(std::string& mUri, LocationBlock& mSetting, s
 		return (ERROR);
 	}
 	std::cout << "Success remove file" << std::endl;
-	// TODO apply date method
 	GenerateResponseStatusLine(200);
 	mResponse += "Content-type: text/plain\r\nContent-length: 71\r\nDate: Wed, 21 Oct 2015 07:28:00 GMT\r\n\r\n";
 	mResponse += "<!DOCTYPE HTML><html>  <body>    <h1>File deleted.</h1>  </body></html>";

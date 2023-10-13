@@ -17,27 +17,31 @@
 void WebServer::closeClientSocket(UserData* udata, int fd)
 {
 	std::cout << Colors::BoldBlue << "close client:" << fd << Colors::Reset << std::endl;
-	close(fd);
-	delete udata;
 	mChangeList.ChangeEvent(fd, EVFILT_READ | EVFILT_WRITE, EV_DELETE, NULL);
+	delete udata;
+	close(fd);
 }
 
 void WebServer::ShutdownCgiPid(UserData* udata)
 {
-	int pid = udata->GetFd();
+	int pid = udata->GetPid();
+	int status;
+
 	std::cout << Colors::BoldBlue << "close cgi pid: " << pid << Colors::Reset << std::endl;
-	// TODO child 살아있으면 kill
-	kill(pid, SIGUSR1);
+	if (waitpid(pid, &status, WNOHANG) == 0)
+		kill(pid, SIGUSR1);
+	udata->GeneratePostResponse(504);
+	mChangeList.ChangeEvent(udata->GetClientUdata()->GetFd(), EVFILT_WRITE, EV_ENABLE, udata->GetClientUdata());
+	std::cout << "udata fd write 킴: " << udata->GetClientUdata()->GetFd() << std::endl;
 	delete udata;
-	mChangeList.ChangeEvent(pid, EVFILT_TIMER, EV_DELETE, NULL);
 }
 
 void WebServer::closeCgiSocket(UserData* udata, int fd)
 {
 	std::cout << Colors::BoldBlue << "close cgi: " << fd << Colors::Reset << std::endl;
-	close(fd);
-	delete udata;
 	mChangeList.ChangeEvent(fd, EVFILT_READ | EVFILT_WRITE, EV_DELETE, NULL);
+	delete udata;
+	close(fd);
 }
 
 static void setSocketLinger(int fd)
@@ -99,6 +103,15 @@ void WebServer::WaitForClientConnection(void)
 		for (int i = 0; i < occurEventNum; i++)
 		{
 			UserData* currentUdata = static_cast<UserData*>(eventList[i].udata);
+			if ((eventList[i].flags & EV_ERROR) == EV_ERROR)
+			{
+				close(eventList[i].ident);
+				continue;
+			}
+			if (eventList[i].filter == EVFILT_TIMER)
+			{
+				ShutdownCgiPid(currentUdata);
+			}
 			if (currentUdata->GetSocketType() == SERVER_SOCKET)
 			{
 				acceptClientSocket(eventList[i].ident, currentUdata->GetServerPtr());
@@ -131,7 +144,6 @@ void WebServer::WaitForClientConnection(void)
 			}
 			else if (currentUdata->GetSocketType() == CGI_SOCKET)
 			{
-				// CGI 처리.
 				if (eventList[i].filter == EVFILT_WRITE)
 				{
 					if (currentUdata->SendToCgi() == ERROR)
@@ -139,15 +151,12 @@ void WebServer::WaitForClientConnection(void)
 						closeCgiSocket(currentUdata, eventList[i].ident);
 						std::cout << "force close cgi: " << eventList[i].ident << std::endl;
 					}
-					// 소켓통신에서 write
 				}
 				if (eventList[i].filter == EVFILT_READ)
 				{
-					// read
 					readLen = currentUdata->RecvFromCgi();
 					if (readLen == 0)
 					{
-						// waitpid -> 0인지 확인
 						int status;
 						waitpid(currentUdata->GetPid(), &status, WNOHANG);
 						if (WIFEXITED(status) == true)
@@ -155,25 +164,21 @@ void WebServer::WaitForClientConnection(void)
 							std::cout << "exit code: " << WEXITSTATUS(status) << std::endl;
 							if (WEXITSTATUS(status) == 0)
 							{
-								// 200 페이지 작성
 								currentUdata->GeneratePostResponse(200);
 							}
 							else
 							{
-								// 502 페이지 작성
 								currentUdata->GeneratePostResponse(502);
 							}
 						}
 						else if (WIFSIGNALED(status) == true)
 						{
-							// 504 에러 페이지 작성
 							std::cout << "exit signal: " << status << std::endl;
 							currentUdata->GeneratePostResponse(504);
 						}
 						else
 						{
 							std::cout << "exit signal: " << status << std::endl;
-							// 500 에러 페이지 작성
 							currentUdata->GeneratePostResponse(500);
 						}
 
@@ -187,14 +192,8 @@ void WebServer::WaitForClientConnection(void)
 						std::cout << "force close client: " << eventList[i].ident << std::endl;
 					}
 					else
-						currentUdata->RecvFromCgi(); // 이부분이 client로 가있었음.
+						currentUdata->RecvFromCgi();
 				}
-			}
-			else if (eventList[i].filter == EVFILT_TIMER)
-			{
-				// kill child process
-				// 서버 에러.
-				ShutdownCgiPid(currentUdata);
 			}
 		}
 	}
