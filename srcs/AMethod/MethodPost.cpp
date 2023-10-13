@@ -141,7 +141,7 @@ void MethodPost::initCgiEnv(std::string httpCgiPath, size_t ContentSize, std::ma
 	this->env["SERVER_PORT"] = (pos > 0 ? Header[HOST].substr(pos + 1, Header[HOST].size()) : "");
 	this->env["SERVER_PROTOCOL"] = "HTTP/1.1";
 	this->env["SERVER_SOFTWARE"] = "42webserv";
-	// this->env["HTTP_COOKIE"] 헤더의 쿠키값
+	this->env["HTTP_COOKIE"] = Header[CACHE_CONTROL];
 	// this->env["WEBTOP_USER"] 로그인한 사용자 이름
 	// this->env["NCHOME"]
 
@@ -198,7 +198,7 @@ int MethodPost::execute(void) // cgi 호출 + 이벤트 등록
 		return (ERROR);
 	}
 	std::cout << "child_CGI|" << sockets[SOCK_CHILD] << "  " << sockets[SOCK_PARENT] << "|parent_WEB" << std::endl;
-	if (setNonBlocking(sockets[SOCK_CHILD]) == -1)
+	if (setNonBlocking(sockets[SOCK_PARENT]) == -1)
 	{
 		GenerateErrorResponse(500);
 		return (ERROR);
