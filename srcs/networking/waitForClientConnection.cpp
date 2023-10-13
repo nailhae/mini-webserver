@@ -14,7 +14,7 @@
 #define ERROR -1
 #define MAX_KEVENTS 10
 
-void WebServer::closeClientSocket(UserData* udata, int fd)
+void WebServer::closeClientSocket(UserData *udata, int fd)
 {
 	std::cout << Colors::BoldBlue << "close client:" << fd << Colors::Reset << std::endl;
 	mChangeList.ChangeEvent(fd, EVFILT_READ | EVFILT_WRITE, EV_DELETE, NULL);
@@ -22,7 +22,7 @@ void WebServer::closeClientSocket(UserData* udata, int fd)
 	close(fd);
 }
 
-void WebServer::ShutdownCgiPid(UserData* udata)
+void WebServer::ShutdownCgiPid(UserData *udata)
 {
 	int pid = udata->GetPid();
 	int status;
@@ -36,7 +36,7 @@ void WebServer::ShutdownCgiPid(UserData* udata)
 	delete udata;
 }
 
-void WebServer::closeCgiSocket(UserData* udata, int fd)
+void WebServer::closeCgiSocket(UserData *udata, int fd)
 {
 	std::cout << Colors::BoldBlue << "close cgi: " << fd << Colors::Reset << std::endl;
 	mChangeList.ChangeEvent(fd, EVFILT_READ | EVFILT_WRITE, EV_DELETE, NULL);
@@ -53,15 +53,15 @@ static void setSocketLinger(int fd)
 	setsockopt(fd, SOL_SOCKET, SO_LINGER, &optVal, sizeof(optVal));
 }
 
-void WebServer::acceptClientSocket(int fd, ServerBlock* serverPtr)
+void WebServer::acceptClientSocket(int fd, ServerBlock *serverPtr)
 {
 	int sock;
 	struct sockaddr_in adr;
 	socklen_t adrSize;
-	UserData* udata;
+	UserData *udata;
 
 	adrSize = sizeof(adr);
-	sock = accept(fd, (struct sockaddr*)&adr, &adrSize);
+	sock = accept(fd, (struct sockaddr *)&adr, &adrSize);
 	udata = new UserData(sock);
 	udata->SetServerPtr(serverPtr);
 	udata->SetSocketType(CLIENT_SOCKET);
@@ -102,7 +102,7 @@ void WebServer::WaitForClientConnection(void)
 		mChangeList.ClearEvent();
 		for (int i = 0; i < occurEventNum; i++)
 		{
-			UserData* currentUdata = static_cast<UserData*>(eventList[i].udata);
+			UserData *currentUdata = static_cast<UserData *>(eventList[i].udata);
 			if ((eventList[i].flags & EV_ERROR) == EV_ERROR)
 			{
 				close(eventList[i].ident);
@@ -171,14 +171,14 @@ void WebServer::WaitForClientConnection(void)
 								currentUdata->GeneratePostResponse(502);
 							}
 						}
-						else if (WIFSIGNALED(status) == true)
+						else if (WIFSIGNALED(status) == true && WTERMSIG(status) == SIGUSR1)
 						{
-							std::cout << "exit signal: " << status << std::endl;
+							std::cout << "exit signal: " << WTERMSIG(status) << std::endl;
 							currentUdata->GeneratePostResponse(504);
 						}
 						else
 						{
-							std::cout << "exit signal: " << status << std::endl;
+							std::cout << "exit signal: " << WTERMSIG(status) << std::endl;
 							currentUdata->GeneratePostResponse(500);
 						}
 
