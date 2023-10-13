@@ -5,7 +5,7 @@
 #include "dataSet.hpp"
 
 ChangeList::ChangeList(void)
-	: _keventVector(std::vector<struct kevent>())
+	: mKeventVector(std::vector<struct kevent>())
 {
 }
 
@@ -38,20 +38,20 @@ void ChangeList::ChangeEvent(uintptr_t ident, int filter, int flags, UserData* u
 		target.data = 0;
 	}
 	target.udata = udata;
-	_keventVector.push_back(target);
+	mKeventVector.push_back(target);
 }
 
 void ChangeList::ClearEvent(void)
 {
-	_keventVector.clear();
+	mKeventVector.clear();
 }
 
 std::vector<struct kevent>& ChangeList::GetKeventVector(void)
 {
-	return (_keventVector);
+	return (mKeventVector);
 }
 
 size_t ChangeList::GetSize(void)
 {
-	return (_keventVector.size());
+	return (mKeventVector.size());
 }

@@ -31,5 +31,5 @@ private:
 	ChangeList& operator=(const ChangeList& rhs);
 	ChangeList(const ChangeList& other);
 
-	std::vector<struct kevent> _keventVector;
+	std::vector<struct kevent> mKeventVector;
 };

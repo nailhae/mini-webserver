@@ -40,21 +40,11 @@ void WebServer::closeCgiSocket(UserData* udata, int fd)
 	mChangeList.ChangeEvent(fd, EVFILT_READ | EVFILT_WRITE, EV_DELETE, NULL);
 }
 
-static void setSocketKeepAlive(int fd, int cnt, int idle, int interval)
-{
-	int on = true;
-
-	setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof(on));
-	setsockopt(fd, IPPROTO_TCP, TCP_KEEPCNT, &cnt, sizeof(cnt));
-	setsockopt(fd, IPPROTO_TCP, TCP_KEEPALIVE, &idle, sizeof(idle));
-	setsockopt(fd, IPPROTO_TCP, TCP_KEEPINTVL, &interval, sizeof(interval));
-}
-
 static void setSocketLinger(int fd)
 {
 	struct linger optVal;
 
-	optVal.l_linger = true;
+	optVal.l_linger = 0;
 	optVal.l_onoff = true;
 	setsockopt(fd, SOL_SOCKET, SO_LINGER, &optVal, sizeof(optVal));
 }
@@ -71,7 +61,6 @@ void WebServer::acceptClientSocket(int fd, ServerBlock* serverPtr)
 	udata = new UserData(sock);
 	udata->SetServerPtr(serverPtr);
 	udata->SetSocketType(CLIENT_SOCKET);
-	setSocketKeepAlive(sock, 60, 5, 5);
 	setSocketLinger(sock);
 	mChangeList.ChangeEvent(sock, EVFILT_READ, EV_ADD | EV_ENABLE, udata);
 	mChangeList.ChangeEvent(sock, EVFILT_WRITE, EV_ADD | EV_DISABLE, udata);
