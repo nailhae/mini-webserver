@@ -3,7 +3,7 @@ print("content-type:text/html; charset=UTF-8\n")
 
 import cgi, os
 form = cgi.FieldStorage()
-print(form)
+# print(form)
 
 if 'name' in form:
     pageId = form['name'].value

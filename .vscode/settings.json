@@ -72,7 +72,10 @@
         "__string": "cpp",
         "chrono": "cpp",
         "compare": "cpp",
-        "concepts": "cpp"
+        "concepts": "cpp",
+        "__functional_base": "cpp",
+        "functional": "cpp",
+        "utility": "cpp"
     },
     "liveServer.settings.port": 5501,
     "C_Cpp.errorSquiggles": "enabled",
