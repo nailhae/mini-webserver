@@ -72,6 +72,9 @@ void WebServer::acceptClientSocket(int fd, ServerBlock* serverPtr)
 void WebServer::WaitForClientConnection(void)
 {
 	int kq;
+	struct kevent eventList[MAX_KEVENTS];
+	int occurEventNum;
+	int readLen;
 
 	if (InitServer() == ERROR)
 		exit(EXIT_FAILURE);
@@ -81,10 +84,7 @@ void WebServer::WaitForClientConnection(void)
 		Error::Print("Open Error");
 		exit(EXIT_FAILURE);
 	}
-
-	struct kevent eventList[MAX_KEVENTS];
-	int occurEventNum;
-	int readLen;
+	mChangeList.setKq(kq);
 
 	while (1)
 	{

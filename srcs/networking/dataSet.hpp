@@ -77,13 +77,13 @@ struct ServerBlock
 struct LocationBlock
 {
 	std::string uri;
-	// TODO 이름 통일
-	bool bGetMethod;	// default false;
-	bool bPostMethod;	// default false;
-	bool bDeleteMethod; // default false;
-	bool bHeadMethod;	// default false;
+	bool bGetMethod;	// default false
+	bool bPostMethod;	// default false
+	bool bDeleteMethod; // default false
+	bool bHeadMethod;	// default false
 	int autoindex;		// default false
-	std::string index;	// default "index.html"
+	int clientMaxBodySize;
+	std::string index; // default "index.html"
 	std::string rootPath;
 	std::string alias;
 	std::pair<int, std::string> returnPair;
@@ -94,7 +94,6 @@ struct HttpBlock
 	std::map<std::string, std::string> types;
 	std::map<int, std::string> errorPages;
 	std::vector<ServerBlock*> serverList; // default_server = vector<ServerBlock> index 0
-	int clientMaxBodySize;				  // default unit kB
 	int clientBodyTimeout;				  // default unit sec.
 	int workerConnections;
 };

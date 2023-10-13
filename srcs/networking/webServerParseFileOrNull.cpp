@@ -116,37 +116,6 @@ static int parseLine(const std::string& line, std::ifstream& file, HttpBlock& ht
 			http.types["default_type"] = value;
 		}
 	}
-	else if (key == "client_max_body_size")
-	{
-		std::string value;
-		if (iss >> value)
-		{
-			if (value.at(value.size() - 1) == ';')
-			{
-				value.erase(value.size() - 1);
-			}
-			else
-			{
-				return error;
-			}
-			if (value[value.size() - 1] == 'm' || value[value.size() - 1] == 'M')
-			{
-				http.clientMaxBodySize = strtol(value.c_str(), NULL, 10) * 1024;
-			}
-			else if (value[value.size() - 1] == 'g' || value[value.size() - 1] == 'G')
-			{
-				http.clientMaxBodySize = strtol(value.c_str(), NULL, 10) * 1024 * 1024;
-			}
-			else if (value[value.size() - 1] == 'k' || value[value.size() - 1] == 'K')
-			{
-				http.clientMaxBodySize = strtol(value.c_str(), NULL, 10);
-			}
-			else
-			{
-				http.clientMaxBodySize = strtol(value.c_str(), NULL, 10);
-			}
-		}
-	}
 	else if (key == "error_page")
 	{
 		std::vector<std::string> result = split(line);
@@ -480,6 +449,22 @@ static int locationParser(LocationBlock& location, std::ifstream& file, MultiTre
 				return error;
 			}
 			location.alias = value;
+		}
+		else if (key == "client_max_body_size")
+		{
+			std::string value;
+			if (iss >> value)
+			{
+				if (value.at(value.size() - 1) == ';')
+				{
+					value.erase(value.size() - 1);
+				}
+				else
+				{
+					return error;
+				}
+				location.clientMaxBodySize = strtol(value.c_str(), NULL, 10);
+			}
 		}
 		else if (key == "return")
 		{

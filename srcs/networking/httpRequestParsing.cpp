@@ -175,9 +175,18 @@ int UserData::ParseFirstLine(std::string& firstLine)
 	std::stringstream ss(firstLine);
 	std::string line;
 
-	ss >> line;
+	ss >> line >> mUri;
 	if (line == "GET")
-		mMethod = new MethodGet(mFd);
+	{
+		if (mUri.find('?') != std::string::npos)
+		{
+			mMethod = new MethodPost(mFd);
+		}
+		else
+		{
+			mMethod = new MethodGet(mFd);
+		}
+	}
 	else if (line == "HEAD")
 		mMethod = new MethodHead(mFd);
 	else if (line == "POST")
@@ -190,7 +199,6 @@ int UserData::ParseFirstLine(std::string& firstLine)
 		mStatusCode = 405;
 		return (ERROR);
 	}
-	ss >> mUri;
 	std::getline(ss, line);
 	if (*(line.end() - 1) == '\r')
 		line.erase(line.size() - 1);
@@ -201,6 +209,13 @@ int UserData::ParseFirstLine(std::string& firstLine)
 		return (ERROR);
 	}
 	return (0);
+}
+
+static std::string intToString(int num)
+{
+	std::ostringstream oss;
+	oss << num;
+	return oss.str();
 }
 
 int UserData::ParseOneLine(std::string& oneLine)
@@ -256,7 +271,20 @@ int UserData::ParseRequest(std::vector<unsigned char>& request)
 	mReceived->erase(mReceived->begin(), pos + 1);
 	if (mMethod->GetType() == POST)
 	{
-		if (mHeaders.find(CONTENT_LENGTH) == mHeaders.end() || mHeaders[CONTENT_LENGTH] == "0")
+		size_t pos;
+		std::string body;
+		pos = mUri.find('?');
+		if (pos != std::string::npos)
+		{
+			body = mUri.substr(pos + 1);
+			std::cout << body << std::endl;
+			mUri.erase(mUri.begin() + pos, mUri.end());
+			mReceived->insert(mReceived->end(), body.begin(), body.end());
+			mHeaders[CONTENT_LENGTH] = intToString(body.size());
+			mHeaders[CONTENT_TYPE] = "application/x-www-form-urlencoded";
+			mContentSize = body.size();
+		}
+		else if (mHeaders.find(CONTENT_LENGTH) == mHeaders.end() || mHeaders[CONTENT_LENGTH] == "0")
 		{
 			if (mHeaders.find(TRANSFER_ENCODING) != mHeaders.end())
 			{

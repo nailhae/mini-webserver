@@ -41,6 +41,16 @@ void ChangeList::ChangeEvent(uintptr_t ident, int filter, int flags, UserData* u
 	mKeventVector.push_back(target);
 }
 
+void ChangeList::setKq(int kq)
+{
+	mKq = kq;
+}
+
+int ChangeList::getKq(void)
+{
+	return (mKq);
+}
+
 void ChangeList::ClearEvent(void)
 {
 	mKeventVector.clear();
