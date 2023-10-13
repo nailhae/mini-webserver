@@ -246,8 +246,7 @@ void UserData::SetCgiEvent(void)
 	udata->mSocketType = CGI_SOCKET;
 	udata->mPid = mMethod->GetPid();
 	udata->mClientUdata = this;
-	WebServer::GetInstance()->ChangeEvent(fd, EVFILT_READ, EV_ADD | EV_DISABLE, udata);
-	WebServer::GetInstance()->ChangeEvent(fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, udata);
+	WebServer::GetInstance()->ChangeEvent(fd, EVFILT_WRITE, EV_ADD, udata);
 }
 
 void UserData::passBodyToPost(void)
@@ -257,7 +256,7 @@ void UserData::passBodyToPost(void)
 	mMethod->GenerateResponse(mUri, mSetting, mHeaders, body);
 	SetCgiEvent();
 	std::cout << body.size() << "|body  contentSize|" << mContentSize << std::endl;
-	WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_DISABLE, this);
+	WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_DELETE, this);
 	return;
 }
 
@@ -349,8 +348,8 @@ void UserData::ReadRequest(void)
 	if (preprocessGenResponse() == 1)
 	{
 		mMethod->GenerateErrorResponse(mStatusCode);
-		WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_DISABLE, this);
-		WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ENABLE, this);
+		WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_DELETE, this);
+		WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ENABLE | EV_ONESHOT, this);
 	}
 	else
 	{
@@ -363,8 +362,8 @@ void UserData::ReadRequest(void)
 				if (mSetting.bPostMethod == false)
 				{
 					mMethod->GenerateErrorResponse(405);
-					WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_DISABLE, this);
-					WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ENABLE, this);
+					WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_DELETE, this);
+					WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ADD, this);
 				}
 				else if (mHeaders[TRANSFER_ENCODING] == "chunked")
 				{
@@ -391,8 +390,8 @@ void UserData::ReadRequest(void)
 		else
 		{
 			mMethod->GenerateResponse(mUri, mSetting, mHeaders);
-			WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_DISABLE, this);
-			WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ENABLE, this);
+			WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_DELETE, this);
+			WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ADD, this);
 		}
 	}
 }
@@ -443,7 +442,7 @@ int UserData::SendToClient(int fd)
 		else
 			maxWrite = mBody->size();
 		std::string temp(mBody->begin(), mBody->begin() + maxWrite);
-		len = write(fd, mBody->data(), maxWrite); // BABO mBody를 그대로 write하고 있었음.
+		len = write(fd, mBody->data(), maxWrite);
 		if (len < 0)
 		{
 			Error::Print("send()");
@@ -454,9 +453,14 @@ int UserData::SendToClient(int fd)
 		{
 			std::cout << Colors::BoldMagenta << "send to client " << fd << "\n" << Colors::Reset << std::endl;
 			InitUserData();
-			WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_ENABLE, this);
-			WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_DISABLE, this);
+			if (mHeaders[CONNECTION] == "keep-alive")
+				WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_ADD, this);
+			WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_DELETE, this);
 		}
+		// else
+		// {
+		// 	WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ENABLE | EV_ONESHOT, this);
+		// }
 		return (len);
 	}
 	if (mMethod->GetResponse().size() >= BUFFER_SIZE)
@@ -475,9 +479,14 @@ int UserData::SendToClient(int fd)
 	{
 		std::cout << Colors::BoldMagenta << "send to client " << fd << "\n" << Colors::Reset << std::endl;
 		InitUserData();
-		WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_ENABLE, this);
-		WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_DISABLE, this);
+		if (mHeaders[CONNECTION] == "keep-alive")
+			WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_ADD, this);
+		WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_DELETE, this);
 	}
+	// else
+	// {
+	// 	WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ENABLE | EV_ONESHOT, this);
+	// }
 	return (len);
 }
 
@@ -514,8 +523,8 @@ int UserData::SendToCgi(void)
 	mReceived->erase(mReceived->begin(), mReceived->begin() + len);
 	if (mReceived->size() == 0)
 	{
-		WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_ENABLE, this);
-		WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_DISABLE, this);
+		WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_ADD, this);
+		WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_DELETE, this);
 		std::cout << mFd << " CGI write 끄고, read 켜고" << std::endl;
 	}
 	return (len);

@@ -180,7 +180,7 @@ static void setCgiPidTimer(int pid)
 {
 	UserData* udataTimer = new UserData(pid);
 	udataTimer->SetSocketType(CGI_PID);
-	WebServer::GetInstance()->ChangeEvent(pid, EVFILT_TIMER, EV_ADD | EV_ONESHOT, udataTimer);
+	WebServer::GetInstance()->ChangeEvent(pid, EVFILT_TIMER, EV_ENABLE | EV_ONESHOT, udataTimer);
 }
 
 int MethodPost::execute(void) // cgi 호출 + 이벤트 등록

@@ -26,10 +26,11 @@ public:
 	std::vector<struct kevent>& GetKeventVector(void);
 	size_t GetSize(void);
 	size_t GetUdata(void);
+	void PrintEveryList(void);
 
 private:
 	ChangeList& operator=(const ChangeList& rhs);
 	ChangeList(const ChangeList& other);
 
-	std::vector<struct kevent> _keventVector;
+	std::vector<struct kevent> mKeventVector;
 };

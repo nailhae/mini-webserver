@@ -5,7 +5,7 @@
 #include "dataSet.hpp"
 
 ChangeList::ChangeList(void)
-	: _keventVector(std::vector<struct kevent>())
+	: mKeventVector(std::vector<struct kevent>())
 {
 }
 
@@ -22,13 +22,21 @@ void ChangeList::ChangeEvent(uintptr_t ident, int filter, int flags, UserData* u
 	target.filter = filter;
 	target.flags = flags;
 	target.fflags = 0;
-	target.udata = NULL;
 	if (flags == EV_DELETE)
 	{
-		kevent(ident, &target, 1, NULL, 0, 0);
-		return;
+		for (std::vector<struct kevent>::iterator it = mKeventVector.begin(); it != mKeventVector.begin();)
+		{
+			if (it->ident == ident && it->filter == filter)
+			{
+				it = mKeventVector.erase(it);
+			}
+			else
+			{
+				++it;
+			}
+		}
 	}
-	else if (filter == EVFILT_TIMER)
+	if (filter == EVFILT_TIMER)
 	{
 		int timerTimeMs = 180000;
 		target.data = timerTimeMs;
@@ -38,20 +46,52 @@ void ChangeList::ChangeEvent(uintptr_t ident, int filter, int flags, UserData* u
 		target.data = 0;
 	}
 	target.udata = udata;
-	_keventVector.push_back(target);
+	mKeventVector.push_back(target);
 }
 
 void ChangeList::ClearEvent(void)
 {
-	_keventVector.clear();
+	mKeventVector.clear();
 }
 
 std::vector<struct kevent>& ChangeList::GetKeventVector(void)
 {
-	return (_keventVector);
+	return (mKeventVector);
 }
 
 size_t ChangeList::GetSize(void)
 {
-	return (_keventVector.size());
+	return (mKeventVector.size());
+}
+
+void ChangeList::PrintEveryList(void)
+{
+	std::cout << "총 개수: " << mKeventVector.size() << std::endl;
+	for (std::vector<struct kevent>::iterator it = mKeventVector.begin(); it != mKeventVector.end(); it++)
+	{
+		if (it->filter == EVFILT_WRITE)
+		{
+			std::cout << "[" << it->ident << "] Write ";
+			if (it->flags == EV_DELETE)
+				std::cout << "delete" << std::endl;
+			else if ((it->flags & EV_ADD) == EV_ADD)
+				std::cout << "add" << std::endl;
+			else if ((it->flags & EV_ENABLE) == EV_ENABLE)
+				std::cout << "enable" << std::endl;
+			else if ((it->flags & EV_DISABLE) == EV_DISABLE)
+				std::cout << "disable" << std::endl;
+		}
+		if (it->filter == EVFILT_READ)
+		{
+			std::cout << "[" << it->ident << "] Read ";
+			if (it->flags == EV_DELETE)
+				std::cout << "delete" << std::endl;
+			else if ((it->flags & EV_ADD) == EV_ADD)
+				std::cout << "add" << std::endl;
+			else if ((it->flags & EV_ENABLE) == EV_ENABLE)
+				std::cout << "enable" << std::endl;
+			else if ((it->flags & EV_DISABLE) == EV_DISABLE)
+				std::cout << "disable" << std::endl;
+		}
+	}
 }

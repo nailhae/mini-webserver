@@ -26,7 +26,7 @@ private:
 
 	HttpBlock* parseFileOrNull(const std::string& fileName);
 	void deleteHttpBlock(HttpBlock& http);
-	void acceptClientSocket(int fd, ServerBlock* serverPtr);
+	int acceptClientSocket(int fd, ServerBlock* serverPtr);
 	void closeClientSocket(UserData* udata, int fd);
 	void ShutdownCgiPid(UserData* udata);
 	void closeCgiSocket(UserData* udata, int fd);

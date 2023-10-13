@@ -61,7 +61,7 @@ int WebServer::InitServer(void)
 		udata->SetSocketType(SERVER_SOCKET);
 		mChangeList.ChangeEvent(serverSocket, EVFILT_READ, EV_ADD, udata);
 		std::cout << Colors::BoldGreen << udata->GetServerPtr()->serverName << ": Socket " << serverSocket
-				  << " is now listen" << std::endl;
+				  << " is now listen" << Colors::Reset << std::endl;
 	}
 	return (0);
 }

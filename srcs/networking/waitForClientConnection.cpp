@@ -12,14 +12,14 @@
 #include "WebServer.hpp"
 #include "dataSet.hpp"
 #define ERROR -1
-#define MAX_KEVENTS 10
+#define MAX_KEVENTS 100
 
 void WebServer::closeClientSocket(UserData* udata, int fd)
 {
+	mChangeList.ChangeEvent(fd, EVFILT_READ, EV_DELETE, NULL);
 	std::cout << Colors::BoldBlue << "close client:" << fd << Colors::Reset << std::endl;
-	close(fd);
 	delete udata;
-	mChangeList.ChangeEvent(fd, EVFILT_READ | EVFILT_WRITE, EV_DELETE, NULL);
+	close(fd);
 }
 
 void WebServer::ShutdownCgiPid(UserData* udata)
@@ -37,47 +37,52 @@ void WebServer::closeCgiSocket(UserData* udata, int fd)
 	std::cout << Colors::BoldBlue << "close cgi: " << fd << Colors::Reset << std::endl;
 	close(fd);
 	delete udata;
-	mChangeList.ChangeEvent(fd, EVFILT_READ | EVFILT_WRITE, EV_DELETE, NULL);
+	mChangeList.ChangeEvent(fd, EVFILT_READ, EV_DELETE, NULL);
 }
 
-static void setSocketKeepAlive(int fd, int cnt, int idle, int interval)
-{
-	int on = true;
+// static void setSocketKeepAlive(int fd, int cnt, int idle, int interval)
+// {
+// 	int on = true;
 
-	setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof(on));
-	setsockopt(fd, IPPROTO_TCP, TCP_KEEPCNT, &cnt, sizeof(cnt));
-	setsockopt(fd, IPPROTO_TCP, TCP_KEEPALIVE, &idle, sizeof(idle));
-	setsockopt(fd, IPPROTO_TCP, TCP_KEEPINTVL, &interval, sizeof(interval));
-}
+// 	setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof(on));
+// 	setsockopt(fd, IPPROTO_TCP, TCP_KEEPCNT, &cnt, sizeof(cnt));
+// 	setsockopt(fd, IPPROTO_TCP, TCP_KEEPALIVE, &idle, sizeof(idle));
+// 	setsockopt(fd, IPPROTO_TCP, TCP_KEEPINTVL, &interval, sizeof(interval));
+// }
 
 static void setSocketLinger(int fd)
 {
 	struct linger optVal;
 
-	optVal.l_linger = true;
+	optVal.l_linger = 0;
 	optVal.l_onoff = true;
 	setsockopt(fd, SOL_SOCKET, SO_LINGER, &optVal, sizeof(optVal));
+	// setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &optVal.l_onoff, sizeof(optVal));
 }
 
-void WebServer::acceptClientSocket(int fd, ServerBlock* serverPtr)
+int WebServer::acceptClientSocket(int fd, ServerBlock* serverPtr)
 {
-	int sock;
+	int sock = 0;
 	struct sockaddr_in adr;
 	socklen_t adrSize;
 	UserData* udata;
 
 	adrSize = sizeof(adr);
 	sock = accept(fd, (struct sockaddr*)&adr, &adrSize);
+	if (sock == ERROR)
+	{
+		return (ERROR);
+	}
 	udata = new UserData(sock);
 	udata->SetServerPtr(serverPtr);
 	udata->SetSocketType(CLIENT_SOCKET);
-	setSocketKeepAlive(sock, 60, 5, 5);
+	// setSocketKeepAlive(sock, 60, 5, 5);
 	setSocketLinger(sock);
-	mChangeList.ChangeEvent(sock, EVFILT_READ, EV_ADD | EV_ENABLE, udata);
-	mChangeList.ChangeEvent(sock, EVFILT_WRITE, EV_ADD | EV_DISABLE, udata);
-
 	fcntl(sock, F_SETFL, O_NONBLOCK);
+	mChangeList.ChangeEvent(sock, EVFILT_READ, EV_ADD, udata);
+
 	std::cout << Colors::Blue << "Connected Client: " << sock << Colors::Reset << std::endl;
+	return (0);
 }
 
 void WebServer::WaitForClientConnection(void)
@@ -99,8 +104,9 @@ void WebServer::WaitForClientConnection(void)
 
 	while (1)
 	{
+		mChangeList.PrintEveryList();
 		occurEventNum =
-			kevent(kq, mChangeList.GetKeventVector().data(), mChangeList.GetSize(), eventList, MAX_KEVENTS, NULL);
+			kevent(kq, &mChangeList.GetKeventVector()[0], mChangeList.GetSize(), eventList, MAX_KEVENTS, NULL);
 		if (occurEventNum == ERROR)
 		{
 			Error::Print("kevent() error");
@@ -109,10 +115,33 @@ void WebServer::WaitForClientConnection(void)
 		mChangeList.ClearEvent();
 		for (int i = 0; i < occurEventNum; i++)
 		{
+			std::cout << "ident: " << eventList[i].ident << std::endl;
+			std::cout << "filter: " << eventList[i].filter << std::endl;
+			std::cout << "flags: " << eventList[i].flags << std::endl;
+			std::cout << "fflags: " << eventList[i].fflags << std::endl;
+			std::cout << "data: " << eventList[i].data << std::endl;
+
+			if ((eventList[i].flags & EV_ERROR) == EV_ERROR)
+			{
+				std::cout << "data contents errno: " << errno << std::endl;
+				close(eventList[i].ident);
+				exit(1);
+			}
+			else if ((eventList[i].flags & EV_EOF) == EV_EOF)
+			{
+				std::cout << Colors::BoldRed << "망할 왜 eof야" << std::endl;
+				close(eventList[i].ident);
+				if (eventList[i].udata != NULL)
+				{
+					delete static_cast<UserData*>(eventList[i].udata);
+				}
+				continue;
+			}
 			UserData* currentUdata = static_cast<UserData*>(eventList[i].udata);
 			if (currentUdata->GetSocketType() == SERVER_SOCKET)
 			{
-				acceptClientSocket(eventList[i].ident, currentUdata->GetServerPtr());
+				if (acceptClientSocket(eventList[i].ident, currentUdata->GetServerPtr()) == ERROR)
+					continue;
 			}
 			else if (currentUdata->GetSocketType() == CLIENT_SOCKET)
 			{
@@ -188,7 +217,7 @@ void WebServer::WaitForClientConnection(void)
 							currentUdata->GeneratePostResponse(500);
 						}
 
-						ChangeEvent(currentUdata->GetClientUdata()->GetFd(), EVFILT_WRITE, EV_ENABLE,
+						ChangeEvent(currentUdata->GetClientUdata()->GetFd(), EVFILT_WRITE, EV_ADD,
 									currentUdata->GetClientUdata());
 						closeCgiSocket(currentUdata, eventList[i].ident);
 					}
@@ -198,7 +227,7 @@ void WebServer::WaitForClientConnection(void)
 						std::cout << "force close client: " << eventList[i].ident << std::endl;
 					}
 					else
-						currentUdata->RecvFromCgi(); // 이부분이 client로 가있었음.
+						currentUdata->RecvFromCgi();
 				}
 			}
 			else if (eventList[i].filter == EVFILT_TIMER)
@@ -208,5 +237,6 @@ void WebServer::WaitForClientConnection(void)
 				ShutdownCgiPid(currentUdata);
 			}
 		}
+		memset(eventList, 0, sizeof(eventList));
 	}
 }
