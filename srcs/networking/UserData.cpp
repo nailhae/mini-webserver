@@ -242,6 +242,11 @@ void UserData::SetCgiEvent(void)
 		mBody = new std::vector<unsigned char>;
 	}
 	udata->mBody = mBody;
+	if (udata->mReceived != NULL)
+	{
+		delete udata->mReceived;
+		udata->mReceived = NULL;
+	}
 	udata->mReceived = mReceived;
 	udata->mSocketType = CGI_SOCKET;
 	udata->mPid = mMethod->GetPid();
