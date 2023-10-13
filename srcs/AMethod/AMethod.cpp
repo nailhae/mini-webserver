@@ -224,8 +224,7 @@ void AMethod::GenerateResponseBody(std::ifstream& File)
 
 void AMethod::GenerateErrorResponse(int code)
 {
-	// http 블럭에있는 error_page 인자로 받아올것.
-	std::string errorUri;
+	std::string errorUri = WebServer::GetInstance()->GetErrorPage(code);
 	std::ifstream errorPage;
 
 	// errorUri = WebServer::GetErrorPage(code)

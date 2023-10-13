@@ -37,6 +37,7 @@ std::pair<int, std::string> WebServer::mStatusPair[] = {std::make_pair(200, "200
 														std::make_pair(404, "404 Not Found"),
 														std::make_pair(405, "405 Method Not Allowed"),
 														std::make_pair(411, "411 Length Required"),
+														std::make_pair(413, "413 Payload Too Large"),
 														std::make_pair(416, "416 Requested Range Not Satisfiable"),
 														std::make_pair(500, "500 Internal Server Error"),
 														std::make_pair(501, "501 Not Implemented"),

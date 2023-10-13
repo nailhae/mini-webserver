@@ -259,11 +259,21 @@ void UserData::passBodyToPost(void)
 {
 	std::string body(mReceived->begin(), mReceived->end());
 	std::cout << mMethod->GetType() << Colors::MagentaString("[body]") << body << std::endl;
-	mMethod->GenerateResponse(mUri, mSetting, mHeaders, body);
-	SetCgiEvent();
 	std::cout << body.size() << "|body  contentSize|" << mContentSize << std::endl;
-	WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_DISABLE, this);
-	return;
+	if (mServerPtr->clientMaxBodySize < body.size())
+	{
+		std::cout << Colors::BoldRedString("413에러 발생 ") << std::endl;
+		mMethod->GenerateErrorResponse(413);
+		mPostFlag = false;
+		WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_DISABLE, this);
+		WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ENABLE, this);
+	}
+	else
+	{
+		mMethod->GenerateResponse(mUri, mSetting, mHeaders, body);
+		SetCgiEvent();
+		WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_DISABLE, this);
+	}
 }
 
 static void generateDefaultErrorPage(std::string& response)
@@ -469,6 +479,7 @@ int UserData::SendToClient(int fd)
 	else
 		maxWrite = mMethod->GetResponse().size();
 	len = write(fd, mMethod->GetResponse().c_str(), maxWrite);
+	len = write(1, mMethod->GetResponse().c_str(), maxWrite);
 	// len = write(1, mMethod->GetResponse().c_str(), maxWrite);
 	if (len < 0)
 	{

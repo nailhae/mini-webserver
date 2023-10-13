@@ -68,22 +68,23 @@ enum eIdentifierType
 
 struct ServerBlock
 {
-	int listenPort;
 	std::string serverName;
 	std::string rootPath;
 	std::vector<MultiTree*> root;
+	size_t clientMaxBodySize; // default unit kB
+	int listenPort;
 };
 
 struct LocationBlock
 {
 	std::string uri;
-	bool bGetMethod;	// default false
-	bool bPostMethod;	// default false
-	bool bDeleteMethod; // default false
-	bool bHeadMethod;	// default false
+	// TODO 이름 통일
+	bool bGetMethod;	// default false;
+	bool bPostMethod;	// default false;
+	bool bDeleteMethod; // default false;
+	bool bHeadMethod;	// default false;
 	int autoindex;		// default false
-	int clientMaxBodySize;
-	std::string index; // default "index.html"
+	std::string index;	// default "index.html"
 	std::string rootPath;
 	std::string alias;
 	std::pair<int, std::string> returnPair;
