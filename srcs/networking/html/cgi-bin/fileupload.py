@@ -5,9 +5,9 @@ import cgi, os, sys
 print("Content-type: text/html\r\n\r\n")
 
 form = cgi.FieldStorage()
-print(form)
 # A nested FieldStorage instance holds the file
 fileitem = form['filename']
+# print(form)
 # print(fileitem)
 # Test if the file was uploaded
 if fileitem.filename:

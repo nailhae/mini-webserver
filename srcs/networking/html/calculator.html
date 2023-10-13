@@ -23,6 +23,7 @@
                 <a class="nav__link" href="POST.html">POST</a>
                 <a class="nav__link" href="error/404.html">error</a>
                 <a class="nav__link" href="calculator.html">calculator</a>
+                <a class="nav__link" href="cookie.html">cookie</a></nav>
             </nav>
         </div>
     </div>
@@ -31,12 +32,13 @@
   <body>
   <div class ="container_body">
     <h3>계산기</h3>
+    <!-- <form method="POST" action="/cgi-bin/calculator.py"> -->
     <form method="POST" action="/cgi-bin/calculator.py">
       <div style="display: flex; justify-content:space-between;">
             <p><input type="text" name="m">X</p>
             <p><input type="text" name="n">=</p>
             <!-- <p><input type="text" value=""></p> -->
-            <p><input type="submit" value="확인"></p>
+            <p><input type="submit" value="확인" name="cal"></p>
         </div>
     </form>
   </div>

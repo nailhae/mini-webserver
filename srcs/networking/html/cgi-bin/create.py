@@ -13,7 +13,7 @@ if 'name' in form:
     description = open(os.getcwd() + '/cgi-bin/' + pageId).read()
 else:
     pageId = 'Welcome'
-    description = 'Hello Python'
+    description = 'Hello Webserv'
 
 print('''<!doctype html>
 <html>
