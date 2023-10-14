@@ -17,7 +17,12 @@
 void WebServer::closeClientSocket(UserData *udata, int fd)
 {
 	std::cout << Colors::BoldBlue << "close client:" << fd << Colors::Reset << std::endl;
-	mChangeList.ChangeEvent(fd, EVFILT_READ | EVFILT_WRITE, EV_DELETE, NULL);
+	mChangeList.ChangeEvent(fd, EVFILT_READ, EV_DELETE, NULL);
+	mChangeList.ChangeEvent(fd, EVFILT_WRITE, EV_DELETE, NULL);
+	if (udata->GetClientUdata() != NULL)
+	{
+		closeCgiSocket(udata->GetClientUdata(), udata->GetClientUdata()->GetFd());
+	}
 	delete udata;
 	close(fd);
 }
@@ -39,7 +44,9 @@ void WebServer::ShutdownCgiPid(UserData *udata)
 void WebServer::closeCgiSocket(UserData *udata, int fd)
 {
 	std::cout << Colors::BoldBlue << "close cgi: " << fd << Colors::Reset << std::endl;
-	mChangeList.ChangeEvent(fd, EVFILT_READ | EVFILT_WRITE, EV_DELETE, NULL);
+	mChangeList.ChangeEvent(fd, EVFILT_READ, EV_DELETE, NULL);
+	mChangeList.ChangeEvent(fd, EVFILT_WRITE, EV_DELETE, NULL);
+	udata->SetClientUdataNULL();
 	delete udata;
 	close(fd);
 }

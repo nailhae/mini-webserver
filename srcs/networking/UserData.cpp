@@ -11,20 +11,7 @@
 #include "WebServer.hpp"
 
 UserData::UserData(int fd)
-	: mFd(fd)
-	, mSocketType(0)
-	, mStatusCode(0)
-	, mHeaderFlag(0)
-	, mChunkedFlag(0)
-	, mFillBodyFlag(0)
-	, mPostFlag(0)
-	, mPid(0)
-	, mContentSize(0)
-	, mReceived(new std::vector<unsigned char>)
-	, mBody(NULL)
-	, mMethod(NULL)
-	, mServerPtr(NULL)
-	, mClientUdata(NULL)
+	: mFd(fd), mSocketType(0), mStatusCode(0), mHeaderFlag(0), mChunkedFlag(0), mFillBodyFlag(0), mPostFlag(0), mPid(0), mContentSize(0), mReceived(new std::vector<unsigned char>), mBody(NULL), mMethod(NULL), mServerPtr(NULL), mClientUdata(NULL)
 {
 }
 
@@ -35,12 +22,12 @@ UserData::~UserData(void)
 		delete mMethod;
 		mMethod = NULL;
 	}
-	if (mSocketType != CGI_SOCKET && mBody != NULL)
+	if (mSocketType == CLIENT_SOCKET && mBody != NULL)
 	{
 		delete mBody;
 		mBody = NULL;
 	}
-	if (mSocketType != CGI_SOCKET && mReceived != NULL)
+	if (mSocketType == CLIENT_SOCKET && mReceived != NULL)
 	{
 		delete mReceived;
 		mReceived = NULL;
@@ -73,7 +60,7 @@ void UserData::InitUserData(void)
 	mClientUdata = NULL;
 }
 
-static void replaceToContent(std::string& contents, std::string& findString, std::string& replaceString)
+static void replaceToContent(std::string &contents, std::string &findString, std::string &replaceString)
 {
 	size_t found = 0;
 
@@ -115,12 +102,12 @@ std::string UserData::uriGenerator(void)
 	return (mUri);
 }
 
-const std::vector<unsigned char>& UserData::GetReceived(void) const
+const std::vector<unsigned char> &UserData::GetReceived(void) const
 {
 	return (*mReceived);
 }
 
-const AMethod& UserData::GetMethod(void) const
+const AMethod &UserData::GetMethod(void) const
 {
 	return (*mMethod);
 }
@@ -130,12 +117,12 @@ int UserData::GetFd(void) const
 	return (mFd);
 }
 
-LocationBlock& UserData::Setting(void)
+LocationBlock &UserData::Setting(void)
 {
 	return (mSetting);
 }
 
-const std::string& UserData::GetUri(void) const
+const std::string &UserData::GetUri(void) const
 {
 	return (mUri);
 }
@@ -145,22 +132,27 @@ int UserData::GetSocketType(void) const
 	return (mSocketType);
 }
 
+void UserData::SetClientUdataNULL(void)
+{
+	mClientUdata = NULL;
+}
+
 void UserData::SetSocketType(int socketType)
 {
 	mSocketType = socketType;
 }
 
-ServerBlock* UserData::GetServerPtr(void) const
+ServerBlock *UserData::GetServerPtr(void) const
 {
 	return (mServerPtr);
 }
 
-void UserData::SetServerPtr(ServerBlock* serverPtr)
+void UserData::SetServerPtr(ServerBlock *serverPtr)
 {
 	mServerPtr = serverPtr;
 }
 
-static int checkHeaderLength(std::vector<unsigned char>& received, int& flag)
+static int checkHeaderLength(std::vector<unsigned char> &received, int &flag)
 {
 	std::vector<unsigned char>::iterator pos = received.begin();
 	std::string line;
@@ -193,7 +185,7 @@ static int checkHeaderLength(std::vector<unsigned char>& received, int& flag)
 	return (false);
 }
 
-static int checkChunkedMessageEnd(std::vector<unsigned char>& received)
+static int checkChunkedMessageEnd(std::vector<unsigned char> &received)
 {
 	if (received.size() > 7 && received[received.size() - 7] == '\r' && received[received.size() - 6] == '\n' &&
 		received[received.size() - 5] == '0' && received[received.size() - 4] == '\r' &&
@@ -243,8 +235,8 @@ void UserData::SetCgiEvent(void)
 {
 	int fd = mMethod->GetFd();
 	int pid = mMethod->GetPid();
-	UserData* udataCgi = new UserData(fd);
-	UserData* udataTimer = new UserData(pid);
+	UserData *udataCgi = new UserData(fd);
+	UserData *udataTimer = new UserData(pid);
 
 	std::cout << "parent fd: " << fd << std::endl;
 	if (mBody == NULL)
@@ -266,6 +258,7 @@ void UserData::SetCgiEvent(void)
 	udataTimer->mPid = pid;
 	udataCgi->mClientUdata = this;
 	udataTimer->mClientUdata = this;
+	mClientUdata = udataCgi;
 	WebServer::GetInstance()->ChangeEvent(pid, EVFILT_TIMER, EV_ENABLE | EV_ONESHOT, udataTimer);
 	WebServer::GetInstance()->ChangeEvent(fd, EVFILT_READ, EV_ADD | EV_DISABLE, udataCgi);
 	WebServer::GetInstance()->ChangeEvent(fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, udataCgi);
@@ -289,7 +282,7 @@ void UserData::passBodyToPost(void)
 	}
 }
 
-static void generateDefaultErrorPage(std::string& response)
+static void generateDefaultErrorPage(std::string &response)
 {
 	response += "Content-type: text/html\r\n"
 				"Content-Length: 203\r\n\r\n"
@@ -471,7 +464,8 @@ int UserData::SendToClient(int fd)
 		mBody->erase(mBody->begin(), mBody->begin() + maxWrite);
 		if (mMethod->GetResponse().size() <= 0)
 		{
-			std::cout << Colors::BoldMagenta << "send to client " << fd << "\n" << Colors::Reset << std::endl;
+			std::cout << Colors::BoldMagenta << "send to client " << fd << "\n"
+					  << Colors::Reset << std::endl;
 			InitUserData();
 			WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_ENABLE, this);
 			WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_DISABLE, this);
@@ -491,7 +485,8 @@ int UserData::SendToClient(int fd)
 	mMethod->EraseResponse(maxWrite);
 	if (mMethod->GetResponse().size() <= 0)
 	{
-		std::cout << Colors::BoldMagenta << "send to client " << fd << "\n" << Colors::Reset << std::endl;
+		std::cout << Colors::BoldMagenta << "send to client " << fd << "\n"
+				  << Colors::Reset << std::endl;
 		InitUserData();
 		WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_ENABLE, this);
 		WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_DISABLE, this);
@@ -542,7 +537,7 @@ int UserData::GetPid(void) const
 	return (mPid);
 }
 
-UserData* UserData::GetClientUdata(void) const
+UserData *UserData::GetClientUdata(void) const
 {
 	return (mClientUdata);
 }
