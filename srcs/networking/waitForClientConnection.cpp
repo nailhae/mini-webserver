@@ -157,29 +157,32 @@ void WebServer::WaitForClientConnection(void)
 					readLen = currentUdata->RecvFromCgi();
 					if (readLen == 0)
 					{
-						int status;
-						waitpid(currentUdata->GetPid(), &status, WNOHANG);
-						if (WIFEXITED(status) == true)
+						currentUdata->GeneratePostResponse(200);
+						int status = 0;
+						if (waitpid(currentUdata->GetPid(), &status, WNOHANG) != 0)
 						{
-							std::cout << "exit code: " << WEXITSTATUS(status) << std::endl;
-							if (WEXITSTATUS(status) == 0)
+							if (WIFEXITED(status) == true)
 							{
-								currentUdata->GeneratePostResponse(200);
+								std::cout << "exit code: " << WEXITSTATUS(status) << std::endl;
+								if (WEXITSTATUS(status) == 0)
+								{
+									currentUdata->GeneratePostResponse(200);
+								}
+								else
+								{
+									currentUdata->GeneratePostResponse(502);
+								}
+							}
+							else if (WIFSIGNALED(status) == true && WTERMSIG(status) == SIGUSR1)
+							{
+								std::cout << "exit signal: " << WTERMSIG(status) << std::endl;
+								currentUdata->GeneratePostResponse(504);
 							}
 							else
 							{
-								currentUdata->GeneratePostResponse(502);
+								std::cout << "exit signal: " << WTERMSIG(status) << std::endl;
+								currentUdata->GeneratePostResponse(500);
 							}
-						}
-						else if (WIFSIGNALED(status) == true && WTERMSIG(status) == SIGUSR1)
-						{
-							std::cout << "exit signal: " << WTERMSIG(status) << std::endl;
-							currentUdata->GeneratePostResponse(504);
-						}
-						else
-						{
-							std::cout << "exit signal: " << WTERMSIG(status) << std::endl;
-							currentUdata->GeneratePostResponse(500);
 						}
 
 						ChangeEvent(currentUdata->GetClientUdata()->GetFd(), EVFILT_WRITE, EV_ENABLE,
