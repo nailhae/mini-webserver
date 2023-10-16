@@ -2,7 +2,8 @@
 print("content-type:text/html; charset=UTF-8\n")
 import cgi,os
 
-files = os.listdir('./html')
+# files = os.listdir('./html')
+files = os.listdir('./assets/cgi-bin')
 liststr = ''
 for item in files:
     liststr = liststr + '<li><a href="/{name}">{name}</a></li>'.format(name=item)
@@ -10,7 +11,7 @@ for item in files:
 form = cgi.FieldStorage()
 if 'name' in form:
     pageId = form["name"].value
-    description = open(os.getcwd() + '/cgi-bin/' + pageId).read()
+    description = open(os.getcwd() + '/assets/cgi-bin/' + pageId).read()
 else:
     pageId = 'Welcome'
     description = 'Hello Webserv'
