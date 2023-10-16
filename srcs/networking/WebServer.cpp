@@ -60,7 +60,7 @@ WebServer::WebServer(std::string confFile)
 {
 	if (mHttp == NULL)
 	{
-		Error::Print("parse .conf file");
+		Error::Print("parse file error");
 		exit(EXIT_FAILURE);
 	}
 }

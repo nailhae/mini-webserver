@@ -1,8 +1,8 @@
 CXX 		=	c++
 
-CXXFLAGS	=	-Wall -Wextra -Werror -std=c++98 -g3 -fsanitize=address $(INCS)
+CXXFLAGS	=	-Wall -Wextra -Werror -std=c++98 -g $(INCS)
 
-NAME 		= ./webServ
+NAME 		= ./webserv
 
 SRCS_DIR	= $(PWD)/srcs
 

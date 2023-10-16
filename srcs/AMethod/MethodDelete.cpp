@@ -26,7 +26,7 @@ int MethodDelete::GenerateResponse(std::string& uri, LocationBlock& setting, std
 int MethodDelete::GenerateResponse(std::string& mUri, LocationBlock& mSetting, std::map<int, std::string>& mHeaders)
 {
 	(void)mHeaders;
-	if (mSetting.bHeadMethod == false)
+	if (mSetting.bDeleteMethod == false)
 	{
 		Error::Print("405 Method Not Allowed");
 		GenerateErrorResponse(405);

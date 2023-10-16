@@ -9,7 +9,7 @@ if 'name' in form:
     pageId = form['name'].value
     # description = open('/html/cgi-bin/' + pageId).read()
     try:
-      description = open(os.getcwd() + '/html/cgi-bin/' + pageId).read()
+      description = open(os.getcwd() + '/assets/cgi-bin/' + pageId).read()
     except IOError as e:
       print("error")
       description = 'Hello CGI'
