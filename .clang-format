@@ -1,0 +1,27 @@
+BasedOnStyle: Microsoft
+AllowShortFunctionsOnASingleLine: None
+UseTab: Always
+IndentWidth: 4
+TabWidth: 4
+BraceWrapping:
+  AfterClass: true
+  AfterControlStatement: true
+  AfterEnum: true
+  AfterFunction: true
+  AfterNamespace: true
+  AfterStruct: true
+  AfterUnion: true
+AccessModifierOffset: -4
+PointerAlignment: Left
+ReferenceAlignment: Left
+SortIncludes: CaseSensitive
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex: '<.*>'
+    Priority: 1
+  - Regex: '".*"'
+    Priority: 2
+BreakConstructorInitializers: BeforeComma
+ConstructorInitializerIndentWidth: 4
+SeparateDefinitionBlocks: Always
+EmptyLineBeforeAccessModifier: LogicalBlock
