@@ -8,12 +8,13 @@
 class WebServer
 {
 public:
-	static WebServer *GetInstance();
+	static WebServer* GetInstance();
+	static WebServer* GetInstance(std::string confFile);
 	static void DeleteInstance();
-	static const std::string &GetStatusText(int code);
-	const std::string &GetErrorPage(int code);
-	const HttpBlock *GetHttp() const;
-	void ChangeEvent(int ident, int nFilter, int nFlags, UserData *udata);
+	static const std::string& GetStatusText(int code);
+	const std::string& GetErrorPage(int code);
+	const HttpBlock* GetHttp() const;
+	void ChangeEvent(int ident, int nFilter, int nFlags, UserData* udata);
 	void WaitForClientConnection(void);
 	int InitServer(void);
 
@@ -21,19 +22,19 @@ private:
 	WebServer();
 	WebServer(std::string confFile);
 	virtual ~WebServer();
-	WebServer(const WebServer &other);
-	WebServer &operator=(const WebServer &other);
+	WebServer(const WebServer& other);
+	WebServer& operator=(const WebServer& other);
 
-	HttpBlock *parseFileOrNull(const std::string &fileName);
-	void deleteHttpBlock(HttpBlock &http);
-	void acceptClientSocket(int fd, ServerBlock *serverPtr);
-	void closeClientSocket(UserData *udata, int fd);
-	void ShutdownCgiPid(UserData *udata);
-	void closeCgiSocket(UserData *udata, int fd);
+	HttpBlock* parseFileOrNull(const std::string& fileName);
+	void deleteHttpBlock(HttpBlock& http);
+	void acceptClientSocket(int fd, ServerBlock* serverPtr);
+	void closeClientSocket(UserData* udata, int fd);
+	void ShutdownCgiPid(UserData* udata);
+	void closeCgiSocket(UserData* udata, int fd);
 
-	static WebServer *mWebServer;
+	static WebServer* mWebServer;
 	ChangeList mChangeList;
-	HttpBlock *mHttp;
+	HttpBlock* mHttp;
 	static std::pair<int, std::string> mStatusPair[];
 	static std::map<int, std::string> mStatusMap;
 };

@@ -12,6 +12,7 @@
 
 #include "ChangeList.hpp"
 #include "Colors.hpp"
+#include "Error.hpp"
 #include "WebServer.hpp"
 
 #define BUFFER_SIZE 1024
@@ -19,11 +20,18 @@
 #define ERROR -1
 #define CRLF "\r\n"
 
-int main()
+int main(int argc, char* argv[])
 {
-	WebServer* webServer;
+	if (argc != 2)
+	{
+		Error::Print("no conf file");
+		exit(1);
+	}
 
-	webServer = WebServer::GetInstance();
+	WebServer* webServer;
+	std::string confFile = argv[1];
+
+	webServer = WebServer::GetInstance(confFile);
 	webServer->WaitForClientConnection();
 	WebServer::DeleteInstance();
 

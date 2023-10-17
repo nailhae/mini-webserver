@@ -47,9 +47,9 @@ std::pair<int, std::string> WebServer::mStatusPair[] = {std::make_pair(200, "200
 
 std::map<int, std::string> WebServer::mStatusMap(mStatusPair, mStatusPair + STATUS_NUM);
 
-void printTreeStructure(MultiTreeNode *node, int depth);
+void printTreeStructure(MultiTreeNode* node, int depth);
 
-WebServer *WebServer::mWebServer = NULL;
+WebServer* WebServer::mWebServer = NULL;
 
 WebServer::WebServer()
 {
@@ -69,16 +69,21 @@ WebServer::~WebServer()
 {
 }
 
-void WebServer::ChangeEvent(int ident, int nFilter, int nFlags, UserData *udata)
+void WebServer::ChangeEvent(int ident, int nFilter, int nFlags, UserData* udata)
 {
 	mChangeList.ChangeEvent(ident, nFilter, nFlags, udata);
 }
 
-WebServer *WebServer::GetInstance()
+WebServer* WebServer::GetInstance()
+{
+	return mWebServer;
+}
+
+WebServer* WebServer::GetInstance(std::string confFile)
 {
 	if (mWebServer == NULL)
 	{
-		mWebServer = new WebServer(CONF_FILE_PATH);
+		mWebServer = new WebServer(confFile);
 	}
 	return mWebServer;
 }
@@ -89,11 +94,11 @@ void WebServer::DeleteInstance()
 	delete mWebServer;
 }
 
-void WebServer::deleteHttpBlock(HttpBlock &http)
+void WebServer::deleteHttpBlock(HttpBlock& http)
 {
-	for (std::vector<ServerBlock *>::iterator it = http.serverList.begin(); it != http.serverList.end(); it++)
+	for (std::vector<ServerBlock*>::iterator it = http.serverList.begin(); it != http.serverList.end(); it++)
 	{
-		for (std::vector<MultiTree *>::iterator treeIt = (*it)->root.begin(); treeIt != (*it)->root.end(); treeIt++)
+		for (std::vector<MultiTree*>::iterator treeIt = (*it)->root.begin(); treeIt != (*it)->root.end(); treeIt++)
 		{
 			delete (*treeIt);
 		}
@@ -102,17 +107,17 @@ void WebServer::deleteHttpBlock(HttpBlock &http)
 	delete &http;
 }
 
-const HttpBlock *WebServer::GetHttp() const
+const HttpBlock* WebServer::GetHttp() const
 {
 	return mWebServer->mHttp;
 }
 
-const std::string &WebServer::GetStatusText(int code)
+const std::string& WebServer::GetStatusText(int code)
 {
 	return (mStatusMap[code]);
 }
 
-const std::string &WebServer::GetErrorPage(int code)
+const std::string& WebServer::GetErrorPage(int code)
 {
 	return (mHttp->errorPages[code]);
 }
