@@ -1,6 +1,7 @@
 #include "ChangeList.hpp"
 
 #include "Colors.hpp"
+#include "Error.hpp"
 #include "UserData.hpp"
 #include "dataSet.hpp"
 

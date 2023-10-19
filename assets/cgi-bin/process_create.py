@@ -7,7 +7,7 @@ form = cgi.FieldStorage()
 title = form["title"].value
 description = form["description"].value
 
-opened_file = open(os.getcwd() + '/assets/cgi-bin/' + title, 'w')
+opened_file = open(os.getcwd() + '/assets/html/' + title, 'w')
 opened_file.write(description)
 
 # Redirection

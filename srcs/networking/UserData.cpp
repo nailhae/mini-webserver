@@ -480,7 +480,8 @@ int UserData::SendToClient(int fd)
 			return (ERROR);
 		}
 		mBody->erase(mBody->begin(), mBody->begin() + maxWrite);
-		if (mMethod->GetResponse().size() <= 0)
+
+		if (mBody->size() <= 0)
 		{
 			std::cout << Colors::BoldMagenta << "send to client " << fd << "\n" << Colors::Reset << std::endl;
 			InitUserData();
