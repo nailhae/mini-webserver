@@ -1,6 +1,13 @@
+ifeq "$(findstring debug, $(MAKECMDGOALS))" "debug"
+	DFLAGS = -g -fsanitize=address
+else
+	ARG.DEBUG = 0
+	DFLAGS =
+endif
+
 CXX 		=	c++
 
-CXXFLAGS	=	-Wall -Wextra -Werror -std=c++98 -g $(INCS)
+CXXFLAGS	=	-Wall -Wextra -Werror -std=c++98 $(DFLAGS) $(INCS)
 
 NAME 		= ./webserv
 
@@ -52,4 +59,8 @@ re: fclean all
 
 debug: $(NAME)
 
-.PHONY: all clean fclean re
+reDebug:
+	make fclean
+	make debug
+
+.PHONY: all clean fclean re debug reDebug
