@@ -249,7 +249,6 @@ void UserData::SetCgiEvent(void)
 	int fd = mMethod->GetFd();
 	int pid = mMethod->GetPid();
 	UserData* udataCgi = new UserData(fd);
-	UserData* udataTimer = new UserData(pid);
 
 	std::cout << "parent fd: " << fd << std::endl;
 	if (mBody == NULL)
@@ -257,27 +256,19 @@ void UserData::SetCgiEvent(void)
 		mBody = new std::vector<unsigned char>;
 	}
 	udataCgi->mBody = mBody;
-	udataTimer->mBody = mBody;
 	if (udataCgi->mReceived != NULL)
 	{
 		delete udataCgi->mReceived;
 		udataCgi->mReceived = NULL;
 	}
 	udataCgi->mReceived = mReceived;
-	if (udataTimer->mReceived != NULL)
-	{
-		delete udataTimer->mReceived;
-		udataTimer->mReceived = NULL;
-	}
-	udataTimer->mReceived = mReceived;
 	udataCgi->mSocketType = CGI_SOCKET;
-	udataTimer->mSocketType = CGI_PID;
 	udataCgi->mPid = pid;
-	udataTimer->mPid = pid;
 	udataCgi->mClientUdata = this;
-	udataTimer->mClientUdata = this;
 	mClientUdata = udataCgi;
-	WebServer::GetInstance()->ChangeEvent(pid, EVFILT_TIMER, EV_ENABLE | EV_ONESHOT, udataTimer);
+
+	WebServer::GetInstance()->ChangeEvent(pid, EVFILT_TIMER, EV_ONESHOT | EV_ENABLE, udataCgi);
+
 	WebServer::GetInstance()->ChangeEvent(fd, EVFILT_READ, EV_ADD | EV_DISABLE, udataCgi);
 	WebServer::GetInstance()->ChangeEvent(fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, udataCgi);
 }

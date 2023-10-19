@@ -36,6 +36,11 @@ void WebServer::ShutdownCgiPid(UserData* udata)
 	if (waitpid(pid, &status, WNOHANG) == 0)
 		kill(pid, SIGUSR1);
 	udata->GeneratePostResponse(504);
+
+	mChangeList.ChangeEvent(udata->GetFd(), EVFILT_READ, EV_DISABLE | EV_DELETE, udata);
+	mChangeList.ChangeEvent(udata->GetFd(), EVFILT_WRITE, EV_DISABLE | EV_DELETE, udata);
+
+	mChangeList.ChangeEvent(udata->GetClientUdata()->GetFd(), EVFILT_READ, EV_DISABLE, udata->GetClientUdata());
 	mChangeList.ChangeEvent(udata->GetClientUdata()->GetFd(), EVFILT_WRITE, EV_ENABLE, udata->GetClientUdata());
 	std::cout << "udata fd write 킴: " << udata->GetClientUdata()->GetFd() << std::endl;
 	delete udata;
@@ -118,6 +123,7 @@ void WebServer::WaitForClientConnection(void)
 			if (eventList[i].filter == EVFILT_TIMER)
 			{
 				ShutdownCgiPid(currentUdata);
+				continue;
 			}
 			if (currentUdata->GetSocketType() == SERVER_SOCKET)
 			{
