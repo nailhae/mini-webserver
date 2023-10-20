@@ -267,7 +267,7 @@ void UserData::SetCgiEvent(void)
 	udataCgi->mClientUdata = this;
 	mClientUdata = udataCgi;
 
-	WebServer::GetInstance()->ChangeEvent(pid, EVFILT_TIMER, EV_ONESHOT | EV_ENABLE, udataCgi);
+	WebServer::GetInstance()->ChangeEvent(pid, EVFILT_TIMER, EV_ADD | EV_ONESHOT, udataCgi);
 
 	WebServer::GetInstance()->ChangeEvent(fd, EVFILT_READ, EV_ADD | EV_DISABLE, udataCgi);
 	WebServer::GetInstance()->ChangeEvent(fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, udataCgi);
