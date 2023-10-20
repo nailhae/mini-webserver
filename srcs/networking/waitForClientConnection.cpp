@@ -30,11 +30,9 @@ void WebServer::closeClientSocket(UserData* udata, int fd)
 void WebServer::ShutdownCgiPid(UserData* udata)
 {
 	int pid = udata->GetPid();
-	int status;
 
-	std::cout << Colors::BoldBlue << "close cgi pid: " << pid << Colors::Reset << std::endl;
-	if (waitpid(pid, &status, WNOHANG) == 0)
-		kill(pid, SIGUSR1);
+	std::cout << Colors::BoldBlue << "timer 발생 close cgi pid: " << pid << Colors::Reset << std::endl;
+	kill(pid, SIGUSR1);
 	udata->GeneratePostResponse(504);
 
 	mChangeList.ChangeEvent(udata->GetFd(), EVFILT_READ, EV_DISABLE | EV_DELETE, udata);
@@ -51,6 +49,7 @@ void WebServer::closeCgiSocket(UserData* udata, int fd)
 	std::cout << Colors::BoldBlue << "close cgi: " << fd << Colors::Reset << std::endl;
 	mChangeList.ChangeEvent(fd, EVFILT_READ, EV_DELETE, NULL);
 	mChangeList.ChangeEvent(fd, EVFILT_WRITE, EV_DELETE, NULL);
+	mChangeList.ChangeEvent(udata->GetPid(), EVFILT_TIMER, EV_DELETE, NULL);
 	udata->SetClientUdataNULL();
 	delete udata;
 	close(fd);
@@ -115,9 +114,10 @@ void WebServer::WaitForClientConnection(void)
 		for (int i = 0; i < occurEventNum; i++)
 		{
 			UserData* currentUdata = static_cast<UserData*>(eventList[i].udata);
-			if ((eventList[i].flags & EV_ERROR) == EV_ERROR)
+			if (eventList[i].flags & EV_ERROR)
 			{
-				close(eventList[i].ident);
+				std::cout << "EV_ERROR: " << eventList[i].data << std::endl;
+				// close(eventList[i].ident);
 				continue;
 			}
 			if (eventList[i].filter == EVFILT_TIMER)
@@ -168,35 +168,27 @@ void WebServer::WaitForClientConnection(void)
 				if (eventList[i].filter == EVFILT_READ)
 				{
 					readLen = currentUdata->RecvFromCgi();
-					std::cout << "redLen : " << readLen << "\n";
+					std::cout << "readLen : " << readLen << "\n";
 					if (readLen == 0)
 					{
 						// currentUdata->GeneratePostResponse(200);
-						int status = 0;
-						if (waitpid(currentUdata->GetPid(), &status, WNOHANG) != 0)
+						int status = -1;
+						waitpid(currentUdata->GetPid(), &status, WNOHANG);
+						if (WIFEXITED(status) == true)
 						{
-							if (WIFEXITED(status) == true)
+							std::cout << "exit code: " << WEXITSTATUS(status) << std::endl;
+							if (WEXITSTATUS(status) == 0)
 							{
-								std::cout << "exit code: " << WEXITSTATUS(status) << std::endl;
-								if (WEXITSTATUS(status) == 0)
-								{
-									currentUdata->GeneratePostResponse(200);
-								}
-								else
-								{
-									currentUdata->GeneratePostResponse(502);
-								}
-							}
-							else if (WIFSIGNALED(status) == true && WTERMSIG(status) == SIGUSR1)
-							{
-								std::cout << "exit signal: " << WTERMSIG(status) << std::endl;
-								currentUdata->GeneratePostResponse(504);
+								currentUdata->GeneratePostResponse(200);
 							}
 							else
 							{
-								std::cout << "exit signal: " << WTERMSIG(status) << std::endl;
-								currentUdata->GeneratePostResponse(500);
+								currentUdata->GeneratePostResponse(502);
 							}
+						}
+						else
+						{
+							currentUdata->GeneratePostResponse(502);
 						}
 						ChangeEvent(currentUdata->GetClientUdata()->GetFd(), EVFILT_WRITE, EV_ENABLE,
 									currentUdata->GetClientUdata());

@@ -8,11 +8,14 @@
 #include "WebServer.hpp"
 
 MethodPost::MethodPost(int type)
-	: AMethod(type, POST), chEnv(NULL), argv(NULL), cgiPid(-1)
+	: AMethod(type, POST)
+	, chEnv(NULL)
+	, argv(NULL)
+	, cgiPid(-1)
 {
 }
 
-int MethodPost::GenerateResponse(std::string &uri, LocationBlock &setting, std::map<int, std::string> &headers)
+int MethodPost::GenerateResponse(std::string& uri, LocationBlock& setting, std::map<int, std::string>& headers)
 {
 	(void)uri;
 	(void)setting;
@@ -28,8 +31,8 @@ static std::string intToString(int num)
 	return oss.str();
 }
 
-int MethodPost::GenerateResponse(std::string &uri, LocationBlock &setting, std::map<int, std::string> &headers,
-								 std::string &body)
+int MethodPost::GenerateResponse(std::string& uri, LocationBlock& setting, std::map<int, std::string>& headers,
+								 std::string& body)
 {
 	size_t size = 0;
 
@@ -62,22 +65,22 @@ MethodPost::~MethodPost()
 	this->env.clear();
 }
 
-const std::map<std::string, std::string> &MethodPost::getEnv() const
+const std::map<std::string, std::string>& MethodPost::getEnv() const
 {
 	return (this->env);
 }
 
-const pid_t &MethodPost::getCgiPid() const
+const pid_t& MethodPost::getCgiPid() const
 {
 	return (this->cgiPid);
 }
 
-const std::string &MethodPost::getCgiPath() const
+const std::string& MethodPost::getCgiPath() const
 {
 	return (this->cgiPath);
 }
 
-std::string getPathInfo(std::string &path)
+std::string getPathInfo(std::string& path)
 {
 	size_t end;
 	std::string tmp;
@@ -125,15 +128,15 @@ void MethodPost::initCgiEnv(std::string httpCgiPath, size_t ContentSize, std::ma
 	this->env["SERVER_SOFTWARE"] = "42webserv";
 	this->env["HTTP_COOKIE"] = Header[CACHE_CONTROL];
 
-	this->chEnv = (char **)calloc(sizeof(char *), this->env.size() + 1);
+	this->chEnv = (char**)calloc(sizeof(char*), this->env.size() + 1);
 	std::map<std::string, std::string>::const_iterator it = this->env.begin();
 	for (int i = 0; it != this->env.end(); it++, i++)
 	{
 		std::string tmp = it->first + "=" + it->second;
 		this->chEnv[i] = strdup(tmp.c_str());
-		std::cout << tmp << std::endl;
+		// std::cout << tmp << std::endl;
 	}
-	this->argv = (char **)malloc(sizeof(char *) * 3);
+	this->argv = (char**)malloc(sizeof(char*) * 3);
 	this->argv[0] = strdup("/usr/bin/python3");
 	this->argv[1] = strdup(httpCgiPath.c_str());
 	this->argv[2] = NULL;

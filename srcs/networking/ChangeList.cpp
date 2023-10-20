@@ -30,8 +30,8 @@ void ChangeList::ChangeEvent(uintptr_t ident, int filter, int flags, UserData* u
 	}
 	else if (filter == EVFILT_TIMER)
 	{
-		int timerTimeMs = 2000;
-		// int timerTimeMs = 180000;
+		// int timerTimeMs = 200000;
+		int timerTimeMs = 10000;
 		target.data = timerTimeMs;
 	}
 	else
