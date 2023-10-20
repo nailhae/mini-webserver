@@ -246,11 +246,11 @@ void UserData::ClearReceived(void)
 
 void UserData::SetCgiEvent(void)
 {
-	int fd = mMethod->GetFd();
+	int parentSocketFd = mMethod->GetFd();
 	int pid = mMethod->GetPid();
-	UserData* udataCgi = new UserData(fd);
+	UserData* udataCgi = new UserData(parentSocketFd);
 
-	std::cout << "parent fd: " << fd << std::endl;
+	std::cout << "parent fd: " << parentSocketFd << std::endl;
 	if (mBody == NULL)
 	{
 		mBody = new std::vector<unsigned char>;
@@ -269,8 +269,9 @@ void UserData::SetCgiEvent(void)
 
 	WebServer::GetInstance()->ChangeEvent(pid, EVFILT_TIMER, EV_ADD | EV_ONESHOT, udataCgi);
 
-	WebServer::GetInstance()->ChangeEvent(fd, EVFILT_READ, EV_ADD | EV_DISABLE, udataCgi);
-	WebServer::GetInstance()->ChangeEvent(fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, udataCgi);
+	WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_DISABLE, this);
+	WebServer::GetInstance()->ChangeEvent(parentSocketFd, EVFILT_READ, EV_ADD | EV_DISABLE, udataCgi);
+	WebServer::GetInstance()->ChangeEvent(parentSocketFd, EVFILT_WRITE, EV_ADD | EV_ENABLE, udataCgi);
 }
 
 void UserData::passBodyToPost(void)

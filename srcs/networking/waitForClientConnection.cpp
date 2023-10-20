@@ -30,9 +30,11 @@ void WebServer::closeClientSocket(UserData* udata, int fd)
 void WebServer::ShutdownCgiPid(UserData* udata)
 {
 	int pid = udata->GetPid();
+	int status;
 
 	std::cout << Colors::BoldBlue << "timer 발생 close cgi pid: " << pid << Colors::Reset << std::endl;
-	kill(pid, SIGUSR1);
+	if (waitpid(pid, &status, WNOHANG) > 0) // timer 발생 시 좀비 프로세스 생기는지 확인
+		kill(pid, SIGUSR1);
 	udata->GeneratePostResponse(504);
 
 	mChangeList.ChangeEvent(udata->GetFd(), EVFILT_READ, EV_DISABLE | EV_DELETE, udata);
@@ -50,6 +52,8 @@ void WebServer::closeCgiSocket(UserData* udata, int fd)
 	mChangeList.ChangeEvent(fd, EVFILT_READ, EV_DELETE, NULL);
 	mChangeList.ChangeEvent(fd, EVFILT_WRITE, EV_DELETE, NULL);
 	mChangeList.ChangeEvent(udata->GetPid(), EVFILT_TIMER, EV_DELETE, NULL);
+	if (waitpid(udata->GetPid(), NULL, WNOHANG) <= 0)
+		kill(udata->GetPid(), 9);
 	udata->SetClientUdataNULL();
 	delete udata;
 	close(fd);
@@ -117,7 +121,6 @@ void WebServer::WaitForClientConnection(void)
 			if (eventList[i].flags & EV_ERROR)
 			{
 				std::cout << "EV_ERROR: " << eventList[i].data << std::endl;
-				// close(eventList[i].ident);
 				continue;
 			}
 			if (eventList[i].filter == EVFILT_TIMER)
@@ -134,7 +137,7 @@ void WebServer::WaitForClientConnection(void)
 				if (eventList[i].filter == EVFILT_READ)
 				{
 					readLen = currentUdata->RecvFromClient();
-					if (readLen == 0)
+					if ((eventList[i].flags & EV_EOF))
 					{
 						closeClientSocket(currentUdata, eventList[i].ident);
 					}
@@ -171,8 +174,7 @@ void WebServer::WaitForClientConnection(void)
 					std::cout << "readLen : " << readLen << "\n";
 					if (readLen == 0)
 					{
-						// currentUdata->GeneratePostResponse(200);
-						int status = -1;
+						int status = 0;
 						waitpid(currentUdata->GetPid(), &status, WNOHANG);
 						if (WIFEXITED(status) == true)
 						{
@@ -188,6 +190,7 @@ void WebServer::WaitForClientConnection(void)
 						}
 						else
 						{
+							std::cout << "signal: " << WTERMSIG(status) << std::endl;
 							currentUdata->GeneratePostResponse(502);
 						}
 						ChangeEvent(currentUdata->GetClientUdata()->GetFd(), EVFILT_WRITE, EV_ENABLE,
@@ -197,7 +200,7 @@ void WebServer::WaitForClientConnection(void)
 					else if (readLen < 0)
 					{
 						closeCgiSocket(currentUdata, eventList[i].ident);
-						std::cout << "force close client: " << eventList[i].ident << std::endl;
+						std::cout << "force close cgi: " << eventList[i].ident << std::endl;
 					}
 				}
 			}

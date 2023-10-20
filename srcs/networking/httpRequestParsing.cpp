@@ -251,7 +251,7 @@ int UserData::ParseRequest(std::vector<unsigned char>& request)
 		if (pos == request.end())
 			return (false);
 		line.assign(it, pos);
-		std::cout << "line: " << line << std::endl;
+		// std::cout << "line: " << line << std::endl;
 		if (it == request.begin() && ParseFirstLine(line) == ERROR)
 		{
 			mStatusCode = 400;

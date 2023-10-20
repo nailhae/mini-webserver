@@ -7,6 +7,8 @@ print("Content-Type: text/html; charset=UTF-8")
 print()
 form = cgi.FieldStorage()
 
+# while True:
+#     print()
 value = 5
 user_input = "Hello"
 print(form)
