@@ -25,7 +25,7 @@ void ChangeList::ChangeEvent(uintptr_t ident, int filter, int flags, UserData* u
 	target.udata = NULL;
 	if (flags == EV_DELETE)
 	{
-		kevent(ident, &target, 1, NULL, 0, 0);
+		kevent(mKq, &target, 1, NULL, 0, 0);
 		return;
 	}
 	else if (filter == EVFILT_TIMER)
