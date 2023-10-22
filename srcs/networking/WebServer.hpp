@@ -16,7 +16,12 @@ public:
 	const HttpBlock* GetHttp() const;
 	void ChangeEvent(int ident, int nFilter, int nFlags, UserData* udata);
 	void WaitForClientConnection(void);
+	void InitKq(void);
 	int InitServer(void);
+	int HandlingServerSocket(int serverSocket, ServerBlock* serverPtr);
+	int HandlingClientSocket(struct kevent& event, UserData* udata);
+	int HandlingCGISocket(struct kevent& event, UserData* udata);
+	int HandlingTimer(UserData* udata);
 
 private:
 	WebServer();
@@ -35,6 +40,7 @@ private:
 	static WebServer* mWebServer;
 	ChangeList mChangeList;
 	HttpBlock* mHttp;
+	int mKq;
 	static std::pair<int, std::string> mStatusPair[];
 	static std::map<int, std::string> mStatusMap;
 };

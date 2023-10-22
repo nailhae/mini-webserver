@@ -88,15 +88,10 @@ void WebServer::acceptClientSocket(int fd, ServerBlock* serverPtr)
 	std::cout << Colors::Blue << "Connected Client: " << sock << Colors::Reset << std::endl;
 }
 
-void WebServer::WaitForClientConnection(void)
+void WebServer::InitKq(void)
 {
 	int kq;
-	struct kevent eventList[MAX_KEVENTS];
-	int occurEventNum;
-	int readLen;
 
-	if (InitServer() == ERROR)
-		exit(EXIT_FAILURE);
 	kq = kqueue();
 	if (kq == -1)
 	{
@@ -104,11 +99,108 @@ void WebServer::WaitForClientConnection(void)
 		exit(EXIT_FAILURE);
 	}
 	mChangeList.setKq(kq);
+}
 
+int WebServer::HandlingServerSocket(int serverSocket, ServerBlock* serverPtr)
+{
+	acceptClientSocket(serverSocket, serverPtr);
+}
+
+int WebServer::HandlingClientSocket(struct kevent& event, UserData* udata)
+{
+	int readLen = 0;
+
+	if (event.filter == EVFILT_READ)
+	{
+		readLen = udata->RecvFromClient();
+		if ((event.flags & EV_EOF))
+		{
+			closeClientSocket(udata, event.ident);
+		}
+		else if (readLen < 0)
+		{
+			closeClientSocket(udata, event.ident);
+			std::cout << "force close client: " << event.ident << std::endl;
+		}
+		else
+			udata->ReadRequest();
+	}
+	else if (event.filter == EVFILT_WRITE)
+	{
+		if (udata->SendToClient(event.ident) == ERROR)
+		{
+			closeClientSocket(udata, event.ident);
+			std::cout << "force close client: " << event.ident << std::endl;
+		}
+	}
+}
+
+int WebServer::HandlingCGISocket(struct kevent& event, UserData* udata)
+{
+	int readLen = 0;
+
+	if (event.filter == EVFILT_WRITE)
+	{
+		if (udata->SendToCgi() == ERROR)
+		{
+			closeCgiSocket(udata, event.ident);
+			std::cout << "force close cgi: " << event.ident << std::endl;
+		}
+	}
+	if (event.filter == EVFILT_READ)
+	{
+		readLen = udata->RecvFromCgi();
+		std::cout << "readLen : " << readLen << "\n";
+		if (readLen == 0)
+		{
+			int status = 0;
+			waitpid(udata->GetPid(), &status, WNOHANG);
+			if (WIFEXITED(status) == true)
+			{
+				std::cout << "exit code: " << WEXITSTATUS(status) << std::endl;
+				if (WEXITSTATUS(status) == 0)
+				{
+					udata->GeneratePostResponse(200);
+				}
+				else
+				{
+					udata->GeneratePostResponse(502);
+				}
+			}
+			else
+			{
+				std::cout << "signal: " << WTERMSIG(status) << std::endl;
+				udata->GeneratePostResponse(502);
+			}
+			ChangeEvent(udata->GetClientUdata()->GetFd(), EVFILT_WRITE, EV_ENABLE, udata->GetClientUdata());
+			closeCgiSocket(udata, event.ident);
+		}
+		else if (readLen < 0)
+		{
+			closeCgiSocket(udata, event.ident);
+			std::cout << "force close cgi: " << event.ident << std::endl;
+		}
+	}
+}
+
+int WebServer::HandlingTimer(UserData* udata)
+{
+	ShutdownCgiPid(udata);
+}
+
+void WebServer::WaitForClientConnection(void)
+{
+	struct kevent eventList[MAX_KEVENTS];
+	int occurEventNum;
+	int readLen;
+
+	InitKq();
+	if (InitServer() == ERROR)
+		exit(EXIT_FAILURE);
 	while (1)
 	{
 		occurEventNum =
-			kevent(kq, mChangeList.GetKeventVector().data(), mChangeList.GetSize(), eventList, MAX_KEVENTS, NULL);
+			kevent(mKq, mChangeList.GetKeventVector().data(), mChangeList.GetSize(), eventList, MAX_KEVENTS, NULL);
 		if (occurEventNum == ERROR)
 		{
 			Error::Print("kevent() error");
@@ -126,83 +218,18 @@ void WebServer::WaitForClientConnection(void)
 			if (eventList[i].filter == EVFILT_TIMER)
 			{
 				ShutdownCgiPid(currentUdata);
-				continue;
 			}
-			if (currentUdata->GetSocketType() == SERVER_SOCKET)
+			else if (currentUdata->GetSocketType() == SERVER_SOCKET)
 			{
-				acceptClientSocket(eventList[i].ident, currentUdata->GetServerPtr());
+				HandlingServerSocket(eventList[i].ident, currentUdata->GetServerPtr());
 			}
 			else if (currentUdata->GetSocketType() == CLIENT_SOCKET)
 			{
-				if (eventList[i].filter == EVFILT_READ)
-				{
-					readLen = currentUdata->RecvFromClient();
-					if ((eventList[i].flags & EV_EOF))
-					{
-						closeClientSocket(currentUdata, eventList[i].ident);
-					}
-					else if (readLen < 0)
-					{
-						closeClientSocket(currentUdata, eventList[i].ident);
-						std::cout << "force close client: " << eventList[i].ident << std::endl;
-					}
-					else
-						currentUdata->ReadRequest();
-				}
-				else if (eventList[i].filter == EVFILT_WRITE)
-				{
-					if (currentUdata->SendToClient(eventList[i].ident) == ERROR)
-					{
-						closeClientSocket(currentUdata, eventList[i].ident);
-						std::cout << "force close client: " << eventList[i].ident << std::endl;
-					}
-				}
+				HandlingClientSocket(eventList[i], currentUdata);
 			}
 			else if (currentUdata->GetSocketType() == CGI_SOCKET)
 			{
-				if (eventList[i].filter == EVFILT_WRITE)
-				{
-					if (currentUdata->SendToCgi() == ERROR)
-					{
-						closeCgiSocket(currentUdata, eventList[i].ident);
-						std::cout << "force close cgi: " << eventList[i].ident << std::endl;
-					}
-				}
-				if (eventList[i].filter == EVFILT_READ)
-				{
-					readLen = currentUdata->RecvFromCgi();
-					std::cout << "readLen : " << readLen << "\n";
-					if (readLen == 0)
-					{
-						int status = 0;
-						waitpid(currentUdata->GetPid(), &status, WNOHANG);
-						if (WIFEXITED(status) == true)
-						{
-							std::cout << "exit code: " << WEXITSTATUS(status) << std::endl;
-							if (WEXITSTATUS(status) == 0)
-							{
-								currentUdata->GeneratePostResponse(200);
-							}
-							else
-							{
-								currentUdata->GeneratePostResponse(502);
-							}
-						}
-						else
-						{
-							std::cout << "signal: " << WTERMSIG(status) << std::endl;
-							currentUdata->GeneratePostResponse(502);
-						}
-						ChangeEvent(currentUdata->GetClientUdata()->GetFd(), EVFILT_WRITE, EV_ENABLE,
-									currentUdata->GetClientUdata());
-						closeCgiSocket(currentUdata, eventList[i].ident);
-					}
-					else if (readLen < 0)
-					{
-						closeCgiSocket(currentUdata, eventList[i].ident);
-						std::cout << "force close cgi: " << eventList[i].ident << std::endl;
-					}
-				}
+				HandlingCGISocket(eventList[i], currentUdata);
 			}
 		}
 	}
