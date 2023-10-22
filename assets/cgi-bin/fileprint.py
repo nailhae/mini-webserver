@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import cgi
+import sys
 
 print("Content-Type: text/html; charset=UTF-8")
 print()
@@ -10,11 +11,15 @@ user_input = form.getvalue("input")
 filename = "./assets/cgi-bin/test.html"
 # filename = "cgi-bin/test.html"
 
+# while True:
+#     print()
+
 try:
     with open(filename, 'r') as f:
         lines = f.readlines()
 except Exception as e:
     print(f" {e}")
+    sys.exit(1)
 print(len)
 value = 0
 for line in lines:
