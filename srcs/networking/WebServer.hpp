@@ -18,10 +18,10 @@ public:
 	void WaitForClientConnection(void);
 	void InitKq(void);
 	int InitServer(void);
-	int HandlingServerSocket(int serverSocket, ServerBlock* serverPtr);
-	int HandlingClientSocket(struct kevent& event, UserData* udata);
-	int HandlingCGISocket(struct kevent& event, UserData* udata);
-	int HandlingTimer(UserData* udata);
+	void HandlingServerSocket(int serverSocket, ServerBlock* serverPtr);
+	void HandlingClientSocket(struct kevent& event, UserData* udata);
+	void HandlingCGISocket(struct kevent& event, UserData* udata);
+	void HandlingTimer(UserData* udata);
 
 private:
 	WebServer();

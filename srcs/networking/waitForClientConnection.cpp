@@ -30,11 +30,10 @@ void WebServer::closeClientSocket(UserData* udata, int fd)
 void WebServer::ShutdownCgiPid(UserData* udata)
 {
 	int pid = udata->GetPid();
-	int status;
 
 	std::cout << Colors::BoldBlue << "timer 발생 close cgi pid: " << pid << Colors::Reset << std::endl;
-	if (waitpid(pid, &status, WNOHANG) > 0) // timer 발생 시 좀비 프로세스 생기는지 확인
-		kill(pid, SIGUSR1);
+	kill(pid, SIGTERM);
+	waitpid(pid, NULL, 0);
 	udata->GeneratePostResponse(504);
 
 	mChangeList.ChangeEvent(udata->GetFd(), EVFILT_READ, EV_DISABLE | EV_DELETE, udata);
@@ -52,8 +51,8 @@ void WebServer::closeCgiSocket(UserData* udata, int fd)
 	mChangeList.ChangeEvent(fd, EVFILT_READ, EV_DELETE, NULL);
 	mChangeList.ChangeEvent(fd, EVFILT_WRITE, EV_DELETE, NULL);
 	mChangeList.ChangeEvent(udata->GetPid(), EVFILT_TIMER, EV_DELETE, NULL);
-	if (waitpid(udata->GetPid(), NULL, WNOHANG) <= 0)
-		kill(udata->GetPid(), 9);
+	kill(udata->GetPid(), SIGTERM);
+	waitpid(udata->GetPid(), NULL, 0);
 	udata->SetClientUdataNULL();
 	delete udata;
 	close(fd);
@@ -90,23 +89,21 @@ void WebServer::acceptClientSocket(int fd, ServerBlock* serverPtr)
 
 void WebServer::InitKq(void)
 {
-	int kq;
-
-	kq = kqueue();
-	if (kq == -1)
+	mKq = kqueue();
+	if (mKq == -1)
 	{
 		Error::Print("Open Error");
 		exit(EXIT_FAILURE);
 	}
-	mChangeList.setKq(kq);
+	mChangeList.setKq(mKq);
 }
 
-int WebServer::HandlingServerSocket(int serverSocket, ServerBlock* serverPtr)
+void WebServer::HandlingServerSocket(int serverSocket, ServerBlock* serverPtr)
 {
 	acceptClientSocket(serverSocket, serverPtr);
 }
 
-int WebServer::HandlingClientSocket(struct kevent& event, UserData* udata)
+void WebServer::HandlingClientSocket(struct kevent& event, UserData* udata)
 {
 	int readLen = 0;
 
@@ -135,7 +132,7 @@ int WebServer::HandlingClientSocket(struct kevent& event, UserData* udata)
 	}
 }
 
-int WebServer::HandlingCGISocket(struct kevent& event, UserData* udata)
+void WebServer::HandlingCGISocket(struct kevent& event, UserData* udata)
 {
 	int readLen = 0;
 
@@ -183,7 +180,7 @@ int WebServer::HandlingCGISocket(struct kevent& event, UserData* udata)
 	}
 }
 
-int WebServer::HandlingTimer(UserData* udata)
+void WebServer::HandlingTimer(UserData* udata)
 {
 	ShutdownCgiPid(udata);
 }
@@ -192,7 +189,6 @@ void WebServer::WaitForClientConnection(void)
 {
 	struct kevent eventList[MAX_KEVENTS];
 	int occurEventNum;
-	int readLen;
 
 	InitKq();
 	if (InitServer() == ERROR)
@@ -204,6 +200,7 @@ void WebServer::WaitForClientConnection(void)
 		if (occurEventNum == ERROR)
 		{
 			Error::Print("kevent() error");
+			perror("kevent");
 			exit(EXIT_FAILURE);
 		}
 		mChangeList.ClearEvent();
