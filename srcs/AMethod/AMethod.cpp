@@ -242,7 +242,7 @@ void AMethod::GenerateErrorResponse(int code)
 	{
 		SetContentLength(errorPage);
 		mResponse += "\r\n";
-		GenerateResponseBody(errorPage); // error_page 본문
+		GenerateResponseBody(errorPage);
 		errorPage.close();
 	}
 }

@@ -268,7 +268,6 @@ void UserData::SetCgiEvent(void)
 	mClientUdata = udataCgi;
 
 	WebServer::GetInstance()->ChangeEvent(pid, EVFILT_TIMER, EV_ADD | EV_ONESHOT, udataCgi);
-
 	WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_DISABLE, this);
 	WebServer::GetInstance()->ChangeEvent(parentSocketFd, EVFILT_READ, EV_ADD | EV_DISABLE, udataCgi);
 	WebServer::GetInstance()->ChangeEvent(parentSocketFd, EVFILT_WRITE, EV_ADD | EV_ENABLE, udataCgi);
@@ -277,10 +276,8 @@ void UserData::SetCgiEvent(void)
 void UserData::passBodyToPost(void)
 {
 	std::string body(mReceived->begin(), mReceived->end());
-	std::cout << body.size() << "|body  contentSize|" << mContentSize << std::endl;
 	if (mServerPtr->clientMaxBodySize < body.size())
 	{
-		std::cout << Colors::BoldRedString("413에러 발생 ") << std::endl;
 		mMethod->GenerateErrorResponse(413);
 		mPostFlag = false;
 		WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ENABLE, this);
@@ -348,7 +345,55 @@ void UserData::GeneratePostResponse(int status)
 		errorPage.close();
 	}
 	mBody->insert(mBody->begin(), body.begin(), body.end());
-	std::cout << Colors::BoldCyanString("[Body]\n") << body << std::endl;
+}
+
+void UserData::HandlingMethodPost(void)
+{
+	mPostFlag = true;
+	if (mReceived->size() < mContentSize)
+	{
+		if (mSetting.bPostMethod == false)
+		{
+			mPostFlag = false;
+			mMethod->GenerateErrorResponse(405);
+			WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_DISABLE, this);
+			WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ENABLE, this);
+		}
+		else if (mHeaders[TRANSFER_ENCODING] == "chunked")
+		{
+			if (checkChunkedMessageEnd(*mReceived) == true)
+			{
+				passBodyToPost();
+			}
+			else
+			{
+				mChunkedFlag = true;
+			}
+		}
+		else
+		{
+			mFillBodyFlag = true;
+		}
+		return;
+	}
+	else
+	{
+		passBodyToPost();
+	}
+	return;
+}
+
+void UserData::CheckReceiveAll(void)
+{
+	if (mFillBodyFlag == true && mReceived->size() < mContentSize)
+	{
+		return;
+	}
+	if (mChunkedFlag == true && checkChunkedMessageEnd(*mReceived) == false)
+	{
+		return;
+	}
+	passBodyToPost();
 }
 
 void UserData::ReadRequest(void)
@@ -359,18 +404,9 @@ void UserData::ReadRequest(void)
 	{
 		return;
 	}
-
-	if (mChunkedFlag == true || mFillBodyFlag == true)
+	if (mPostFlag == true)
 	{
-		if (mFillBodyFlag == true && mReceived->size() < mContentSize)
-		{
-			return;
-		}
-		if (mChunkedFlag == true && checkChunkedMessageEnd(*mReceived) == false)
-		{
-			return;
-		}
-		passBodyToPost();
+		CheckReceiveAll();
 		return;
 	}
 	if (preprocessGenResponse() == 1)
@@ -384,38 +420,7 @@ void UserData::ReadRequest(void)
 		mUri = uriGenerator();
 		if (mMethod->GetType() == POST)
 		{
-			mPostFlag = true;
-			if (mReceived->size() < mContentSize)
-			{
-				if (mSetting.bPostMethod == false)
-				{
-					mPostFlag = false;
-					mMethod->GenerateErrorResponse(405);
-					WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_DISABLE, this);
-					WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ENABLE, this);
-				}
-				else if (mHeaders[TRANSFER_ENCODING] == "chunked")
-				{
-					if (checkChunkedMessageEnd(*mReceived) == true)
-					{
-						passBodyToPost();
-					}
-					else
-					{
-						mChunkedFlag = true;
-					}
-				}
-				else
-				{
-					mFillBodyFlag = true;
-				}
-				return;
-			}
-			else
-			{
-				passBodyToPost();
-			}
-			return;
+			HandlingMethodPost();
 		}
 		else
 		{
@@ -452,6 +457,33 @@ int UserData::RecvFromCgi(void)
 	return (len);
 }
 
+int UserData::SendToClientPostResponse(int fd)
+{
+	int len;
+	int maxWrite;
+
+	if (mBody->size() >= BUFFER_SIZE)
+		maxWrite = BUFFER_SIZE;
+	else
+		maxWrite = mBody->size();
+	std::string temp(mBody->begin(), mBody->begin() + maxWrite);
+	len = write(fd, mBody->data(), maxWrite);
+	if (len < 0)
+	{
+		Error::Print("send()");
+		return (ERROR);
+	}
+	mBody->erase(mBody->begin(), mBody->begin() + maxWrite);
+	if (mBody->size() <= 0)
+	{
+		std::cout << Colors::BoldMagenta << "send to client " << fd << "\n" << Colors::Reset << std::endl;
+		InitUserData();
+		WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_ENABLE, this);
+		WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_DISABLE, this);
+	}
+	return (len);
+}
+
 int UserData::SendToClient(int fd)
 {
 	int len;
@@ -459,28 +491,7 @@ int UserData::SendToClient(int fd)
 
 	if (mPostFlag == true)
 	{
-		std::cout << "mBody: " << mBody->size() << std::endl;
-		if (mBody->size() >= BUFFER_SIZE)
-			maxWrite = BUFFER_SIZE;
-		else
-			maxWrite = mBody->size();
-		std::string temp(mBody->begin(), mBody->begin() + maxWrite);
-		len = write(fd, mBody->data(), maxWrite);
-		if (len < 0)
-		{
-			Error::Print("send()");
-			return (ERROR);
-		}
-		mBody->erase(mBody->begin(), mBody->begin() + maxWrite);
-
-		if (mBody->size() <= 0)
-		{
-			std::cout << Colors::BoldMagenta << "send to client " << fd << "\n" << Colors::Reset << std::endl;
-			InitUserData();
-			WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_ENABLE, this);
-			WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_DISABLE, this);
-		}
-		return (len);
+		return (SendToClientPostResponse(fd));
 	}
 	if (mMethod->GetResponse().size() >= BUFFER_SIZE)
 		maxWrite = BUFFER_SIZE;
@@ -526,7 +537,6 @@ int UserData::SendToCgi(void)
 	}
 	temp.assign(mReceived->begin(), mReceived->begin() + maxLen);
 	len = write(mFd, temp.c_str(), maxLen);
-	std::cout << mFd << Colors::BoldGreenString(" CGI 파이프 소켓에 썼음: ") << len << std::endl;
 	if (len < 0)
 	{
 		return (ERROR);
@@ -536,7 +546,6 @@ int UserData::SendToCgi(void)
 	{
 		WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_ENABLE, this);
 		WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_DISABLE, this);
-		std::cout << mFd << " CGI write 끄고, read 켜고" << std::endl;
 	}
 	return (len);
 }

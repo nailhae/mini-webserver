@@ -108,7 +108,7 @@ void MethodPost::initCgiEnv(std::string httpCgiPath, size_t ContentSize, std::ma
 		httpCgiPath.erase(0, 1);
 	}
 	this->env["AUTH_TYPE"] = "BASIC";
-	this->env["CONTENT_LENGTH"] = std::to_string(ContentSize);
+	this->env["CONTENT_LENGTH"] = intToString(ContentSize);
 	this->env["CONTENT_TYPE"] = Header[CONTENT_TYPE];
 	this->env["GATEWAY_INTERFACE"] = "CGI/1.1";
 	this->env["PATH_INFO"] = httpCgiPath;

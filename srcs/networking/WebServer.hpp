@@ -16,12 +16,6 @@ public:
 	const HttpBlock* GetHttp() const;
 	void ChangeEvent(int ident, int nFilter, int nFlags, UserData* udata);
 	void WaitForClientConnection(void);
-	void InitKq(void);
-	int InitServer(void);
-	void HandlingServerSocket(int serverSocket, ServerBlock* serverPtr);
-	void HandlingClientSocket(struct kevent& event, UserData* udata);
-	void HandlingCGISocket(struct kevent& event, UserData* udata);
-	void HandlingTimer(UserData* udata);
 
 private:
 	WebServer();
@@ -30,6 +24,12 @@ private:
 	WebServer(const WebServer& other);
 	WebServer& operator=(const WebServer& other);
 
+	void InitKq(void);
+	int InitServer(void);
+	void HandlingServerSocket(int serverSocket, ServerBlock* serverPtr);
+	void HandlingClientSocket(struct kevent& event, UserData* udata);
+	void HandlingCGISocket(struct kevent& event, UserData* udata);
+	void HandlingTimer(UserData* udata);
 	HttpBlock* parseFileOrNull(const std::string& fileName);
 	void deleteHttpBlock(HttpBlock& http);
 	void acceptClientSocket(int fd, ServerBlock* serverPtr);
