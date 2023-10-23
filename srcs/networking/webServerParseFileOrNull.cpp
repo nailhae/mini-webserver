@@ -52,9 +52,6 @@ static int parserErrorCheck(HttpBlock& http)
 {
 	const int success = 0;
 	const int error = 1;
-	// 서버블록이 0개일경우
-	// 서버블록안에 listen이 없을경우, 숫자여야한다, 다른 서버랑 중복이 아니여야한다. 범위는  0~65535
-	// 로케이션 uri중복인지 아닌지
 	for (std::vector<ServerBlock*>::iterator it = http.serverList.begin(); it != http.serverList.end(); it++)
 	{
 		for (std::vector<MultiTree*>::iterator treeIt = (*it)->root.begin(); treeIt != (*it)->root.end(); treeIt++)
@@ -69,7 +66,6 @@ static int parserErrorCheck(HttpBlock& http)
 
 static void initHttpBlock(HttpBlock& http)
 {
-	http.clientMaxBodySize = 1024;
 	http.clientBodyTimeout = 60;
 	http.workerConnections = 1024;
 	http.types.insert(std::make_pair("text/plain", "txt"));
@@ -116,37 +112,6 @@ static int parseLine(const std::string& line, std::ifstream& file, HttpBlock& ht
 			http.types["default_type"] = value;
 		}
 	}
-	else if (key == "client_max_body_size")
-	{
-		std::string value;
-		if (iss >> value)
-		{
-			if (value.at(value.size() - 1) == ';')
-			{
-				value.erase(value.size() - 1);
-			}
-			else
-			{
-				return error;
-			}
-			if (value[value.size() - 1] == 'm' || value[value.size() - 1] == 'M')
-			{
-				http.clientMaxBodySize = strtol(value.c_str(), NULL, 10) * 1024;
-			}
-			else if (value[value.size() - 1] == 'g' || value[value.size() - 1] == 'G')
-			{
-				http.clientMaxBodySize = strtol(value.c_str(), NULL, 10) * 1024 * 1024;
-			}
-			else if (value[value.size() - 1] == 'k' || value[value.size() - 1] == 'K')
-			{
-				http.clientMaxBodySize = strtol(value.c_str(), NULL, 10);
-			}
-			else
-			{
-				http.clientMaxBodySize = strtol(value.c_str(), NULL, 10);
-			}
-		}
-	}
 	else if (key == "error_page")
 	{
 		std::vector<std::string> result = split(line);
@@ -188,7 +153,6 @@ static int parseLine(const std::string& line, std::ifstream& file, HttpBlock& ht
 	else if (key == "location")
 	{
 		std::string value;
-		// TODO uri checker가 만들어지면 uri 확인하는 코드도 추가 필요
 		if (!(iss >> value) || value[0] != '/')
 		{
 			return error;
@@ -253,6 +217,7 @@ static std::vector<std::string> split(std::string str)
 static void initServerBlock(ServerBlock& server)
 {
 	server.rootPath = "";
+	server.clientMaxBodySize = 1024;
 }
 
 static void initLocationBlock(LocationBlock& location)
@@ -320,6 +285,37 @@ static int serverParser(ServerBlock& server, std::ifstream& file)
 				return error;
 			}
 			server.serverName = value;
+		}
+		else if (key == "client_max_body_size")
+		{
+			std::string value;
+			if (iss >> value)
+			{
+				if (value.at(value.size() - 1) == ';')
+				{
+					value.erase(value.size() - 1);
+				}
+				else
+				{
+					return error;
+				}
+				if (value[value.size() - 1] == 'm' || value[value.size() - 1] == 'M')
+				{
+					server.clientMaxBodySize = strtol(value.c_str(), NULL, 10) * 1024;
+				}
+				else if (value[value.size() - 1] == 'g' || value[value.size() - 1] == 'G')
+				{
+					server.clientMaxBodySize = strtol(value.c_str(), NULL, 10) * 1024 * 1024;
+				}
+				else if (value[value.size() - 1] == 'k' || value[value.size() - 1] == 'K')
+				{
+					server.clientMaxBodySize = strtol(value.c_str(), NULL, 10);
+				}
+				else
+				{
+					server.clientMaxBodySize = strtol(value.c_str(), NULL, 10);
+				}
+			}
 		}
 		else if (key == "root")
 		{
@@ -415,6 +411,10 @@ static int locationParser(LocationBlock& location, std::ifstream& file, MultiTre
 				else if (value == "POST")
 				{
 					location.bPostMethod = true;
+				}
+				else if (value == "HEAD")
+				{
+					location.bHeadMethod = true;
 				}
 				else if (value == "DELETE")
 				{

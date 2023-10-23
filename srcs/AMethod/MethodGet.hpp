@@ -6,7 +6,6 @@
 class MethodGet : public AMethod
 {
 public:
-	// temp
 	MethodGet(int fd);
 	~MethodGet(void);
 

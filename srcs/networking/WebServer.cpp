@@ -21,7 +21,7 @@
 #include "MultiTree.hpp"
 #include "MultiTreeNode.hpp"
 
-#define STATUS_NUM 18
+#define STATUS_NUM 21
 
 std::pair<int, std::string> WebServer::mStatusPair[] = {std::make_pair(200, "200 OK"),
 														std::make_pair(201, "201 Created"),
@@ -37,6 +37,7 @@ std::pair<int, std::string> WebServer::mStatusPair[] = {std::make_pair(200, "200
 														std::make_pair(404, "404 Not Found"),
 														std::make_pair(405, "405 Method Not Allowed"),
 														std::make_pair(411, "411 Length Required"),
+														std::make_pair(413, "413 Payload Too Large"),
 														std::make_pair(416, "416 Requested Range Not Satisfiable"),
 														std::make_pair(500, "500 Internal Server Error"),
 														std::make_pair(501, "501 Not Implemented"),
@@ -59,7 +60,7 @@ WebServer::WebServer(std::string confFile)
 {
 	if (mHttp == NULL)
 	{
-		Error::Print("parse .conf file");
+		Error::Print("parse file error");
 		exit(EXIT_FAILURE);
 	}
 }
@@ -75,9 +76,14 @@ void WebServer::ChangeEvent(int ident, int nFilter, int nFlags, UserData* udata)
 
 WebServer* WebServer::GetInstance()
 {
+	return mWebServer;
+}
+
+WebServer* WebServer::GetInstance(std::string confFile)
+{
 	if (mWebServer == NULL)
 	{
-		mWebServer = new WebServer(CONF_FILE_PATH);
+		mWebServer = new WebServer(confFile);
 	}
 	return mWebServer;
 }
@@ -111,19 +117,7 @@ const std::string& WebServer::GetStatusText(int code)
 	return (mStatusMap[code]);
 }
 
-void printTreeStructure(MultiTreeNode* node, int depth = 0)
+const std::string& WebServer::GetErrorPage(int code)
 {
-	if (node == nullptr)
-	{
-		return;
-	}
-	// 현재 노드 정보 출력
-	const LocationBlock* data = node->GetLocationBlock();
-	std::cout << std::string(depth, ' ') << "URI: " << data->uri << std::endl;
-	// 자식 노드 순회 및 출력
-	for (std::vector<MultiTreeNode*>::const_iterator it = node->GetChildren().begin(); it != node->GetChildren().end();
-		 it++)
-	{
-		printTreeStructure((*it), depth + 2); // 들여쓰기 레벨 조절
-	}
+	return (mHttp->errorPages[code]);
 }

@@ -58,31 +58,32 @@ enum eBlockType
 	LOCATION
 };
 
-enum eSocketType
+enum eIdentifierType
 {
 	SERVER_SOCKET,
 	CLIENT_SOCKET,
 	CGI_SOCKET,
+	CGI_PID,
 };
 
 struct ServerBlock
 {
-	int listenPort;
 	std::string serverName;
 	std::string rootPath;
 	std::vector<MultiTree*> root;
+	size_t clientMaxBodySize;
+	int listenPort;
 };
 
 struct LocationBlock
 {
 	std::string uri;
-	// TODO 이름 통일
-	bool bGetMethod;	// default false;
-	bool bPostMethod;	// default false;
-	bool bDeleteMethod; // default false;
-	bool bHeadMethod;	// default false;
-	int autoindex;		// default false
-	std::string index;	// default "index.html"
+	bool bGetMethod;
+	bool bPostMethod;
+	bool bDeleteMethod;
+	bool bHeadMethod;
+	int autoindex;
+	std::string index;
 	std::string rootPath;
 	std::string alias;
 	std::pair<int, std::string> returnPair;
@@ -92,8 +93,7 @@ struct HttpBlock
 {
 	std::map<std::string, std::string> types;
 	std::map<int, std::string> errorPages;
-	std::vector<ServerBlock*> serverList; // default_server = vector<ServerBlock> index 0
-	int clientMaxBodySize;				  // default unit kB
-	int clientBodyTimeout;				  // default unit sec.
+	std::vector<ServerBlock*> serverList;
+	int clientBodyTimeout;
 	int workerConnections;
 };

@@ -85,12 +85,6 @@ static int checkValidHeaderKey(int headerKey, std::string& value)
 		if (value != "close")
 			value = "keep-alive";
 	}
-	else if (headerKey == CONTENT_TYPE)
-	{
-		/* MIME type 체크
-			HTTP block의 TYPE map을 순회하고, 발견하지 못한 경우 application/octet-stream 으로 설정
-		*/
-	}
 	else if (headerKey == CONTENT_LENGTH)
 	{
 		for (std::string::iterator it = value.begin(); it != value.end(); it++)
@@ -98,11 +92,6 @@ static int checkValidHeaderKey(int headerKey, std::string& value)
 			if (isdigit(*it) == false)
 				return (ERROR);
 		}
-		// config에서 지정한 파일 크기보다 큰 파일의 경우
-		// if (atoi(value.c_str) > max_contents)
-		// {
-		// 	return (ERROR);
-		// }
 	}
 	else if (headerKey == CACHE_CONTROL)
 	{
@@ -121,14 +110,6 @@ static int checkValidHeaderKey(int headerKey, std::string& value)
 				return (ERROR);
 		}
 	}
-	else if (headerKey == IF_MODIFIED_SINCE)
-	{
-		/*
-			value가 올바른 날짜인지 확인하는 함수가 필요함.
-			라이브러리 잘 적용시킬 것.
-			보나스 할 때 추가하도록 하자.
-		*/
-	}
 	return (0);
 }
 
@@ -139,16 +120,11 @@ int UserData::ParseHeaderValue(int headerKey, std::string& value)
 	if (mHeaders.find(headerKey) != mHeaders.end())
 	{
 		mStatusCode = 400;
-		mStatusText = "Bad Request";
-		std::cout << mHeaders[headerKey] << " header is duplicated (key: value) (" << headerKey << ": " << value << ")"
-				  << std::endl;
 		return (ERROR);
 	}
 	else if (checkValidHeaderKey(headerKey, value) == ERROR)
 	{
 		mStatusCode = 400;
-		mStatusText = "Bad Request";
-		std::cout << "header field  not valid (key: value) (" << headerKey << ": " << value << ")" << std::endl;
 		return (ERROR);
 	}
 	else
@@ -173,35 +149,49 @@ int UserData::ParseHeaderKey(std::string& header)
 int UserData::ParseFirstLine(std::string& firstLine)
 {
 	std::stringstream ss(firstLine);
-	std::string line;
+	std::string lineTemp;
 
-	ss >> line;
-	if (line == "GET")
-		mMethod = new MethodGet(mFd);
-	else if (line == "HEAD")
+	ss >> lineTemp >> mUri;
+	if (lineTemp == "GET")
+	{
+		if (mUri.find('?') != std::string::npos)
+		{
+			mMethod = new MethodPost(mFd);
+		}
+		else
+		{
+			mMethod = new MethodGet(mFd);
+		}
+	}
+	else if (lineTemp == "HEAD")
 		mMethod = new MethodHead(mFd);
-	else if (line == "POST")
+	else if (lineTemp == "POST")
 		mMethod = new MethodPost(mFd);
-	else if (line == "DELETE")
+	else if (lineTemp == "DELETE")
 		mMethod = new MethodDelete(mFd);
 	else
 	{
 		mMethod = new MethodGet(mFd);
 		mStatusCode = 405;
-		std::cout << line << " 405로 세팅한다." << std::endl;
 		return (ERROR);
 	}
-	ss >> mUri;
-	std::getline(ss, line);
-	if (*(line.end() - 1) == '\r')
-		line.erase(line.size() - 1);
-	trimWhiteSpace(line);
-	if (line != "HTTP/1.1")
+	std::getline(ss, lineTemp);
+	if (*(lineTemp.end() - 1) == '\r')
+		lineTemp.erase(lineTemp.size() - 1);
+	trimWhiteSpace(lineTemp);
+	if (lineTemp != "HTTP/1.1")
 	{
 		mStatusCode = 505;
 		return (ERROR);
 	}
 	return (0);
+}
+
+static std::string intToString(int num)
+{
+	std::ostringstream oss;
+	oss << num;
+	return oss.str();
 }
 
 int UserData::ParseOneLine(std::string& oneLine)
@@ -234,34 +224,51 @@ int UserData::ParseOneLine(std::string& oneLine)
 int UserData::ParseRequest(std::vector<unsigned char>& request)
 {
 	std::vector<unsigned char>::iterator pos = request.begin();
-	std::string line;
+	std::string lineTemp;
 
 	for (std::vector<unsigned char>::iterator it = request.begin(); it != request.end();)
 	{
 		pos = std::find(pos, request.end(), '\n');
 		if (pos == request.end())
 			return (false);
-		line.assign(it, pos);
-		std::cout << "line: " << line << std::endl;
-		if (it == request.begin() && ParseFirstLine(line) == ERROR)
+		lineTemp.assign(it, pos);
+		// std::cout << "lineTemp: " << lineTemp << std::endl;
+		if (it == request.begin() && ParseFirstLine(lineTemp) == ERROR)
+		{
 			return (ERROR);
-		if (*(line.end() - 1) == '\r')
-			line.erase(line.size() - 1);
-		if (line.size() == 0)
+		}
+		if (*(lineTemp.end() - 1) == '\r')
+			lineTemp.erase(lineTemp.size() - 1);
+		if (lineTemp.size() == 0)
 			break;
-		else if (ParseOneLine(line) == ERROR)
+		else if (ParseOneLine(lineTemp) == ERROR)
+		{
+			mStatusCode = 400;
 			return (ERROR);
+		}
 		pos += 1;
 		it = pos;
 	}
-	mReceived.erase(mReceived.begin(), pos + 1);
+	mReceived->erase(mReceived->begin(), pos + 1);
 	if (mMethod->GetType() == POST)
 	{
-		if (mHeaders.find(CONTENT_LENGTH) == mHeaders.end() || mHeaders[CONTENT_LENGTH] == "0")
+		size_t pos;
+		std::string body;
+		pos = mUri.find('?');
+		if (pos != std::string::npos)
+		{
+			body = mUri.substr(pos + 1);
+			std::cout << body << std::endl;
+			mUri.erase(mUri.begin() + pos, mUri.end());
+			mReceived->insert(mReceived->end(), body.begin(), body.end());
+			mHeaders[CONTENT_LENGTH] = intToString(body.size());
+			mHeaders[CONTENT_TYPE] = "application/x-www-form-urlencoded";
+			mContentSize = body.size();
+		}
+		else if (mHeaders.find(CONTENT_LENGTH) == mHeaders.end() || mHeaders[CONTENT_LENGTH] == "0")
 		{
 			if (mHeaders.find(TRANSFER_ENCODING) != mHeaders.end())
 			{
-				std::cout << "1024로 설정" << std::endl;
 				mHeaders[CONTENT_LENGTH] = "1024"; // buffer size
 				mContentSize = BUFFER_SIZE;
 				return (0);

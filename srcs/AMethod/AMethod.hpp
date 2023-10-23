@@ -15,8 +15,6 @@ public:
 	virtual int GenerateResponse(std::string& mUri, LocationBlock& mSetting, std::map<int, std::string>& mHeaders) = 0;
 	virtual int GenerateResponse(std::string& mUri, LocationBlock& mSetting, std::map<int, std::string>& mHeaders,
 								 std::string& body) = 0;
-	// int GeneratePostResponse(std::string& uri, LocationBlock& setting, std::map<int, std::string>& headers,
-	// 						 std::string body);
 	const std::string& GetResponse(void) const;
 	void GenerateErrorResponse(int code);
 	void GenerateResponseStatusLine(int code);
@@ -30,7 +28,10 @@ public:
 	void GenerateResponseBody(std::ifstream& File);
 	void ResponseConfigSetup(const ServerBlock& server, std::string& uri, LocationBlock& setting);
 	int GetType(void) const;
+	int GetFd(void) const;
+	int GetPid(void) const;
 	void SetResponse(const std::string& content);
+	void EraseResponse(unsigned int amount);
 	void SetSetupFlag(eSetupFlags flag);
 	void SetContentLength(std::ifstream& _requestedFile);
 	void SetContentType(const std::string& extTemp);
@@ -41,6 +42,7 @@ protected:
 	std::string mResponse;
 	int mFd;
 	int mType;
+	int mPid;
 	int mSetupFlags;
 
 private:

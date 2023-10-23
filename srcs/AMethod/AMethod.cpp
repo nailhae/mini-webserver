@@ -20,12 +20,27 @@ const std::string& AMethod::GetResponse(void) const
 	return (mResponse);
 }
 
+int AMethod::GetFd(void) const
+{
+	return (mFd);
+}
+
+int AMethod::GetPid(void) const
+{
+	return (mPid);
+}
+
 void AMethod::GenerateRedirectionResponse(int code, LocationBlock& mSetting)
 {
 	GenerateResponseStatusLine(code);
 	if (code != 304)
-		mResponse += "Location: " + mSetting.returnPair.second + "\r\n"; // 리디렉션할 URI
+		mResponse += "Location: " + mSetting.returnPair.second + "\r\n";
 	mResponse += "\r\n";
+}
+
+void AMethod::EraseResponse(unsigned int amount)
+{
+	mResponse.erase(0, amount);
 }
 
 void AMethod::SetCurrentTime(const char* headerType)
@@ -93,11 +108,9 @@ int AMethod::SetETag(const std::string& mUri, const std::string& etagHeader)
 	struct stat fileInfo;
 	if (stat(("." + mUri).c_str(), &fileInfo) == 0)
 	{
-		// 정보 읽어올 수 없을 경우 어떻게 하지?
 		time(&modifiedTime);
 	}
 	modifiedTime = fileInfo.st_mtime;
-	// 파일 정보에서 수정된 시간으로 etag 설정
 	eTag << mUri << "\\" << modifiedTime;
 
 	if (eTag.str() == etagHeader)
@@ -209,8 +222,7 @@ void AMethod::GenerateResponseBody(std::ifstream& File)
 
 void AMethod::GenerateErrorResponse(int code)
 {
-	// http 블럭에있는 error_page 인자로 받아올것.
-	std::string errorUri;
+	std::string errorUri = WebServer::GetInstance()->GetErrorPage(code);
 	std::ifstream errorPage;
 
 	// errorUri = WebServer::GetErrorPage(code)
@@ -230,7 +242,7 @@ void AMethod::GenerateErrorResponse(int code)
 	{
 		SetContentLength(errorPage);
 		mResponse += "\r\n";
-		GenerateResponseBody(errorPage); // error_page 본문
+		GenerateResponseBody(errorPage);
 		errorPage.close();
 	}
 }
@@ -316,20 +328,3 @@ void AMethod::SetResponse(const std::string& content)
 {
 	mResponse.append(content);
 }
-
-// int AMethod::GeneratePostResponse(std::string& uri, LocationBlock& setting, std::map<int, std::string>& headers,
-// 								  std::string body)
-// {
-// 	size_t size;
-// 	Mpost = new MethodPost(POST);
-
-// 	(void)setting;
-// 	size = strtol(headers[CONTENT_LENGTH].c_str(), NULL, 10);
-// 	if (size < 1)
-// 		size = 1024;
-// 	initCgiEnv(uri, size, headers);
-// 	execute();
-// 	sendCgiBody(body);
-// 	readCgiResponse();
-// 	return (0);
-// }

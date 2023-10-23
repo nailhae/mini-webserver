@@ -1,4 +1,5 @@
 #include "MultiTreeNode.hpp"
+
 #include "Error.hpp"
 
 MultiTreeNode::MultiTreeNode(LocationBlock* data)

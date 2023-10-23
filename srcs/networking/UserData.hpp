@@ -7,6 +7,7 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <signal.h>
 #include <sstream>
 #include <string>
 #include <sys/event.h>
@@ -29,15 +30,14 @@ public:
 	~UserData(void);
 	void InitUserData(void);
 	const std::vector<unsigned char>& GetReceived(void) const;
-	const std::string& GetResponse(void) const;
 	const std::string& GetUri(void) const;
 
 	const AMethod& GetMethod(void) const;
 	int GetFd(void) const;
 	int GetSocketType(void) const;
 	void SetSocketType(int socketType);
-	const ServerBlock* GetServerPtr(void) const;
-	void SetServerPtr(const ServerBlock* serverPtr);
+	ServerBlock* GetServerPtr(void) const;
+	void SetServerPtr(ServerBlock* serverPtr);
 	LocationBlock& Setting(void);
 	std::string uriGenerator(void);
 	void ReadRequest(void);
@@ -50,12 +50,20 @@ public:
 	int ParseOneLine(std::string& oneLine);
 	int ParseHeaderValue(int headerKey, std::string& field);
 	int RecvFromClient(void);
+	int RecvFromCgi(void);
 	int SendToClient(int fd);
-	int GeneratePostResponse(void);
+	int SendToClientPostResponse(int fd);
+	int SendToCgi(void);
+	void ClearBody(void);
+	void ClearReceived(void);
+	void GeneratePostResponse(int status);
 	int loadFolderContent(void);
-
-	std::vector<unsigned char> mReceived;
-	std::vector<unsigned char> mBody;
+	int GetPid(void) const;
+	void HandlingMethodPost(void);
+	void CheckReceiveAll(void);
+	UserData* GetClientUdata(void) const;
+	void SetClientUdataNULL(void);
+	void SetCgiEvent(void);
 
 private:
 	UserData(void);
@@ -69,11 +77,15 @@ private:
 	int mHeaderFlag;
 	int mChunkedFlag;
 	int mFillBodyFlag;
+	int mPostFlag;
+	int mPid;
 	size_t mContentSize;
 	LocationBlock mSetting;
-	std::string mStatusText;
 	std::string mUri;
 	std::map<int, std::string> mHeaders;
-	const ServerBlock* mServerPtr;
+	std::vector<unsigned char>* mReceived;
+	std::vector<unsigned char>* mBody;
 	AMethod* mMethod;
+	ServerBlock* mServerPtr;
+	UserData* mClientUdata;
 };

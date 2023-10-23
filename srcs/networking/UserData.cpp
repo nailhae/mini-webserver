@@ -17,13 +17,34 @@ UserData::UserData(int fd)
 	, mHeaderFlag(0)
 	, mChunkedFlag(0)
 	, mFillBodyFlag(0)
+	, mPostFlag(0)
+	, mPid(0)
 	, mContentSize(0)
+	, mReceived(new std::vector<unsigned char>)
+	, mBody(NULL)
 	, mMethod(NULL)
+	, mServerPtr(NULL)
+	, mClientUdata(NULL)
 {
 }
 
 UserData::~UserData(void)
 {
+	if (mMethod != NULL)
+	{
+		delete mMethod;
+		mMethod = NULL;
+	}
+	if (mSocketType == CLIENT_SOCKET && mBody != NULL)
+	{
+		delete mBody;
+		mBody = NULL;
+	}
+	if (mSocketType == CLIENT_SOCKET && mReceived != NULL)
+	{
+		delete mReceived;
+		mReceived = NULL;
+	}
 }
 
 void UserData::InitUserData(void)
@@ -33,16 +54,22 @@ void UserData::InitUserData(void)
 		delete mMethod;
 		mMethod = NULL;
 	}
+	memset(&mSetting, 0, sizeof(LocationBlock));
 	memset(mBuf, 0, sizeof(mBuf));
 	mStatusCode = 0;
 	mHeaderFlag = 0;
 	mChunkedFlag = 0;
 	mFillBodyFlag = 0;
-	mStatusText.clear();
+	mPid = 0;
+	mPostFlag = 0;
+	mContentSize = 0;
 	mUri.clear();
-	mBody.clear();
-	mReceived.clear();
+	if (mBody != NULL)
+		mBody->clear();
+	mReceived->clear();
 	mHeaders.clear();
+	mHeaders.clear();
+	mClientUdata = NULL;
 }
 
 static void replaceToContent(std::string& contents, std::string& findString, std::string& replaceString)
@@ -70,18 +97,16 @@ std::string UserData::uriGenerator(void)
 		replaceToContent(mUri, mSetting.uri, mSetting.alias);
 		return (mUri);
 	}
-	if (*(mUri.end() - 1) == '/')
+	if (*(mUri.end() - 1) == '/' && mSetting.autoindex == false)
 	{
 		mUri += mSetting.index;
 	}
 	if (mSetting.rootPath.size() > 0)
 	{
-		std::cout << "\nroot: " << Colors::BoldCyanString(mSetting.rootPath) << mUri << std::endl;
 		mUri.insert(0, mSetting.rootPath);
 	}
 	else
 	{
-		std::cout << "\nroot: " << Colors::BoldCyanString(mServerPtr->rootPath) << mUri << std::endl;
 		mUri.insert(0, mServerPtr->rootPath);
 	}
 	return (mUri);
@@ -89,7 +114,7 @@ std::string UserData::uriGenerator(void)
 
 const std::vector<unsigned char>& UserData::GetReceived(void) const
 {
-	return (mReceived);
+	return (*mReceived);
 }
 
 const AMethod& UserData::GetMethod(void) const
@@ -117,17 +142,22 @@ int UserData::GetSocketType(void) const
 	return (mSocketType);
 }
 
+void UserData::SetClientUdataNULL(void)
+{
+	mClientUdata = NULL;
+}
+
 void UserData::SetSocketType(int socketType)
 {
 	mSocketType = socketType;
 }
 
-const ServerBlock* UserData::GetServerPtr(void) const
+ServerBlock* UserData::GetServerPtr(void) const
 {
 	return (mServerPtr);
 }
 
-void UserData::SetServerPtr(const ServerBlock* serverPtr)
+void UserData::SetServerPtr(ServerBlock* serverPtr)
 {
 	mServerPtr = serverPtr;
 }
@@ -135,12 +165,10 @@ void UserData::SetServerPtr(const ServerBlock* serverPtr)
 static int checkHeaderLength(std::vector<unsigned char>& received, int& flag)
 {
 	std::vector<unsigned char>::iterator pos = received.begin();
-	std::string line;
+	std::string lineTemp;
 
 	if (flag == true)
 		return (true);
-	// if (received.size() > 1024)
-	// 	return (ERROR);
 	for (std::vector<unsigned char>::iterator it = received.begin(); it != received.end();)
 	{
 		pos = std::find(pos, received.end(), '\n');
@@ -149,14 +177,14 @@ static int checkHeaderLength(std::vector<unsigned char>& received, int& flag)
 			flag = false;
 			return (false);
 		}
-		line.assign(it, pos);
-		if (line == "\r" || line == "")
+		lineTemp.assign(it, pos);
+		if (lineTemp == "\r" || lineTemp == "")
 		{
 			flag = true;
 			return (true);
 		}
-		pos += 1; // 현재 pos는 \n을 가리키고 있기 때문.
-		it = pos; // 찾기 시작하는 위치 저장.
+		pos += 1;
+		it = pos;
 	}
 	flag = false;
 	return (false);
@@ -173,19 +201,23 @@ static int checkChunkedMessageEnd(std::vector<unsigned char>& received)
 	}
 	else
 	{
-		// std::cout << "chunked on and on: " << mReceived.size() << std::endl;
 		return (false);
 	}
 }
 
 int UserData::preprocessGenResponse()
 {
-	if (ParseRequest(mReceived) == ERROR)
+
+	if (ParseRequest(*mReceived) == ERROR)
 	{
 		mMethod->GenerateErrorResponse(mStatusCode);
 		return (1);
 	}
 	mMethod->ResponseConfigSetup(*mServerPtr, mUri, mSetting);
+	if (mSetting.returnPair.first != 0)
+	{
+		mStatusCode = mSetting.returnPair.first;
+	}
 	if (300 <= mStatusCode && mStatusCode < 600)
 	{
 		mMethod->GenerateRedirectionResponse(mStatusCode, mSetting);
@@ -194,94 +226,217 @@ int UserData::preprocessGenResponse()
 	return (0);
 }
 
+void UserData::ClearBody(void)
+{
+	mBody->clear();
+}
+
+void UserData::ClearReceived(void)
+{
+	mReceived->clear();
+}
+
+void UserData::SetCgiEvent(void)
+{
+	int parentSocketFd = mMethod->GetFd();
+	int pid = mMethod->GetPid();
+	UserData* udataCgi = new UserData(parentSocketFd);
+
+	if (mBody == NULL)
+	{
+		mBody = new std::vector<unsigned char>;
+	}
+	udataCgi->mBody = mBody;
+	if (udataCgi->mReceived != NULL)
+	{
+		delete udataCgi->mReceived;
+		udataCgi->mReceived = NULL;
+	}
+	udataCgi->mReceived = mReceived;
+	udataCgi->mSocketType = CGI_SOCKET;
+	udataCgi->mPid = pid;
+	udataCgi->mClientUdata = this;
+	mClientUdata = udataCgi;
+
+	WebServer::GetInstance()->ChangeEvent(pid, EVFILT_TIMER, EV_ADD | EV_ONESHOT, udataCgi);
+	WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_DISABLE, this);
+	WebServer::GetInstance()->ChangeEvent(parentSocketFd, EVFILT_READ, EV_ADD | EV_DISABLE, udataCgi);
+	WebServer::GetInstance()->ChangeEvent(parentSocketFd, EVFILT_WRITE, EV_ADD | EV_ENABLE, udataCgi);
+}
+
 void UserData::passBodyToPost(void)
 {
+	std::string body(mReceived->begin(), mReceived->end());
+	if (mServerPtr->clientMaxBodySize < body.size())
+	{
+		mMethod->GenerateErrorResponse(413);
+		mPostFlag = false;
+		WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ENABLE, this);
+	}
+	else
+	{
+		mMethod->GenerateResponse(mUri, mSetting, mHeaders, body);
+		SetCgiEvent();
+	}
+}
 
-	std::string body(mReceived.begin(), mReceived.end());
-	mMethod->GenerateResponse(mUri, mSetting, mHeaders, body);
-	std::cout << body.size() << "|body  contentSize|" << mContentSize << std::endl;
-	WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_DISABLE, this);
-	WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_ONESHOT, this);
+static void generateDefaultErrorPage(std::string& response)
+{
+	response += "Content-type: text/html\r\n"
+				"Content-Length: 203\r\n\r\n"
+				"<!DOCTYPE HTML>"
+				"<html>\n"
+				"  <head>\n"
+				"    <title>Error page</title>\n"
+				"  </head>\n"
+				"  <body>\n"
+				"    <h1>Sorry. Error occurred</h1>\n"
+				"    <p>Server didn't prepare specific error page. What did you do?</p>\n"
+				"  </body>\n"
+				"</html>";
+}
+
+static std::string intToString(int num)
+{
+	std::ostringstream oss;
+	oss << num;
+	return oss.str();
+}
+
+void UserData::GeneratePostResponse(int status)
+{
+	std::string errorPageUri = WebServer::GetInstance()->GetErrorPage(status);
+	std::string lineToInsert;
+	std::string lineTemp;
+	std::ifstream errorPage;
+	std::vector<unsigned char>::iterator pos = mBody->begin();
+
+	if (status == 200)
+	{
+		lineToInsert = "HTTP/1.1 200 OK\r\nContent-Length: ";
+		std::cout << mBody->size() << std::endl;
+		for (std::vector<unsigned char>::iterator it = mBody->begin(); it != mBody->end();)
+		{
+			pos = std::find(pos, mBody->end(), '\n');
+			if (pos == mBody->end())
+				break;
+			lineTemp.assign(it, pos);
+			if (lineTemp.size() > 0 && *(lineTemp.end() - 1) == '\r')
+				lineTemp.erase(lineTemp.size() - 1);
+			if (lineTemp.size() == 0)
+			{
+				lineToInsert += intToString(mBody->size() - (it - mBody->begin()) - 1) + "\r\n";
+				break;
+			}
+			pos += 1;
+			it = pos;
+		}
+		mBody->insert(mBody->begin(), lineToInsert.begin(), lineToInsert.end());
+		return;
+	}
+	mBody->clear();
+	std::string body = "HTTP/1.1 " + WebServer::GetInstance()->GetStatusText(status) + "\r\n";
+	errorPage.open(errorPageUri.c_str(), std::ios::binary);
+	if (errorPage.is_open() == false)
+	{
+		generateDefaultErrorPage(body);
+	}
+	else
+	{
+		body += "Content-length: ";
+		errorPage.seekg(0, std::ios::end);
+		std::streampos fileSize = errorPage.tellg();
+		errorPage.seekg(0, std::ios::beg);
+		body += intToString(fileSize) + "\r\n\r\n";
+
+		std::stringstream fileContent;
+		fileContent << errorPage.rdbuf();
+		body += fileContent.str();
+		errorPage.close();
+	}
+	mBody->insert(mBody->begin(), body.begin(), body.end());
+}
+
+void UserData::HandlingMethodPost(void)
+{
+	mPostFlag = true;
+	if (mReceived->size() < mContentSize)
+	{
+		if (mSetting.bPostMethod == false)
+		{
+			mPostFlag = false;
+			mMethod->GenerateErrorResponse(405);
+			WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_DISABLE, this);
+			WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ENABLE, this);
+		}
+		else if (mHeaders[TRANSFER_ENCODING] == "chunked")
+		{
+			if (checkChunkedMessageEnd(*mReceived) == true)
+			{
+				passBodyToPost();
+			}
+			else
+			{
+				mChunkedFlag = true;
+			}
+		}
+		else
+		{
+			mFillBodyFlag = true;
+		}
+		return;
+	}
+	else
+	{
+		passBodyToPost();
+	}
 	return;
+}
+
+void UserData::CheckReceiveAll(void)
+{
+	if (mFillBodyFlag == true && mReceived->size() < mContentSize)
+	{
+		return;
+	}
+	if (mChunkedFlag == true && checkChunkedMessageEnd(*mReceived) == false)
+	{
+		return;
+	}
+	passBodyToPost();
 }
 
 void UserData::ReadRequest(void)
 {
 	std::string temp;
 
-	if (mHeaderFlag == ERROR)
-	{
-		mMethod = new MethodGet(mFd);
-		mMethod->GenerateErrorResponse(mStatusCode);
-		WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_DISABLE, this);
-		WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_ONESHOT, this);
-		return;
-	}
-	else if (checkHeaderLength(mReceived, mHeaderFlag) == false)
+	if (checkHeaderLength(*mReceived, mHeaderFlag) == false)
 	{
 		return;
 	}
-
-	if (mChunkedFlag == true || mFillBodyFlag == true)
+	if (mPostFlag == true)
 	{
-		if (mFillBodyFlag == true && mReceived.size() < mContentSize)
-		{
-			return;
-		}
-		if (mChunkedFlag == true && checkChunkedMessageEnd(mReceived) == false)
-		{
-			return;
-		}
-		passBodyToPost();
+		CheckReceiveAll();
 		return;
 	}
-
 	if (preprocessGenResponse() == 1)
 	{
 		mMethod->GenerateErrorResponse(mStatusCode);
 		WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_DISABLE, this);
-		WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_ONESHOT, this);
+		WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ENABLE, this);
 	}
 	else
 	{
 		mUri = uriGenerator();
 		if (mMethod->GetType() == POST)
 		{
-			if (mReceived.size() < mContentSize)
-			{
-				if (mSetting.bPostMethod == false)
-				{
-					mMethod->GenerateErrorResponse(405);
-					WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_DISABLE, this);
-					WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_ONESHOT, this);
-				}
-				else if (mHeaders[TRANSFER_ENCODING] == "chunked")
-				{
-					if (checkChunkedMessageEnd(mReceived) == true)
-					{
-						passBodyToPost();
-					}
-					else
-					{
-						mChunkedFlag = true;
-					}
-				}
-				else
-				{
-					mFillBodyFlag = true;
-				}
-			}
-			else
-			{
-				passBodyToPost();
-			}
-			return;
+			HandlingMethodPost();
 		}
 		else
 		{
 			mMethod->GenerateResponse(mUri, mSetting, mHeaders);
 			WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_DISABLE, this);
-			WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_ONESHOT, this);
+			WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ENABLE, this);
 		}
 	}
 }
@@ -291,36 +446,126 @@ int UserData::RecvFromClient(void)
 	int len;
 
 	len = read(mFd, mBuf, BUFFER_SIZE);
-	mReceived.insert(mReceived.end(), &mBuf[0], &mBuf[len]);
-	// std::string test(&mBuf[0], &mBuf[len]);
-	// std::cout << Colors::BoldGreen;
-	// for (std::string::iterator it = test.begin(); it != test.end(); it++)
-	// {
-	// 	std::cout << *it;
-	// }
-	// std::cout << Colors::Reset << std::endl;
+	if (len <= 0)
+	{
+		return (len);
+	}
+	mReceived->insert(mReceived->end(), &mBuf[0], &mBuf[len]);
+	return (len);
+}
+
+int UserData::RecvFromCgi(void)
+{
+	int len;
+
+	len = read(mFd, mBuf, BUFFER_SIZE);
+	if (len <= 0)
+	{
+		return (len);
+	}
+	mBody->insert(mBody->end(), &mBuf[0], &mBuf[len]);
+	return (len);
+}
+
+int UserData::SendToClientPostResponse(int fd)
+{
+	int len;
+	int maxWrite;
+
+	if (mBody->size() >= BUFFER_SIZE)
+		maxWrite = BUFFER_SIZE;
+	else
+		maxWrite = mBody->size();
+	std::string temp(mBody->begin(), mBody->begin() + maxWrite);
+	len = write(fd, mBody->data(), maxWrite);
+	if (len < 0)
+	{
+		Error::Print("send()");
+		return (ERROR);
+	}
+	mBody->erase(mBody->begin(), mBody->begin() + maxWrite);
+	if (mBody->size() <= 0)
+	{
+		std::cout << Colors::BoldMagentaString("send to client ") << fd << "\n" << std::endl;
+		InitUserData();
+		WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_ENABLE, this);
+		WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_DISABLE, this);
+	}
 	return (len);
 }
 
 int UserData::SendToClient(int fd)
 {
-	size_t len;
+	int len;
+	int maxWrite;
 
-	// test code
-	std::cout << Colors::BoldCyan << "[Headers]" << Colors::Reset << std::endl;
-	for (std::map<int, std::string>::iterator it = mHeaders.begin(); it != mHeaders.end(); it++)
+	if (mPostFlag == true)
 	{
-		std::cout << it->first << ": " << it->second << std::endl;
+		return (SendToClientPostResponse(fd));
 	}
-	std::cout << "\n" << std::endl;
-	len = write(fd, mMethod->GetResponse().c_str(), mMethod->GetResponse().size());
-	len = write(1, mMethod->GetResponse().c_str(), mMethod->GetResponse().size());
-	// TODO 얘도 나눠서 써야 함.
-	// WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_ONESHOT, this);
+	if (mMethod->GetResponse().size() >= BUFFER_SIZE)
+		maxWrite = BUFFER_SIZE;
+	else
+		maxWrite = mMethod->GetResponse().size();
+	len = write(fd, mMethod->GetResponse().c_str(), maxWrite);
 	if (len < 0)
+	{
 		Error::Print("send()");
-	std::cout << Colors::BoldMagenta << "send to client " << fd << "\n" << Colors::Reset << std::endl;
-	InitUserData();
-	WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_ENABLE, this);
+		return (ERROR);
+	}
+	mMethod->EraseResponse(maxWrite);
+	if (mMethod->GetResponse().size() <= 0)
+	{
+		std::cout << Colors::BoldMagenta << "send to client " << fd << "\n" << Colors::Reset << std::endl;
+		InitUserData();
+		WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_ENABLE, this);
+		WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_DISABLE, this);
+	}
 	return (len);
+}
+
+#define MAX_CGI_WRITE_SIZE 1024
+
+int UserData::SendToCgi(void)
+{
+	int len = 0;
+	int maxLen;
+	std::string temp;
+
+	std::cout << Colors::BoldBlueString("mReceived: ") << mReceived->size() << std::endl;
+	if (mReceived->size() >= MAX_CGI_WRITE_SIZE)
+	{
+		maxLen = MAX_CGI_WRITE_SIZE;
+	}
+	else if (mReceived->size() == 0)
+	{
+		return (0);
+	}
+	else
+	{
+		maxLen = mReceived->size();
+	}
+	temp.assign(mReceived->begin(), mReceived->begin() + maxLen);
+	len = write(mFd, temp.c_str(), maxLen);
+	if (len < 0)
+	{
+		return (ERROR);
+	}
+	mReceived->erase(mReceived->begin(), mReceived->begin() + len);
+	if (mReceived->size() == 0)
+	{
+		WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_ENABLE, this);
+		WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_DISABLE, this);
+	}
+	return (len);
+}
+
+int UserData::GetPid(void) const
+{
+	return (mPid);
+}
+
+UserData* UserData::GetClientUdata(void) const
+{
+	return (mClientUdata);
 }
