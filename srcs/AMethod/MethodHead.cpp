@@ -147,7 +147,7 @@ int MethodHead::GenerateResponse(std::string& mUri, LocationBlock& mSetting, std
 		}
 		else
 		{
-			std::cout << Colors::BlueString("open success: ") << mUri << std::endl;
+			// std::cout << Colors::BlueString("open success: ") << mUri << std::endl;
 			GenerateResponseStatusLine(200);
 			GenerateResponseHeaders(requestedFile, mSetting, mUri, mHeaders);
 			requestedFile.close();

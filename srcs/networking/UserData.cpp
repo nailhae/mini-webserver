@@ -104,12 +104,10 @@ std::string UserData::uriGenerator(void)
 	}
 	if (mSetting.rootPath.size() > 0)
 	{
-		std::cout << "\nroot: " << Colors::BoldCyanString(mSetting.rootPath) << mUri << std::endl;
 		mUri.insert(0, mSetting.rootPath);
 	}
 	else
 	{
-		std::cout << "\nroot: " << Colors::BoldCyanString(mServerPtr->rootPath) << mUri << std::endl;
 		mUri.insert(0, mServerPtr->rootPath);
 	}
 	return (mUri);
@@ -476,7 +474,7 @@ int UserData::SendToClientPostResponse(int fd)
 	mBody->erase(mBody->begin(), mBody->begin() + maxWrite);
 	if (mBody->size() <= 0)
 	{
-		std::cout << Colors::BoldMagenta << "send to client " << fd << "\n" << Colors::Reset << std::endl;
+		std::cout << Colors::BoldMagentaString("send to client ") << fd << "\n" << std::endl;
 		InitUserData();
 		WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_READ, EV_ENABLE, this);
 		WebServer::GetInstance()->ChangeEvent(mFd, EVFILT_WRITE, EV_DISABLE, this);
