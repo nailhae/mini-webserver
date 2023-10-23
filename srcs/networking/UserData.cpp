@@ -327,7 +327,7 @@ void UserData::GeneratePostResponse(int status)
 			if (pos == mBody->end())
 				break;
 			lineTemp.assign(it, pos);
-			if (*(lineTemp.end() - 1) == '\r')
+			if (lineTemp.size() > 0 && *(lineTemp.end() - 1) == '\r')
 				lineTemp.erase(lineTemp.size() - 1);
 			if (lineTemp.size() == 0)
 			{
