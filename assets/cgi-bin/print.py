@@ -38,14 +38,15 @@ print("""
     <head>
         <meta http-equiv="content-type" content="text/html; charset=UTF-8">
         <title>print</title>
-        <h2 href="/index.html">home</h2>
+        <a style="font-size:30; Color: skyblue" href="/index.html">home</a>
     </head>
 <body>
 <form method="POST" action="/cgi-bin/print.py">
+</br>
 <input type="hidden" name="number" value="{}">
 <input type="hidden" name="input" value="{}">
-<button type="submit" name="action" value="add">+</button>
-<button type="submit" name="action" value="subtract">-</button>
+<button style="width: 100px; height: 50px;border: 3px solid skyblue;background-color: rgba(0,0,0,0);" type="submit" name="action" value="add">+</button>
+<button style="width: 100px; height: 50px;border: 3px solid skyblue;background-color: rgba(0,0,0,0);" type="submit" name="action" value="subtract">-</button>
 </form>""".format(value, user_input))
 print("<p>{}</p>".format(form))
 print("""<p>{}</p>""".format((user_input + "<br>") * value))

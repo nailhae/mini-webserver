@@ -235,7 +235,6 @@ int UserData::ParseRequest(std::vector<unsigned char>& request)
 		// std::cout << "lineTemp: " << lineTemp << std::endl;
 		if (it == request.begin() && ParseFirstLine(lineTemp) == ERROR)
 		{
-			mStatusCode = 400;
 			return (ERROR);
 		}
 		if (*(lineTemp.end() - 1) == '\r')

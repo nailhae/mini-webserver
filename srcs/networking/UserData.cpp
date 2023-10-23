@@ -169,11 +169,6 @@ static int checkHeaderLength(std::vector<unsigned char>& received, int& flag)
 
 	if (flag == true)
 		return (true);
-	if (received.size() > 1024)
-	{
-
-		return (ERROR);
-	}
 	for (std::vector<unsigned char>::iterator it = received.begin(); it != received.end();)
 	{
 		pos = std::find(pos, received.end(), '\n');
@@ -247,7 +242,6 @@ void UserData::SetCgiEvent(void)
 	int pid = mMethod->GetPid();
 	UserData* udataCgi = new UserData(parentSocketFd);
 
-	std::cout << "parent fd: " << parentSocketFd << std::endl;
 	if (mBody == NULL)
 	{
 		mBody = new std::vector<unsigned char>;

@@ -134,7 +134,6 @@ int MethodHead::GenerateResponse(std::string& mUri, LocationBlock& mSetting, std
 		}
 		else if (S_ISDIR(fileInfo.st_mode) == true)
 		{
-			Error::Print("directory can't open in file mode: " + mUri);
 			GenerateErrorResponse(404);
 			return (0);
 		}
