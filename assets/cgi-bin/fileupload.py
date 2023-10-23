@@ -14,17 +14,20 @@ if fileitem.filename:
     # strip leading path from file name
     # to avoid directory traversal attacks
     fn = os.path.basename(fileitem.filename)
-    open(os.getcwd() + '/assets/html/tmp/' + fn, 'wb').write(fileitem.file.read())
-    message = 'The file "' + fn + '" was uploaded successfully'
+    try :
+        open(os.getcwd() + '/assets/html/tmp/' + fn, 'wb').write(fileitem.file.read())
+        message = 'The file [' + fn + '] was uploaded successfully'
+    except Exception as e:
+        message = 'Error occurred: can not open file'
 
 else:
-    message = 'No file was uploaded'
+    message = 'Error occurred: can not open file'
 
 print ("""\
 <html>
     <a href='/index.html'>Home</a>
 <body>
-<p>%s</p>
+<h2>%s</h2>
 </body></html>
 """ % (message,))
 

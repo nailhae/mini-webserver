@@ -11,7 +11,6 @@ form = cgi.FieldStorage()
 #     print()
 value = 5
 user_input = "Hello"
-print(form)
 if "number" in form:
     try:
         value = int(form.getvalue("number"))
@@ -31,15 +30,15 @@ if "action" in form:
     elif form.getvalue("action") == "subtract":
         value -= 1
 
-if value == 0 in form:
-    value == 1
+if value <= 0:
+    value = 0
         
 print("""
 <html>
     <head>
         <meta http-equiv="content-type" content="text/html; charset=UTF-8">
         <title>print</title>
-        <a href="/index.html">home</a>
+        <h2 href="/index.html">home</h2>
     </head>
 <body>
 <form method="POST" action="/cgi-bin/print.py">
@@ -48,5 +47,6 @@ print("""
 <button type="submit" name="action" value="add">+</button>
 <button type="submit" name="action" value="subtract">-</button>
 </form>""".format(value, user_input))
+print("<p>{}</p>".format(form))
 print("""<p>{}</p>""".format((user_input + "<br>") * value))
 print("</body></html>")

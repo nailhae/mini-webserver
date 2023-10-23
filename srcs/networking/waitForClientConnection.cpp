@@ -110,7 +110,7 @@ void WebServer::HandlingClientSocket(struct kevent& event, UserData* udata)
 	if (event.filter == EVFILT_READ)
 	{
 		readLen = udata->RecvFromClient();
-		if ((event.flags & EV_EOF))
+		if (readLen == 0 || (event.flags & EV_EOF))
 		{
 			closeClientSocket(udata, event.ident);
 		}
@@ -151,7 +151,9 @@ void WebServer::HandlingCGISocket(struct kevent& event, UserData* udata)
 		if (readLen == 0)
 		{
 			int status = 0;
-			waitpid(udata->GetPid(), &status, WNOHANG);
+
+			kill(udata->GetPid(), SIGTERM);
+			waitpid(udata->GetPid(), &status, 0);
 			if (WIFEXITED(status) == true)
 			{
 				std::cout << "exit code: " << WEXITSTATUS(status) << std::endl;
