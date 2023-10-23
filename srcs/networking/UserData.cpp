@@ -63,7 +63,6 @@ void UserData::InitUserData(void)
 	mPid = 0;
 	mPostFlag = 0;
 	mContentSize = 0;
-	mStatusText.clear();
 	mUri.clear();
 	if (mBody != NULL)
 		mBody->clear();
@@ -166,7 +165,7 @@ void UserData::SetServerPtr(ServerBlock* serverPtr)
 static int checkHeaderLength(std::vector<unsigned char>& received, int& flag)
 {
 	std::vector<unsigned char>::iterator pos = received.begin();
-	std::string line;
+	std::string lineTemp;
 
 	if (flag == true)
 		return (true);
@@ -183,8 +182,8 @@ static int checkHeaderLength(std::vector<unsigned char>& received, int& flag)
 			flag = false;
 			return (false);
 		}
-		line.assign(it, pos);
-		if (line == "\r" || line == "")
+		lineTemp.assign(it, pos);
+		if (lineTemp == "\r" || lineTemp == "")
 		{
 			flag = true;
 			return (true);
@@ -313,13 +312,32 @@ static std::string intToString(int num)
 void UserData::GeneratePostResponse(int status)
 {
 	std::string errorPageUri = WebServer::GetInstance()->GetErrorPage(status);
-	std::string firstLine;
+	std::string lineToInsert;
+	std::string lineTemp;
 	std::ifstream errorPage;
+	std::vector<unsigned char>::iterator pos = mBody->begin();
 
 	if (status == 200)
 	{
-		firstLine = "HTTP/1.1 200 OK\r\n";
-		mBody->insert(mBody->begin(), firstLine.begin(), firstLine.end());
+		lineToInsert = "HTTP/1.1 200 OK\r\nContent-Length: ";
+		std::cout << mBody->size() << std::endl;
+		for (std::vector<unsigned char>::iterator it = mBody->begin(); it != mBody->end();)
+		{
+			pos = std::find(pos, mBody->end(), '\n');
+			if (pos == mBody->end())
+				break;
+			lineTemp.assign(it, pos);
+			if (*(lineTemp.end() - 1) == '\r')
+				lineTemp.erase(lineTemp.size() - 1);
+			if (lineTemp.size() == 0)
+			{
+				lineToInsert += intToString(mBody->size() - (it - mBody->begin()) - 1) + "\r\n";
+				break;
+			}
+			pos += 1;
+			it = pos;
+		}
+		mBody->insert(mBody->begin(), lineToInsert.begin(), lineToInsert.end());
 		return;
 	}
 	mBody->clear();

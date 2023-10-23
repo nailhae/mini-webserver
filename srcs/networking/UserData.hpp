@@ -81,7 +81,6 @@ private:
 	int mPid;
 	size_t mContentSize;
 	LocationBlock mSetting;
-	std::string mStatusText;
 	std::string mUri;
 	std::map<int, std::string> mHeaders;
 	std::vector<unsigned char>* mReceived;
