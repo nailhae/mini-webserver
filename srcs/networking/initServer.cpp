@@ -9,6 +9,7 @@ static void setServerSocketOption(int fd)
 	int optVal = true;
 
 	setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &optVal, sizeof(optVal));
+	setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &optVal, sizeof(optVal));
 }
 
 static int createSocket(int port)
