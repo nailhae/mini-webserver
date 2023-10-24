@@ -1,4 +1,5 @@
 #include "MultiTree.hpp"
+
 #include "Error.hpp"
 
 MultiTree::MultiTree(MultiTreeNode& root)
@@ -36,7 +37,7 @@ MultiTree::~MultiTree(void)
  */
 static MultiTreeNode* findNodeOrNullRecursive(MultiTreeNode* node, std::string& target)
 {
-	MultiTreeNode* temp = NULL;
+	MultiTreeNode* uritemp = NULL;
 	MultiTreeNode* result = NULL;
 	std::string subString;
 
@@ -55,11 +56,11 @@ static MultiTreeNode* findNodeOrNullRecursive(MultiTreeNode* node, std::string& 
 		subString = target.substr(0, (*it)->GetURI().size());
 		if ((*it)->GetURI() == subString)
 		{
-			if (temp == NULL || temp->GetURI().size() < subString.size())
-				temp = *it;
+			if (uritemp == NULL || uritemp->GetURI().size() < subString.size())
+				uritemp = *it;
 		}
 	}
-	result = findNodeOrNullRecursive(temp, target);
+	result = findNodeOrNullRecursive(uritemp, target);
 	if (result == NULL)
 	{
 		return (node);
@@ -88,14 +89,14 @@ MultiTreeNode* MultiTree::searchNodeOrNull(std::string target) const
 
 void printSearchedResult(MultiTree& root, std::string uri)
 {
-	MultiTreeNode* temp;
+	MultiTreeNode* uritemp;
 
-	temp = root.searchNodeOrNull(uri);
-	if (temp == NULL)
+	uritemp = root.searchNodeOrNull(uri);
+	if (uritemp == NULL)
 		Error::Print("failed to find " + uri);
 
 	else
-		Error::Print("found node's URI: " + temp->GetURI());
+		Error::Print("found node's URI: " + uritemp->GetURI());
 }
 
 static void printNodeRecursive(MultiTreeNode* node)
@@ -117,17 +118,17 @@ void MultiTree::PrintEveryNodes(void)
 
 static int CheckDupRecursive(MultiTreeNode* node)
 {
-	std::string temp;
+	std::string uritemp;
 
 	if (node == NULL || node->GetChildrenSize() < 2)
 		return (true);
 	for (std::vector<MultiTreeNode*>::const_iterator it = node->GetChildren().begin(); it != node->GetChildren().end();
 		 it++)
 	{
-		temp = (*it)->GetURI();
+		uritemp = (*it)->GetURI();
 		for (std::vector<MultiTreeNode*>::const_iterator nextIt = it + 1; nextIt != node->GetChildren().end(); nextIt++)
 		{
-			if (temp == (*nextIt)->GetURI())
+			if (uritemp == (*nextIt)->GetURI())
 				return (false);
 		}
 		if (CheckDupRecursive(*it) == false)

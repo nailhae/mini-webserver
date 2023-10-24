@@ -41,7 +41,6 @@ HttpBlock* WebServer::parseFileOrNull(const std::string& fileName)
 	}
 	if (parserErrorCheck(*http))
 	{
-		Error::Print("parse conf file");
 		return NULL;
 	}
 
@@ -52,12 +51,26 @@ static int parserErrorCheck(HttpBlock& http)
 {
 	const int success = 0;
 	const int error = 1;
+	int portTemp;
+
 	for (std::vector<ServerBlock*>::iterator it = http.serverList.begin(); it != http.serverList.end(); it++)
 	{
+		portTemp = (*it)->listenPort;
+		for (std::vector<ServerBlock*>::iterator nextIt = it + 1; nextIt != http.serverList.end(); nextIt++)
+		{
+			if (portTemp == (*nextIt)->listenPort)
+			{
+				Error::Print("duplicate server port");
+				return error;
+			}
+		}
 		for (std::vector<MultiTree*>::iterator treeIt = (*it)->root.begin(); treeIt != (*it)->root.end(); treeIt++)
 		{
 			if ((*treeIt)->CheckDuplicateError() == false)
+			{
+				Error::Print("duplicate location uri");
 				return error;
+			}
 		}
 	}
 
@@ -95,7 +108,6 @@ static int parseLine(const std::string& line, std::ifstream& file, HttpBlock& ht
 	{
 		return success;
 	}
-
 	if (key == "default_type")
 	{
 		std::string value;
@@ -107,6 +119,7 @@ static int parseLine(const std::string& line, std::ifstream& file, HttpBlock& ht
 			}
 			else
 			{
+				Error::Print("default_type value error");
 				return error;
 			}
 			http.types["default_type"] = value;
@@ -125,6 +138,7 @@ static int parseLine(const std::string& line, std::ifstream& file, HttpBlock& ht
 			}
 			else
 			{
+				Error::Print("error_page value error");
 				return error;
 			}
 			for (size_t i = 0; i < result.size() - 1; i++)
@@ -140,6 +154,7 @@ static int parseLine(const std::string& line, std::ifstream& file, HttpBlock& ht
 		std::string value;
 		if (!(iss >> value) || value != "{")
 		{
+			Error::Print("server value error");
 			return error;
 		}
 		ServerBlock* server = new ServerBlock;
@@ -147,6 +162,7 @@ static int parseLine(const std::string& line, std::ifstream& file, HttpBlock& ht
 		initServerBlock(*server);
 		if (serverParser(*server, file))
 		{
+			Error::Print("server block compose error");
 			return error;
 		}
 	}
@@ -177,20 +193,24 @@ static int parseLine(const std::string& line, std::ifstream& file, HttpBlock& ht
 		location->uri = value;
 		if (!(iss >> value) || value != "{")
 		{
+			Error::Print("location block compose error");
 			return error;
 		}
 		if (locationParser(*location, file, *tree, location->uri))
 		{
+			Error::Print("location block compose error");
 			return error;
 		}
 	}
 	else
 	{
+		Error::Print("unknown type error");
 		return error;
 	}
 
 	if (iss >> key && key[0] != '#')
 	{
+		Error::Print("parse error");
 		return error;
 	}
 
