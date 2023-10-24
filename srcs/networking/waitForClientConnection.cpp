@@ -41,7 +41,6 @@ void WebServer::ShutdownCgiPid(UserData* udata)
 
 	mChangeList.ChangeEvent(udata->GetClientUdata()->GetFd(), EVFILT_READ, EV_DISABLE, udata->GetClientUdata());
 	mChangeList.ChangeEvent(udata->GetClientUdata()->GetFd(), EVFILT_WRITE, EV_ENABLE, udata->GetClientUdata());
-	std::cout << "udata fd write 킴: " << udata->GetClientUdata()->GetFd() << std::endl;
 	delete udata;
 }
 
@@ -76,6 +75,10 @@ void WebServer::acceptClientSocket(int fd, ServerBlock* serverPtr)
 
 	adrSize = sizeof(adr);
 	sock = accept(fd, (struct sockaddr*)&adr, &adrSize);
+	if (sock == -1)
+	{
+		return;
+	}
 	udata = new UserData(sock);
 	udata->SetServerPtr(serverPtr);
 	udata->SetSocketType(CLIENT_SOCKET);
