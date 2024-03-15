@@ -1,6 +1,7 @@
 # mini-webserver
 
 mini-webserver는 HTTP1.1을 지원하는 웹서버입니다.
+웹서버와 멀티플렉싱, HTTP프로토콜을 이해하기 위한 목적으로 진행한 프로젝트입니다.
 
 ## 실행 요구사항
 
@@ -64,7 +65,7 @@ error_page 500 502 503 504  ./assets/html/error/50x.html;
 server {
   listen       8888;
   # Setup the server_names or not.
-  server_name  second_server;
+  server_name  hello_world;
 
   client_max_body_size 1000000;
   root         ./assets/html;
