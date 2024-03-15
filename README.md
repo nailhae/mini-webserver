@@ -3,11 +3,15 @@
 mini-webserver는 HTTP1.1을 지원하는 웹서버입니다.
 웹서버와 멀티플렉싱, HTTP프로토콜을 이해하기 위한 목적으로 진행한 프로젝트입니다.
 
-## 실행 요구사항
+## 목차
 
-- macOS or BSD
-- C++98
-- make
+- [mini-webserver](#mini-webserver)
+  - [특징](#특징)
+  - [역할](#역할)
+  - [시퀀스 다이어그램](#시퀀스-다이어그램)
+  - [실행 요구사항](#실행-요구사항)
+  - [실행](#실행)
+  - [서버 설정](#서버-설정)
 
 ## 특징
 
@@ -25,6 +29,16 @@ mini-webserver는 HTTP1.1을 지원하는 웹서버입니다.
 - parksangmin1543: `conf` 파일 파싱, CGI 구현
 
 - hyemch: HTTP 메소드 함수 구현
+
+## 시퀀스 다이어그램
+
+![mini-webserver-sequence-diagram](./doc/image/mini-webserver-sequence-diagram.png)
+
+## 실행 요구사항
+
+- macOS or BSD
+- C++98
+- make
 
 ## 실행
 
